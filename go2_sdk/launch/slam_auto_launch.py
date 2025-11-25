@@ -15,6 +15,10 @@ def generate_launch_description():
         robot_desc = infp.read()
 
     slam_config_file = os.path.join(pkg_dir, "config", "slam_params.yaml")
+    nav2_config_file = os.path.join(pkg_dir, "config", "nav2_params.yaml")
+    m_explorer_config_file = os.path.join(
+        pkg_dir, "config", "m_explorer_ros2_params.yaml"
+    )
 
     channel_type = LaunchConfiguration("channel_type", default="serial")
     serial_port = LaunchConfiguration("serial_port", default="/dev/ttyUSB0")
@@ -172,72 +176,80 @@ def generate_launch_description():
                 parameters=[slam_config_file],
                 output="screen",
             ),
-            # Node(
-            #     package='nav2_lifecycle_manager',
-            #     executable='lifecycle_manager',
-            #     name='lifecycle_manager_navigation',
-            #     output='screen',
-            #     parameters=[{'use_sim_time': False},
-            #                {'autostart': True},
-            #                {'node_names': ['controller_server',
-            #                               'smoother_server',
-            #                               'planner_server',
-            #                               'behavior_server',
-            #                               'bt_navigator',
-            #                               'waypoint_follower',
-            #                               'velocity_smoother']}]
-            # ),
-            # Node(
-            #     package='nav2_controller',
-            #     executable='controller_server',
-            #     output='screen',
-            #     parameters=[nav2_config_file],
-            #     remappings=[('/cmd_vel', '/cmd_vel')]
-            # ),
-            # Node(
-            #     package='nav2_smoother',
-            #     executable='smoother_server',
-            #     name='smoother_server',
-            #     output='screen',
-            #     parameters=[nav2_config_file]
-            # ),
-            # Node(
-            #     package='nav2_planner',
-            #     executable='planner_server',
-            #     name='planner_server',
-            #     output='screen',
-            #     parameters=[nav2_config_file]
-            # ),
-            # Node(
-            #     package='nav2_behaviors',
-            #     executable='behavior_server',
-            #     name='behavior_server',
-            #     output='screen',
-            #     parameters=[nav2_config_file]
-            # ),
-            # Node(
-            #     package='nav2_bt_navigator',
-            #     executable='bt_navigator',
-            #     name='bt_navigator',
-            #     output='screen',
-            #     parameters=[nav2_config_file]
-            # ),
-            # Node(
-            #     package='nav2_waypoint_follower',
-            #     executable='waypoint_follower',
-            #     name='waypoint_follower',
-            #     output='screen',
-            #     parameters=[nav2_config_file]
-            # ),
-            # Node(
-            #     package='nav2_velocity_smoother',
-            #     executable='velocity_smoother',
-            #     name='velocity_smoother',
-            #     output='screen',
-            #     parameters=[nav2_config_file],
-            #     remappings=[('/cmd_vel', '/cmd_vel_nav'),
-            #                ('/cmd_vel_smoothed', '/cmd_vel')]
-            # ),
+            Node(
+                package="nav2_lifecycle_manager",
+                executable="lifecycle_manager",
+                name="lifecycle_manager_navigation",
+                output="screen",
+                parameters=[
+                    {"use_sim_time": False},
+                    {"autostart": True},
+                    {
+                        "node_names": [
+                            "controller_server",
+                            "smoother_server",
+                            "planner_server",
+                            "behavior_server",
+                            "bt_navigator",
+                            "waypoint_follower",
+                            "velocity_smoother",
+                        ]
+                    },
+                ],
+            ),
+            Node(
+                package="nav2_controller",
+                executable="controller_server",
+                output="screen",
+                parameters=[nav2_config_file],
+                remappings=[("/cmd_vel", "/cmd_vel")],
+            ),
+            Node(
+                package="nav2_smoother",
+                executable="smoother_server",
+                name="smoother_server",
+                output="screen",
+                parameters=[nav2_config_file],
+            ),
+            Node(
+                package="nav2_planner",
+                executable="planner_server",
+                name="planner_server",
+                output="screen",
+                parameters=[nav2_config_file],
+            ),
+            Node(
+                package="nav2_behaviors",
+                executable="behavior_server",
+                name="behavior_server",
+                output="screen",
+                parameters=[nav2_config_file],
+            ),
+            Node(
+                package="nav2_bt_navigator",
+                executable="bt_navigator",
+                name="bt_navigator",
+                output="screen",
+                parameters=[nav2_config_file],
+            ),
+            Node(
+                package="nav2_waypoint_follower",
+                executable="waypoint_follower",
+                name="waypoint_follower",
+                output="screen",
+                parameters=[nav2_config_file],
+            ),
+            Node(
+                package="nav2_velocity_smoother",
+                executable="velocity_smoother",
+                name="velocity_smoother",
+                output="screen",
+                parameters=[nav2_config_file],
+                remappings=[
+                    ("/cmd_vel", "/cmd_vel_nav"),
+                    ("/cmd_vel_smoothed", "/cmd_vel"),
+                ],
+            ),
             # Node(
             #     package='nav2_lifecycle_manager',
             #     executable='lifecycle_manager',
@@ -255,5 +267,12 @@ def generate_launch_description():
             #     output='screen',
             #     parameters=[nav2_config_file]
             # )
+            Node(
+                package="explore_lite",
+                executable="explore",
+                name="explore_lite",
+                output="screen",
+                parameters=[m_explorer_config_file],
+            ),
         ]
     )

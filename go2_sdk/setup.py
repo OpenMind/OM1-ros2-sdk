@@ -1,4 +1,3 @@
-import os
 from glob import glob
 
 from setuptools import find_packages, setup
@@ -13,12 +12,9 @@ setup(
         ("share/ament_index/resource_index/packages", ["resource/go2_sdk"]),
         ("share/" + package_name, ["package.xml"]),
         ("share/" + package_name + "/launch", glob("launch/*")),
-        (
-            "share/" + package_name + "/config",
-            ["config/slam.yaml", "config/rviz.rviz", "config/nav2_params.yaml"],
-        ),
+        ("share/" + package_name + "/config", glob("config/*")),
         ("share/" + package_name + "/urdf", ["urdf/go2.urdf"]),
-        (os.path.join("share", package_name, "dae"), glob(os.path.join("dae", "*"))),
+        ("share/" + package_name + "/dae", glob("dae/*")),
     ],
     install_requires=["setuptools"],
     zip_safe=True,
