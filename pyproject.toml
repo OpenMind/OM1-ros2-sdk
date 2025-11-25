@@ -87,6 +87,7 @@ multi_line_output = 3
 line_length = 88
 known_first_party = ["go2_sdk", "go2_auto_dock", "orchestrator"]
 known_third_party = ["rclpy", "ros2", "numpy", "opencv", "flask"]
+skip_glob = ["m-explore-ros2/*"]
 
 [tool.ruff]
 line-length = 88
