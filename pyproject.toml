@@ -92,7 +92,7 @@ known_third_party = ["rclpy", "ros2", "numpy", "opencv", "flask"]
 line-length = 88
 indent-width = 4
 src = ["src"]
-exclude = ["src/unitree","gazebo", "src/ubtech"]
+exclude = ["m-explore-ros2"]
 
 [tool.ruff.lint]
 select = ["E", "F"]
