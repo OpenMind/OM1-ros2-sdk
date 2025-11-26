@@ -1,0 +1,3 @@
+[submodule "go2_sim"]
+	path = go2_sim
+	url = https://github.com/OpenMind/go2_sim.git
