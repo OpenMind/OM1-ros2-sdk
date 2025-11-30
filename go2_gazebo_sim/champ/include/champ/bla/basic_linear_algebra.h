@@ -482,10 +482,10 @@ Matrix<rows,cols,retMemT> &ElementwiseMultiply(const Matrix<rows,cols,MemT> &A, 
     for(int i = 0; i < rows; i++)
         for(int j = 0; j < cols; j++)
             C(i,j) = A(i,j) * B(i,j);
-	
+
     return C;
 }
-    
+
 // Multiplies two matrices and stores the result in a third matrix C, this is slightly faster than using the operators
 template<int rows, int cols, class MemT, class retMemT>
 Matrix<rows,cols,retMemT> &ElementwiseDivide(const Matrix<rows,cols,MemT> &A, const typename MemT::elem_t &B, Matrix<rows,cols,retMemT> &C)
@@ -507,7 +507,7 @@ typename MemT::elem_t Determinant(const Matrix<dim,dim,MemT> &A)
     {
         Minor<MemT> del(A.delegate, i, 0);
         Matrix<dim-1,dim-1,Minor<MemT> > m(del);
-        
+
         // det += Determinant(m) * (i % 2? -A(i,0) : A(i,0));
 
         if (i%2)

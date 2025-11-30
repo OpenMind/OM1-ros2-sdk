@@ -46,7 +46,7 @@ namespace champ
         float ref_control_points_y_[12];
         float control_points_x_[12];
         float control_points_y_[12];
-        
+
         float height_ratio_;
         float length_ratio_;
 
@@ -56,21 +56,21 @@ namespace champ
         void updateControlPointsHeight(float swing_height)
         {
             float new_height_ratio = swing_height / 0.15f;
-            
+
             if(height_ratio_ != new_height_ratio)
             {
                 height_ratio_ = new_height_ratio;
                 for(unsigned int i = 0; i < 12; i++)
                 {
                     control_points_y_[i] = -((ref_control_points_y_[i] * height_ratio_) + (0.5f * height_ratio_));
-                }    
+                }
             }
         }
 
         void updateControlPointsLength(float step_length)
         {
             float new_length_ratio = step_length / 0.4f;
-            
+
             if(length_ratio_ != new_length_ratio)
             {
                 length_ratio_ = new_length_ratio;
@@ -81,14 +81,14 @@ namespace champ
                     else if(i == 11)
                         control_points_x_[i] = step_length / 2.0f;
                     else
-                        control_points_x_[i] = ref_control_points_x_[i] * length_ratio_;   
+                        control_points_x_[i] = ref_control_points_x_[i] * length_ratio_;
                 }
             }
         }
 
         public:
             TrajectoryPlanner(QuadrupedLeg &leg):
-                leg_(&leg),    
+                leg_(&leg),
                 total_control_points_(12),
                 factorial_{1.0,1.0,2.0,6.0,24.0,120.0,720.0,5040.0,40320.0,362880.0,3628800.0,39916800.0,479001600.0},
                 ref_control_points_x_{-0.15, -0.2805,-0.3,-0.3,-0.3, 0.0, 0.0, 0.0, 0.3032, 0.3032, 0.2826, 0.15},
@@ -100,14 +100,14 @@ namespace champ
             }
 
             void generate(geometry::Transformation &foot_position, float step_length, float rotation, float swing_phase_signal, float stance_phase_signal)
-            {    
+            {
                 updateControlPointsHeight(leg_->gait_config->swing_height);
 
                 //ensures the prev_foot_position_ is not empty on first run
                 if(!run_once_)
                 {
                     run_once_ = true;
-                    prev_foot_position_ = foot_position;                    
+                    prev_foot_position_ = foot_position;
                 }
 
                 //check if there's a need to hop, otherwise nothing to do here
@@ -146,7 +146,7 @@ namespace champ
                     // x = -(step_length / 2) * (1 - (2 * swing_phase_signal));
                     // y = leg_->gait_config->swing_height * cosf((M_PI * x) / step_length);
                 }
-    
+
                 foot_position.X() += x * cosf(rotation);
                 foot_position.Y() += x * sinf(rotation);
                 foot_position.Z() += y;

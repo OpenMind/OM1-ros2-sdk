@@ -34,12 +34,12 @@ namespace champ
 {
     class Joint
     {
-        // float translation_.x; 
-        // float translation_.y; 
-        // float translation_.z; 
+        // float translation_.x;
+        // float translation_.y;
+        // float translation_.z;
 
-        // float rotation_.roll; 
-        // float rotation_.pitch; 
+        // float rotation_.roll;
+        // float rotation_.pitch;
         // float rotation_.yaw;
 
         float theta_;
@@ -52,27 +52,27 @@ namespace champ
                 theta_(0.0)
             {
             }
-            
-            Joint(float pos_x, float pos_y, float pos_z, 
+
+            Joint(float pos_x, float pos_y, float pos_z,
                   float or_r,  float or_p,  float or_y):
                 theta_(0.0)
-            { 
+            {
                 translation_.x = pos_x;
                 translation_.y = pos_y;
                 translation_.z = pos_z;
                 rotation_.roll = or_r;
                 rotation_.pitch = or_p;
                 rotation_.yaw = or_y;
-            } 
+            }
 
             float theta()
-            { 
-                return theta_; 
+            {
+                return theta_;
             }
 
             void theta(float angle)
-            { 
-                theta_ = angle; 
+            {
+                theta_ = angle;
             }
 
             void setTranslation(float x, float y, float z)

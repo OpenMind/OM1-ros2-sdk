@@ -35,12 +35,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace champ
 {
     class QuadrupedBase
-    {   
+    {
         champ::Velocities speed_;
-        
+
         int getKneeDirection(char direction)
         {
-            switch (direction) 
+            switch (direction)
             {
                 case '>':
                     return -1;
@@ -49,7 +49,7 @@ namespace champ
                 default:
                     return -1;
             }
-        }    
+        }
 
         public:
             QuadrupedBase()
@@ -63,7 +63,7 @@ namespace champ
 
                 setGaitConfig(gait_config);
             }
-            QuadrupedBase(champ::GaitConfig &gait_conf)     
+            QuadrupedBase(champ::GaitConfig &gait_conf)
             {
                 unsigned int total_legs = 0;
 
@@ -73,8 +73,8 @@ namespace champ
                 legs[total_legs++] = &rh;
 
                 setGaitConfig(gait_conf);
-            }        
-            
+            }
+
             void getJointPositions(float *joint_positions)
             {
                 unsigned int total_joints = 0;
@@ -128,7 +128,7 @@ namespace champ
                     legs[i]->setGaitConfig(&gait_config);
                 }
             }
-            
+
             champ::QuadrupedLeg *legs[4];
 
             champ::QuadrupedLeg lf;

@@ -67,8 +67,8 @@ namespace champ
     {
         public:
             Quaternion():
-                x(0.0f), 
-                y(0.0f), 
+                x(0.0f),
+                y(0.0f),
                 z(0.0f),
                 w(0.0f)
             {}
@@ -95,8 +95,8 @@ namespace champ
     {
         public:
             Euler():
-                roll(0.0f), 
-                pitch(0.0f), 
+                roll(0.0f),
+                pitch(0.0f),
                 yaw(0.0f)
             {}
             float roll;
@@ -115,8 +115,8 @@ namespace champ
     {
         public:
             Accelerometer():
-                x(0.0f), 
-                y(0.0f), 
+                x(0.0f),
+                y(0.0f),
                 z(0.0f)
             {}
             float x;
@@ -128,8 +128,8 @@ namespace champ
     {
         public:
             Gyroscope():
-                x(0.0f), 
-                y(0.0f), 
+                x(0.0f),
+                y(0.0f),
                 z(0.0f)
             {}
             float x;
@@ -141,8 +141,8 @@ namespace champ
     {
         public:
             Magnetometer():
-                x(0.0f), 
-                y(0.0f), 
+                x(0.0f),
+                y(0.0f),
                 z(0.0f)
             {}
             float x;

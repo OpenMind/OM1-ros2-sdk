@@ -42,7 +42,7 @@ namespace champ
     class Kinematics
     {
         champ::QuadrupedBase *base_;
-        
+
         public:
             Kinematics(champ::QuadrupedBase &quadruped_base):
                 base_(&quadruped_base)
@@ -56,21 +56,21 @@ namespace champ
                 for(unsigned int i = 0; i < 4; i++)
                 {
                     inverse(calculated_joints[(i*3)], calculated_joints[(i*3) + 1], calculated_joints[(i*3) + 2], *base_->legs[i], foot_positions[i]);
-                    
+
                     //check if any leg has invalid calculation, if so disregard the whole plan
                     if(isnan(calculated_joints[(i*3)]) || isnan(calculated_joints[(i*3) + 1]) || isnan(calculated_joints[(i*3) + 2]))
                     {
                         return;
                     }
                 }
-                
+
                 for(unsigned int i = 0; i < 12; i++)
                 {
                     joint_positions[i] = calculated_joints[i];
                 }
             }
 
-            static void inverse(float &hip_joint, float &upper_leg_joint, float &lower_leg_joint, 
+            static void inverse(float &hip_joint, float &upper_leg_joint, float &lower_leg_joint,
                                 champ::QuadrupedLeg &leg, geometry::Transformation &foot_position)
             {
                 geometry::Transformation temp_foot_pos = foot_position;
@@ -83,15 +83,15 @@ namespace champ
                 }
 
                 float l1 = -sqrtf(pow(leg.lower_leg.x(), 2) + pow(leg.lower_leg.z(), 2));
-                float ik_alpha = acosf(leg.lower_leg.x() / l1) - (M_PI / 2); 
+                float ik_alpha = acosf(leg.lower_leg.x() / l1) - (M_PI / 2);
 
                 float l2 = -sqrtf(pow(leg.foot.x(), 2) + pow(leg.foot.z(), 2));
-                float ik_beta = acosf(leg.foot.x() / l2) - (M_PI / 2); 
+                float ik_beta = acosf(leg.foot.x() / l2) - (M_PI / 2);
 
                 float x = temp_foot_pos.X();
                 float y = temp_foot_pos.Y();
                 float z = temp_foot_pos.Z();
-            
+
                 hip_joint = -(atanf(y / z) - ((M_PI/2) - acosf(-l0 / sqrtf(pow(y, 2) + pow(z, 2)))));
 
                 temp_foot_pos.RotateX(-hip_joint);
@@ -121,7 +121,7 @@ namespace champ
                         upper_leg_joint = upper_leg_joint +  M_PI;
                     }
                 }
-                else 
+                else
                 {
                     if(upper_leg_joint > 0)
                     {
@@ -130,34 +130,34 @@ namespace champ
                 }
             }
 
-            static void forward(geometry::Transformation foot_position, const champ::QuadrupedLeg &leg, 
-                                const float upper_leg_theta, 
+            static void forward(geometry::Transformation foot_position, const champ::QuadrupedLeg &leg,
+                                const float upper_leg_theta,
                                 const float lower_leg_theta )
             {
                 foot_position.Translate(leg.foot.x(), leg.foot.y(), leg.foot.z());
-                foot_position.RotateY(lower_leg_theta);          
+                foot_position.RotateY(lower_leg_theta);
 
                 foot_position.Translate(leg.lower_leg.x(), leg.lower_leg.y(), leg.lower_leg.z());
-                foot_position.RotateY(upper_leg_theta);   
+                foot_position.RotateY(upper_leg_theta);
 
                 foot_position.Translate(leg.upper_leg.x(), leg.upper_leg.y(), leg.upper_leg.z());
             }
 
-            static void forward(geometry::Transformation foot_position, const champ::QuadrupedLeg &leg, 
-                                const float hip_theta, 
-                                const float upper_leg_theta, 
+            static void forward(geometry::Transformation foot_position, const champ::QuadrupedLeg &leg,
+                                const float hip_theta,
+                                const float upper_leg_theta,
                                 const float lower_leg_theta)
             {
                 foot_position = Identity<4,4>();
 
                 foot_position.Translate(leg.foot.x(), leg.foot.y(), leg.foot.z());
-                foot_position.RotateY(lower_leg_theta);          
+                foot_position.RotateY(lower_leg_theta);
 
                 foot_position.Translate(leg.lower_leg.x(), leg.lower_leg.y(), leg.lower_leg.z());
-                foot_position.RotateY(upper_leg_theta);   
+                foot_position.RotateY(upper_leg_theta);
 
                 foot_position.Translate(leg.upper_leg.x(), leg.upper_leg.y(), leg.upper_leg.z());
-                foot_position.RotateY(hip_theta);   
+                foot_position.RotateY(hip_theta);
 
                 foot_position.Translate(leg.hip.x(), leg.hip.y(), leg.hip.z());
             }

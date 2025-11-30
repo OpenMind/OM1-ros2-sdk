@@ -61,7 +61,7 @@ include_directories(
   ${champ_INCLUDE_DIRS}/champ/champ/
 )
 install(DIRECTORY config
-  DESTINATION share/${PROJECT_NAME} 
+  DESTINATION share/${PROJECT_NAME}
 )
 
 add_library(quadruped_controller SHARED src/quadruped_controller.cpp)
@@ -85,7 +85,7 @@ target_link_libraries(state_estimation_node state_estimation)
 ament_target_dependencies(state_estimation_node ${dependencies})
 
 
-install(TARGETS 
+install(TARGETS
     quadruped_controller
     quadruped_controller_node
     message_relay
@@ -98,7 +98,7 @@ install(TARGETS
 )
 
 
-install(TARGETS 
+install(TARGETS
     quadruped_controller_node
     message_relay_node
     state_estimation_node

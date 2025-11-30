@@ -29,7 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 MessageRelay::MessageRelay():
      Node("message_relay_node")
-{    
+{
     imu_data_.orientation.w = 1.0;
 
     foot_contacts_publisher_ = this->create_publisher<champ_msgs::msg::ContactsStamped>("foot_contacts", 1);
@@ -143,7 +143,7 @@ void MessageRelay::jointStatesRawCallback_(const champ_msgs::msg::Joints::Shared
         joint_commands_publisher_->publish(joints_cmd_msg);
     }
     else
-    {   
+    {
         sensor_msgs::msg::JointState joints_msg;
 
         joints_msg.header.stamp = this->get_clock()->now();
@@ -152,7 +152,7 @@ void MessageRelay::jointStatesRawCallback_(const champ_msgs::msg::Joints::Shared
         joints_msg.name = joint_names_;
 
         for (size_t i = 0; i < joint_names_.size(); ++i)
-        {    
+        {
             joints_msg.position[i]= msg->position[i];
         }
 

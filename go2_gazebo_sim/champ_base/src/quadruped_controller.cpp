@@ -65,12 +65,12 @@ QuadrupedController::QuadrupedController():
     this->get_parameter("joint_controller_topic",      joint_control_topic);
     this->get_parameter("loop_rate",                   loop_rate);
     this->get_parameter("urdf",                        urdf);
-    
+
     cmd_vel_subscription_ = this->create_subscription<geometry_msgs::msg::Twist>(
         "cmd_vel/smooth", 10, std::bind(&QuadrupedController::cmdVelCallback_, this,  std::placeholders::_1));
     cmd_pose_subscription_ = this->create_subscription<geometry_msgs::msg::Pose>(
         "body_pose", 1,  std::bind(&QuadrupedController::cmdPoseCallback_, this,  std::placeholders::_1));
-    
+
     if(publish_joint_control_)
     {
         joint_commands_publisher_ = this->create_publisher<trajectory_msgs::msg::JointTrajectory>(joint_control_topic, 10);
@@ -87,7 +87,7 @@ QuadrupedController::QuadrupedController():
     }
 
     gait_config_.knee_orientation = knee_orientation.c_str();
-    
+
     base_.setGaitConfig(gait_config_);
     champ::URDF::loadFromString(base_, this->get_node_parameters_interface(), urdf);
     joint_names_ = champ::URDF::getJointNames(this->get_node_parameters_interface());
@@ -121,18 +121,18 @@ void QuadrupedController::cmdVelCallback_(const geometry_msgs::msg::Twist::Share
 }
 
 void QuadrupedController::cmdPoseCallback_(const geometry_msgs::msg::Pose::SharedPtr msg)
-{   
-    
+{
+
     tf2::Quaternion quat(
         msg->orientation.x,
         msg->orientation.y,
         msg->orientation.z,
         msg->orientation.w);
-    
+
     tf2::Matrix3x3 m(quat);
     double roll, pitch, yaw;
     m.getRPY(roll, pitch, yaw);
-    
+
     req_pose_.orientation.roll = roll;
     req_pose_.orientation.pitch = pitch;
     req_pose_.orientation.yaw = yaw;
@@ -143,14 +143,14 @@ void QuadrupedController::cmdPoseCallback_(const geometry_msgs::msg::Pose::Share
 }
 
 void QuadrupedController::publishJoints_(float target_joints[12])
-{   
+{
     if(publish_joint_control_)
     {
         trajectory_msgs::msg::JointTrajectory joints_cmd_msg;
         joints_cmd_msg.header.stamp = clock_.now();
         joints_cmd_msg.header.stamp.sec = 0;
         joints_cmd_msg.header.stamp.nanosec = 0;
-        
+
         joints_cmd_msg.joint_names = joint_names_;
 
         trajectory_msgs::msg::JointTrajectoryPoint point;
@@ -177,7 +177,7 @@ void QuadrupedController::publishJoints_(float target_joints[12])
         joints_msg.name = joint_names_;
 
         for (size_t i = 0; i < joint_names_.size(); ++i)
-        {    
+        {
             joints_msg.position[i]= target_joints[i];
         }
 
@@ -192,7 +192,7 @@ void QuadrupedController::publishFootContacts_(bool foot_contacts[4])
         champ_msgs::msg::ContactsStamped contacts_msg;
         contacts_msg.header.stamp = clock_.now();
         contacts_msg.contacts.resize(4);
-        
+
         std::string s2;
        for(size_t i = 0; i < 4; i++)
         {

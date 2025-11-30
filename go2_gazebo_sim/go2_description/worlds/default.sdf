@@ -5,7 +5,7 @@
       <max_step_size>0.001</max_step_size>
       <real_time_factor>1.0</real_time_factor>
     </physics>
-    
+
     <!-- Plugins -->
     <plugin
       filename="gz-sim-physics-system"
@@ -24,7 +24,7 @@
       filename="gz-sim-scene-broadcaster-system"
       name="gz::sim::systems::SceneBroadcaster">
     </plugin>
-    
+
     <!-- Lights -->
     <light type="directional" name="sun">
       <cast_shadows>true</cast_shadows>
@@ -67,7 +67,7 @@
         </visual>
       </link>
     </model>
-    
+
     <!-- Box 1 -->
     <model name="box1">
       <pose>5 0 0.5 0 0 0</pose>
@@ -105,7 +105,7 @@
       </link>
       <static>true</static>
     </model>
-    
+
     <!-- Box 2 -->
     <model name="box2">
       <pose>-3 4 0.5 0 0 0.5</pose>
@@ -143,7 +143,7 @@
       </link>
       <static>true</static>
     </model>
-    
+
     <!-- Box 3 -->
     <model name="box3">
       <pose>0 -5 0.5 0 0 0.7</pose>
@@ -181,7 +181,7 @@
       </link>
       <static>true</static>
     </model>
-    
+
     <!-- Cylinder 1 -->
     <model name="cylinder1">
       <pose>3 3 0.5 0 0 0</pose>
@@ -221,7 +221,7 @@
       </link>
       <static>true</static>
     </model>
-    
+
     <!-- Cylinder 2 -->
     <model name="cylinder2">
       <pose>-4 -3 0.5 0 0 0</pose>

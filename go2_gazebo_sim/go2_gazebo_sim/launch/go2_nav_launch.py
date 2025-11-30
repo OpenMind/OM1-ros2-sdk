@@ -1,10 +1,10 @@
-import os
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
+
 
 def generate_launch_description():
     go2_gazebo_sim = FindPackageShare("go2_gazebo_sim")
@@ -25,7 +25,9 @@ def generate_launch_description():
 
     declare_map = DeclareLaunchArgument(
         "map",
-        default_value=PathJoinSubstitution([go2_gazebo_sim, "map", "map.yaml"]), # Default map path, might need to be created
+        default_value=PathJoinSubstitution(
+            [go2_gazebo_sim, "map", "map.yaml"]
+        ),  # Default map path, might need to be created
         description="Full path to map yaml file to load",
     )
 
@@ -136,17 +138,19 @@ def generate_launch_description():
         parameters=[
             {"use_sim_time": use_sim_time},
             {"autostart": True},
-            {"node_names": [
-                "map_server",
-                "amcl",
-                "controller_server",
-                "smoother_server",
-                "planner_server",
-                "behavior_server",
-                "bt_navigator",
-                "waypoint_follower",
-                "velocity_smoother",
-            ]},
+            {
+                "node_names": [
+                    "map_server",
+                    "amcl",
+                    "controller_server",
+                    "smoother_server",
+                    "planner_server",
+                    "behavior_server",
+                    "bt_navigator",
+                    "waypoint_follower",
+                    "velocity_smoother",
+                ]
+            },
         ],
     )
 
@@ -159,12 +163,14 @@ def generate_launch_description():
         parameters=[{"use_sim_time": use_sim_time}],
     )
 
-    return LaunchDescription([
-        declare_use_sim_time,
-        declare_map,
-        declare_world,
-        sim_launch,
-        *nav2_nodes,
-        nav2_lifecycle_manager,
-        rviz_node,
-    ])
+    return LaunchDescription(
+        [
+            declare_use_sim_time,
+            declare_map,
+            declare_world,
+            sim_launch,
+            *nav2_nodes,
+            nav2_lifecycle_manager,
+            rviz_node,
+        ]
+    )

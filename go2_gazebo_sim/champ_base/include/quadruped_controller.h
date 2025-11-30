@@ -54,7 +54,7 @@ class QuadrupedController: public rclcpp::Node
 {
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_subscription_;
     rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr cmd_pose_subscription_;
-    
+
 
     rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr joint_commands_publisher_;
     rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_states_publisher_;
@@ -62,7 +62,7 @@ class QuadrupedController: public rclcpp::Node
 
     rclcpp::TimerBase::SharedPtr loop_timer_;
     rclcpp::Clock clock_;
-    
+
     champ::Velocities req_vel_;
     champ::Pose req_pose_;
 
@@ -81,7 +81,7 @@ class QuadrupedController: public rclcpp::Node
     bool in_gazebo_;
 
     void controlLoop_();
-    
+
     void publishJoints_(float target_joints[12]);
     void publishFootContacts_(bool foot_contacts[4]);
 

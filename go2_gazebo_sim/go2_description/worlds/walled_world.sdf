@@ -163,7 +163,7 @@
         </visual>
       </link>
     </model>
-    
+
     <!-- Add some internal obstacles -->
     <model name="obstacle_1">
       <static>true</static>

@@ -2,29 +2,28 @@ import os
 
 import launch_ros
 from ament_index_python.packages import get_package_share_directory
-from launch_ros.actions import Node
-
 from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
     ExecuteProcess,
     IncludeLaunchDescription,
-    GroupAction,
     TimerAction,
 )
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import Command, LaunchConfiguration
+from launch_ros.actions import Node
 
 
 def generate_launch_description():
     use_sim_time = LaunchConfiguration("use_sim_time")
-    base_frame = "base_link"
 
     go2_gazebo_sim = launch_ros.substitutions.FindPackageShare(
-        package="go2_gazebo_sim").find("go2_gazebo_sim")
+        package="go2_gazebo_sim"
+    ).find("go2_gazebo_sim")
     go2_description = launch_ros.substitutions.FindPackageShare(
-        package="go2_description").find("go2_description")
+        package="go2_description"
+    ).find("go2_description")
 
     joints_config = os.path.join(go2_gazebo_sim, "config/joints/joints.yaml")
     ros_control_config = os.path.join(
@@ -80,16 +79,17 @@ def generate_launch_description():
     )
 
     # Description nodes and parameters
-    robot_description = {"robot_description": Command(["xacro ", LaunchConfiguration("go2_description_path")])}
+    robot_description = {
+        "robot_description": Command(
+            ["xacro ", LaunchConfiguration("go2_description_path")]
+        )
+    }
 
     robot_state_publisher_node = Node(
         package="robot_state_publisher",
         executable="robot_state_publisher",
         output="screen",
-        parameters=[
-            robot_description,
-            {"use_sim_time": use_sim_time}
-        ],
+        parameters=[robot_description, {"use_sim_time": use_sim_time}],
     )
 
     # CHAMP controller nodes
@@ -103,8 +103,10 @@ def generate_launch_description():
             {"publish_joint_states": True},
             {"publish_joint_control": True},
             {"publish_foot_contacts": False},
-            {"joint_controller_topic": "joint_group_effort_controller/joint_trajectory"},
-            {"urdf": Command(['xacro ', LaunchConfiguration('go2_description_path')])},
+            {
+                "joint_controller_topic": "joint_group_effort_controller/joint_trajectory"
+            },
+            {"urdf": Command(["xacro ", LaunchConfiguration("go2_description_path")])},
             joints_config,
             links_config,
             gait_config,
@@ -122,7 +124,7 @@ def generate_launch_description():
         parameters=[
             {"use_sim_time": use_sim_time},
             {"orientation_from_imu": True},
-            {"urdf": Command(['xacro ', LaunchConfiguration('go2_description_path')])},
+            {"urdf": Command(["xacro ", LaunchConfiguration("go2_description_path")])},
             joints_config,
             links_config,
             gait_config,
@@ -170,92 +172,125 @@ def generate_launch_description():
 
     # Go2 static frame connection (map -> odom)
     map_to_odom_tf_node = Node(
-        package='tf2_ros',
-        name='map_to_odom_tf_node',
-        executable='static_transform_publisher',
-        parameters=[{'use_sim_time': use_sim_time}],
+        package="tf2_ros",
+        name="map_to_odom_tf_node",
+        executable="static_transform_publisher",
+        parameters=[{"use_sim_time": use_sim_time}],
         arguments=[
-            '--x', '0', '--y', '0', '--z', '0',
-            '--roll', '0', '--pitch', '0', '--yaw', '0',
-            '--frame-id', 'map', '--child-frame-id', 'odom'
+            "--x",
+            "0",
+            "--y",
+            "0",
+            "--z",
+            "0",
+            "--roll",
+            "0",
+            "--pitch",
+            "0",
+            "--yaw",
+            "0",
+            "--frame-id",
+            "map",
+            "--child-frame-id",
+            "odom",
         ],
         condition=IfCondition(LaunchConfiguration("publish_map_tf")),
     )
 
     # Go2 URDF connection (base_footprint -> base_link)
     base_footprint_to_base_link_tf_node = Node(
-        package='tf2_ros',
-        name='base_footprint_to_base_link_tf_node',
-        executable='static_transform_publisher',
-        parameters=[{'use_sim_time': use_sim_time}],
+        package="tf2_ros",
+        name="base_footprint_to_base_link_tf_node",
+        executable="static_transform_publisher",
+        parameters=[{"use_sim_time": use_sim_time}],
         arguments=[
-            '--x', '0', '--y', '0', '--z', '0',
-            '--roll', '0', '--pitch', '0', '--yaw', '0',
-            '--frame-id', 'base_footprint', '--child-frame-id', 'base_link'
+            "--x",
+            "0",
+            "--y",
+            "0",
+            "--z",
+            "0",
+            "--roll",
+            "0",
+            "--pitch",
+            "0",
+            "--yaw",
+            "0",
+            "--frame-id",
+            "base_footprint",
+            "--child-frame-id",
+            "base_link",
         ],
     )
 
     rviz2 = Node(
-        package='rviz2',
-        executable='rviz2',
-        name='rviz2',
-        arguments=['-d', os.path.join(go2_gazebo_sim, "rviz/rviz.rviz")],
+        package="rviz2",
+        executable="rviz2",
+        name="rviz2",
+        arguments=["-d", os.path.join(go2_gazebo_sim, "rviz/rviz.rviz")],
         condition=IfCondition(LaunchConfiguration("rviz")),
         # parameters=[{"use_sim_time": use_sim_time}]
     )
 
-    pkg_ros_gz_sim = get_package_share_directory('ros_gz_sim')
+    pkg_ros_gz_sim = get_package_share_directory("ros_gz_sim")
 
     # Setup to launch the simulator and Gazebo world
     gz_sim = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(pkg_ros_gz_sim, 'launch', 'gz_sim.launch.py')),
+            os.path.join(pkg_ros_gz_sim, "launch", "gz_sim.launch.py")
+        ),
         launch_arguments={
-            'gz_args': [LaunchConfiguration('world'), ' -r']  # Add -r flag to start unpaused
+            "gz_args": [
+                LaunchConfiguration("world"),
+                " -r",
+            ]  # Add -r flag to start unpaused
         }.items(),
     )
 
     # Spawn robot in Gazebo Sim
     gazebo_spawn_robot = Node(
-        package='ros_gz_sim',
-        executable='create',
-        output='screen',
+        package="ros_gz_sim",
+        executable="create",
+        output="screen",
         arguments=[
-            '-name', LaunchConfiguration('robot_name'),
-            '-topic', 'robot_description',
-            '-x', LaunchConfiguration('world_init_x'),
-            '-y', LaunchConfiguration('world_init_y'),
-            '-z', LaunchConfiguration('world_init_z'),
-            '-Y', LaunchConfiguration('world_init_heading')
+            "-name",
+            LaunchConfiguration("robot_name"),
+            "-topic",
+            "robot_description",
+            "-x",
+            LaunchConfiguration("world_init_x"),
+            "-y",
+            LaunchConfiguration("world_init_y"),
+            "-z",
+            LaunchConfiguration("world_init_z"),
+            "-Y",
+            LaunchConfiguration("world_init_heading"),
         ],
     )
 
     # Bridge ROS 2 topics to Gazebo Sim
     gazebo_bridge = Node(
-        package='ros_gz_bridge',
-        executable='parameter_bridge',
-        name='gazebo_bridge',
-        output='screen',
-        parameters=[{'use_sim_time': use_sim_time}],
+        package="ros_gz_bridge",
+        executable="parameter_bridge",
+        name="gazebo_bridge",
+        output="screen",
+        parameters=[{"use_sim_time": use_sim_time}],
         arguments=[
             # Gazebo to ROS
-            '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
-            '/imu/data@sensor_msgs/msg/Imu@gz.msgs.IMU',
-            '/tf@tf2_msgs/msg/TFMessage@gz.msgs.Pose_V',
-            '/joint_states@sensor_msgs/msg/JointState@gz.msgs.Model',
+            "/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock",
+            "/imu/data@sensor_msgs/msg/Imu@gz.msgs.IMU",
+            "/tf@tf2_msgs/msg/TFMessage@gz.msgs.Pose_V",
+            "/joint_states@sensor_msgs/msg/JointState@gz.msgs.Model",
             # '/velodyne_points@sensor_msgs/msg/PointCloud2@gz.msgs.PointCloudPacked',
-            '/unitree_lidar/points@sensor_msgs/msg/PointCloud2@gz.msgs.PointCloudPacked',
-            '/scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
-            '/odom@nav_msgs/msg/Odometry@gz.msgs.Odometry',
-            '/rgb_image@sensor_msgs/msg/Image@gz.msgs.Image',
-
+            "/unitree_lidar/points@sensor_msgs/msg/PointCloud2@gz.msgs.PointCloudPacked",
+            "/scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan",
+            "/odom@nav_msgs/msg/Odometry@gz.msgs.Odometry",
+            "/rgb_image@sensor_msgs/msg/Image@gz.msgs.Image",
             # ROS to Gazebo
-            '/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist',
-            '/joint_group_effort_controller/joint_trajectory@trajectory_msgs/msg/JointTrajectory]gz.msgs.JointTrajectory',
+            "/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist",
+            "/joint_group_effort_controller/joint_trajectory@trajectory_msgs/msg/JointTrajectory]gz.msgs.JointTrajectory",
         ],
     )
-
-
 
     # Use spawner nodes directly to handle the configuration step. (load → configure → activate)
     controller_spawner_js = TimerAction(
@@ -266,12 +301,13 @@ def generate_launch_description():
                 executable="spawner",
                 output="screen",
                 arguments=[
-                    "--controller-manager-timeout", "120",  # Longer timeout
+                    "--controller-manager-timeout",
+                    "120",  # Longer timeout
                     "joint_states_controller",  # No --inactive flag to ensure full activation
                 ],
                 parameters=[{"use_sim_time": use_sim_time}],
             )
-        ]
+        ],
     )
 
     controller_spawner_effort = TimerAction(
@@ -282,12 +318,13 @@ def generate_launch_description():
                 executable="spawner",
                 output="screen",
                 arguments=[
-                    "--controller-manager-timeout", "120",  # Longer timeout
+                    "--controller-manager-timeout",
+                    "120",  # Longer timeout
                     "joint_group_effort_controller",  # No --inactive flag to ensure full activation
                 ],
                 parameters=[{"use_sim_time": use_sim_time}],
             )
-        ]
+        ],
     )
 
     # Shell script to manually check controller status
@@ -295,10 +332,14 @@ def generate_launch_description():
         period=25.0,  # Check status after controllers should be loaded
         actions=[
             ExecuteProcess(
-                cmd=["bash", "-c", "echo 'Checking controller status:' && ros2 control list_controllers"],
-                output='screen',
+                cmd=[
+                    "bash",
+                    "-c",
+                    "echo 'Checking controller status:' && ros2 control list_controllers",
+                ],
+                output="screen",
             )
-        ]
+        ],
     )
 
     return LaunchDescription(
@@ -317,32 +358,24 @@ def generate_launch_description():
             declare_world_init_heading,
             declare_description_path,
             declare_publish_map_tf,
-
             # Gazebo and robot nodes first
             gz_sim,
             robot_state_publisher_node,
             gazebo_spawn_robot,
             gazebo_bridge,
-
-
-
             # CHAMP controller nodes
             quadruped_controller_node,
             state_estimator_node,
-
             # EKF nodes for localization
             # base_to_footprint_ekf,
             # footprint_to_odom_ekf,
-
             # TF publishers for frame connections
             map_to_odom_tf_node,
             base_footprint_to_base_link_tf_node,
-
             # Controller spawners that handle the complete lifecycle
             controller_spawner_js,
             controller_spawner_effort,
             controller_status_check,
-
             # Visualization (only if rviz flag is set)
             rviz2,
         ]

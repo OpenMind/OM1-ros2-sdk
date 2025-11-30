@@ -43,20 +43,20 @@ StateEstimation::StateEstimation():
     last_sync_time_ = clock_.now();
     base_broadcaster_ =
       std::make_unique<tf2_ros::TransformBroadcaster>(*this);
-      
+
     joint_states_subscriber_.subscribe(reinterpret_cast<rclcpp::Node*>(this),  "joint_states");
     foot_contacts_subscriber_.subscribe(reinterpret_cast<rclcpp::Node*>(this), "foot_contacts");
 
     this->sync = std::make_unique<Sync>(
-        SyncPolicy(10), 
-        this->joint_states_subscriber_, 
+        SyncPolicy(10),
+        this->joint_states_subscriber_,
         this->foot_contacts_subscriber_
     );
-    
+
     // Register callback functions
     this->sync->registerCallback(
         std::bind(
-            &StateEstimation::synchronized_callback_, 
+            &StateEstimation::synchronized_callback_,
             this,
             std::placeholders::_1, std::placeholders::_2
         )
@@ -65,7 +65,7 @@ StateEstimation::StateEstimation():
     footprint_to_odom_publisher_ = this->create_publisher<nav_msgs::msg::Odometry>("odom/raw", 1);
     base_to_footprint_publisher_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("base_to_footprint_pose", 1);
     foot_publisher_ = this->create_publisher<visualization_msgs::msg::MarkerArray>("foot", 1);
-    
+
     std::string urdf = "";
 
     orientation_from_imu_ = false;
@@ -118,7 +118,7 @@ StateEstimation::StateEstimation():
          std::bind(&StateEstimation::publishBaseToFootprint_, this));
 }
 
-void StateEstimation::synchronized_callback_(const std::shared_ptr<sensor_msgs::msg::JointState const>& joints_msg, 
+void StateEstimation::synchronized_callback_(const std::shared_ptr<sensor_msgs::msg::JointState const>& joints_msg,
                                 const std::shared_ptr<champ_msgs::msg::ContactsStamped const>& contacts_msg)
 {
     last_sync_time_ = clock_.now();
@@ -155,7 +155,7 @@ void StateEstimation::publishFootprintToOdom_()
     last_vel_time_ = current_time;
     //rotate in the z axis
     //https://en.wikipedia.org/wiki/Rotation_matrix
-    double delta_heading = current_velocities_.angular.z * vel_dt; 
+    double delta_heading = current_velocities_.angular.z * vel_dt;
     double delta_x = (current_velocities_.linear.x * cos(heading_) - current_velocities_.linear.y * sin(heading_)) * vel_dt; //m
     double delta_y = (current_velocities_.linear.x * sin(heading_) + current_velocities_.linear.y * cos(heading_)) * vel_dt; //m
 
@@ -197,7 +197,7 @@ void StateEstimation::publishFootprintToOdom_()
     odom.twist.covariance[0] = 0.3;
     odom.twist.covariance[7] = 0.3;
     odom.twist.covariance[35] = 0.017;
-    
+
     footprint_to_odom_publisher_->publish(odom);
 }
 
@@ -214,7 +214,7 @@ visualization_msgs::msg::Marker StateEstimation::createMarker_(geometry::Transfo
     foot_marker.pose.position.x = foot_pos.X();
     foot_marker.pose.position.y = foot_pos.Y();
     foot_marker.pose.position.z = foot_pos.Z();
-    
+
     foot_marker.pose.orientation.x = 0.0;
     foot_marker.pose.orientation.y = 0.0;
     foot_marker.pose.orientation.z = 0.0;

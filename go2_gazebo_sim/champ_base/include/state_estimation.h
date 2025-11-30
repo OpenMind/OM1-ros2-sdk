@@ -66,10 +66,10 @@ class StateEstimation: public rclcpp::Node
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr footprint_to_odom_publisher_;
     rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr base_to_footprint_publisher_;
     rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr foot_publisher_;
-    
+
 
     std::unique_ptr<tf2_ros::TransformBroadcaster> base_broadcaster_;
-    
+
     rclcpp::TimerBase::SharedPtr odom_data_timer_;
     rclcpp::TimerBase::SharedPtr base_pose_timer_;
 
@@ -84,7 +84,7 @@ class StateEstimation: public rclcpp::Node
     rclcpp::Time last_vel_time_;
     rclcpp::Time last_sync_time_;
     rclcpp::Clock clock_;
-    
+
     sensor_msgs::msg::Imu::SharedPtr last_imu_;
 
     champ::GaitConfig gait_config_;
@@ -102,7 +102,7 @@ class StateEstimation: public rclcpp::Node
 
     void publishFootprintToOdom_();
     void publishBaseToFootprint_();
-    void synchronized_callback_(const std::shared_ptr<sensor_msgs::msg::JointState const>& joints_msg, 
+    void synchronized_callback_(const std::shared_ptr<sensor_msgs::msg::JointState const>& joints_msg,
                                 const std::shared_ptr<champ_msgs::msg::ContactsStamped const>& contacts_msg);
     void imu_callback_(const sensor_msgs::msg::Imu::SharedPtr msg);
 

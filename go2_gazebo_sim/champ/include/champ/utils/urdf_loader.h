@@ -48,10 +48,10 @@ namespace champ
             urdf::LinkConstSharedPtr prev_link = model.getLink(current_parent_name);
 
             while(ref_link_ptr->name != current_parent_name)
-            {   
+            {
                 urdf::LinkConstSharedPtr current_link = model.getLink(current_parent_name);
                 urdf::Pose current_pose = current_link->parent_joint->parent_to_joint_origin_transform;
-              
+
                 current_parent_name = current_link->getParent()->name;
                 prev_link = model.getLink(current_parent_name);
                 pose->position.x += current_pose.position.x;
@@ -85,7 +85,7 @@ namespace champ
                 x = pose.position.x;
                 y = pose.position.y;
                 z = pose.position.z;
-                
+
                 leg->joint_chain[i]->setTranslation(x,y,z);
             }
 
@@ -97,8 +97,8 @@ namespace champ
             // TODO fix temp path
             if (!model.initFile(urdf_filepath)){
                  RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to parse urdf file");
-            } 
-            
+            }
+
             RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Successfully parsed urdf file");
             std::vector<std::string> links_map;
 
@@ -106,7 +106,7 @@ namespace champ
             links_map.push_back("links_map.right_front");
             links_map.push_back("links_map.left_hind");
             links_map.push_back("links_map.right_hind");
-            
+
             for(int i = 0; i < 4; i++)
             {
                 fillLeg(base.legs[i], nh, model, links_map[i]);
@@ -119,8 +119,8 @@ namespace champ
             // TODO fix temp path
             if (!model.initString(urdf_string)){
                  RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to parse urdf string");
-            } 
-            
+            }
+
             RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Successfully parsed urdf file");
             std::vector<std::string> links_map;
 
@@ -128,7 +128,7 @@ namespace champ
             links_map.push_back("links_map.right_front");
             links_map.push_back("links_map.left_hind");
             links_map.push_back("links_map.right_hind");
-            
+
             for(int i = 0; i < 4; i++)
             {
                 fillLeg(base.legs[i], nh, model, links_map[i]);
@@ -145,7 +145,7 @@ namespace champ
             joints_map.push_back("joints_map.left_hind");
             joints_map.push_back("joints_map.right_hind");
 
-           
+
             for(int i = 0; i < 4; i++)
             {
                 rclcpp::Parameter joints_param_("joints_param", std::vector<std::string> ({}));

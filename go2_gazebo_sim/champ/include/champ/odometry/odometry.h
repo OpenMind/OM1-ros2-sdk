@@ -58,8 +58,8 @@ namespace champ
                 {
                     prev_foot_position_[i] = base_->legs[i]->foot_from_base();
                 }
-            }        
-            
+            }
+
             bool allFeetInContact()
             {
                 if(base_->legs[0]->in_contact() &&
@@ -91,7 +91,7 @@ namespace champ
             }
 
             void getVelocities(champ::Velocities &vel, Time now = champ::Odometry::now())
-            {      
+            {
                 //if all legs are on the ground, nothing to calculate
                 //or if no legs are on the ground, probably the robot is upside-down
                 if(allFeetInContact() || noFootInContact())
@@ -115,12 +115,12 @@ namespace champ
                 for(unsigned int i = 0; i < 4; i++)
                 {
                     geometry::Transformation current_foot_position = base_->legs[i]->foot_from_base();
-                    
+
                     bool foot_in_contact = base_->legs[i]->in_contact();
-                    
+
                     float delta_x = (prev_foot_position_[i].X() - current_foot_position.X());
                     float delta_y = (prev_foot_position_[i].Y() - current_foot_position.Y());
-                    
+
                     float current_theta = atan2f(current_foot_position.X(), current_foot_position.Y());
                     float delta_theta = (current_theta - prev_theta_[i]);
 
@@ -131,7 +131,7 @@ namespace champ
                         x_sum += delta_x / 2.0;
                         y_sum += delta_y / 2.0;
                     }
-                        
+
                     prev_foot_position_[i] = current_foot_position;
                     prev_foot_contacts_[i] = foot_in_contact;
                     prev_theta_[i] = current_theta;
@@ -144,7 +144,7 @@ namespace champ
                 vel.linear.x =  ((1 - beta_) * ((x_sum * base_->gait_config.odom_scaler) / dt)) + (beta_ * prev_vel_.linear.x);
                 vel.linear.y =  ((1 - beta_) * ((y_sum * base_->gait_config.odom_scaler) / dt)) + (beta_ * prev_vel_.linear.y);
                 vel.angular.z = ((1- beta_ ) * (theta_sum / dt)) + (beta_ * prev_vel_.angular.z);
-                
+
                 prev_vel_ = vel;
                 prev_time_ = now;
             }
@@ -152,4 +152,3 @@ namespace champ
 }
 
 #endif
-

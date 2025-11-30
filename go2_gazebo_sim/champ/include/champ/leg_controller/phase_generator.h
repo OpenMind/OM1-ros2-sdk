@@ -55,7 +55,7 @@ namespace champ
                 stance_phase_signal{0.0f,0.0f,0.0f,0.0f},
                 swing_phase_signal{0.0f,0.0f,0.0f,0.0f}
             {
-            }        
+            }
 
             void run(float target_velocity, float step_length, Time time = now())
             {
@@ -74,7 +74,7 @@ namespace champ
                     {
                         leg_clocks[i] = 0.0f;
                         stance_phase_signal[i] = 0.0f;
-                        swing_phase_signal[i] = 0.0f;  
+                        swing_phase_signal[i] = 0.0f;
                     }
                     return;
                 }
@@ -125,7 +125,7 @@ namespace champ
                 else
                 {
                     has_swung_ = true;
-                }  
+                }
             }
 
             bool has_started;

@@ -45,7 +45,7 @@ namespace champ
             {
             }
 
-            void poseCommand(geometry::Transformation (&foot_positions)[4], 
+            void poseCommand(geometry::Transformation (&foot_positions)[4],
                              const champ::Pose &req_pose)
             {
                 for(int i = 0; i < 4; i++)
@@ -53,9 +53,9 @@ namespace champ
                     poseCommand(foot_positions[i], *base_->legs[i], req_pose);
                 }
             }
-            
-            static void poseCommand(geometry::Transformation &foot_position, 
-                                    champ::QuadrupedLeg &leg, 
+
+            static void poseCommand(geometry::Transformation &foot_position,
+                                    champ::QuadrupedLeg &leg,
                                     const champ::Pose &req_pose)
             {
                 float req_translation_x = -req_pose.position.x;
@@ -86,8 +86,8 @@ namespace champ
                 foot_position.RotateZ(-req_pose.orientation.yaw);
                 foot_position.RotateY(-req_pose.orientation.pitch);
                 foot_position.RotateX(-req_pose.orientation.roll);
-            
-    
+
+
                 champ::Kinematics::transformToHip(foot_position, leg);
             }
     };

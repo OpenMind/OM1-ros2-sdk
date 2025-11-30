@@ -36,7 +36,7 @@ namespace champ
     class QuadrupedLeg
     {
         unsigned int no_of_links_;
-        
+
         geometry::Transformation zero_stance_;
         float center_to_nominal_;
 
@@ -50,7 +50,7 @@ namespace champ
         bool is_pantograph_;
 
         bool gait_phase_;
-        
+
         public:
             QuadrupedLeg():
                 no_of_links_(0),
@@ -81,7 +81,7 @@ namespace champ
                     //prevent hip from being rotated as hip is on a different axis of rotation
                     if(i > 1)
                     {
-                        foot_position.RotateY(joint_chain[i-1]->theta());          
+                        foot_position.RotateY(joint_chain[i-1]->theta());
                     }
                 }
 
@@ -101,7 +101,7 @@ namespace champ
             }
 
             void joints(float hip_joint, float upper_leg_joint, float lower_leg_joint)
-            { 
+            {
                 hip.theta(hip_joint);
                 upper_leg.theta(upper_leg_joint);
                 lower_leg.theta(lower_leg_joint);
@@ -120,7 +120,7 @@ namespace champ
                 zero_stance_.X() = hip.x() + upper_leg.x() + gait_config->com_x_translation;
                 zero_stance_.Y() = hip.y() + upper_leg.y();
                 zero_stance_.Z() = hip.z() + upper_leg.z() + lower_leg.z() + foot.z();
-                
+
                 return zero_stance_;
             }
 
@@ -128,7 +128,7 @@ namespace champ
             {
                 float x = hip.x() + upper_leg.x();
                 float y = hip.y() + upper_leg.y();
-                
+
                 return sqrtf(pow(x,2) + pow(y,2));
             }
 
@@ -208,4 +208,3 @@ namespace champ
     };
 }
 #endif
-

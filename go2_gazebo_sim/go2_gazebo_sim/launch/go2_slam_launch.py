@@ -1,10 +1,10 @@
-import os
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
+
 
 def generate_launch_description():
     go2_gazebo_sim = FindPackageShare("go2_gazebo_sim")
@@ -50,11 +50,9 @@ def generate_launch_description():
     # SLAM Toolbox
     slam_toolbox = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            PathJoinSubstitution([
-                FindPackageShare("slam_toolbox"),
-                "launch",
-                "online_async_launch.py"
-            ])
+            PathJoinSubstitution(
+                [FindPackageShare("slam_toolbox"), "launch", "online_async_launch.py"]
+            )
         ),
         launch_arguments={
             "use_sim_time": use_sim_time,
@@ -71,10 +69,12 @@ def generate_launch_description():
         parameters=[{"use_sim_time": use_sim_time}],
     )
 
-    return LaunchDescription([
-        declare_use_sim_time,
-        declare_world,
-        sim_launch,
-        slam_toolbox,
-        rviz_node,
-    ])
+    return LaunchDescription(
+        [
+            declare_use_sim_time,
+            declare_world,
+            sim_launch,
+            slam_toolbox,
+            rviz_node,
+        ]
+    )

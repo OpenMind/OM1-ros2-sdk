@@ -58,7 +58,7 @@ class MessageRelay: public rclcpp::Node
     rclcpp::Subscription<champ_msgs::msg::Imu>::SharedPtr imu_raw_subscription_;
     rclcpp::Subscription<champ_msgs::msg::Joints>::SharedPtr joints_raw_subscription_;
     rclcpp::Subscription<champ_msgs::msg::Contacts>::SharedPtr foot_contacts_subscription_;
-    
+
     rclcpp::Publisher<champ_msgs::msg::ContactsStamped>::SharedPtr foot_contacts_publisher_;
     rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_states_publisher_;
     rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr joint_commands_publisher_;

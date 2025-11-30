@@ -106,7 +106,7 @@ namespace geometry
                 (*this)(2,2) = cosf(psi) * cosf(theta);
 
                 return (*this);
-            }    
+            }
 
             Matrix<3,2> ToEulerAngles()
             {
@@ -162,8 +162,8 @@ namespace geometry
                 (*this)(2,2) = tmp2;
 
                 return (*this);
-            }    
-            
+            }
+
             Rotation &RotateY(float theta)
             {
                 float tmp1, tmp2;
@@ -208,7 +208,7 @@ namespace geometry
 
                 return (*this);
             }
-            
+
             template<class opMemT> Rotation &operator=(const Matrix<3,3,opMemT> &obj)
             {
                 for(int i = 0; i < Rows; i++)
@@ -322,4 +322,3 @@ namespace geometry
     };
 }
 #endif // GEOMETRY_H
-
