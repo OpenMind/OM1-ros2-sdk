@@ -164,9 +164,7 @@ def generate_launch_description():
     )
 
     # Nodes for teleoperation
-    joy = Node(
-        package="joy", executable="joy_node", name="joy_node", output="screen"
-    )
+    joy = Node(package="joy", executable="joy_node", name="joy_node", output="screen")
     # RB is the enable button
     # The left joystick controls linear movement
     # The right joystick controls angular movement
