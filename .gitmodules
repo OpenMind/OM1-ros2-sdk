@@ -1,3 +1,0 @@
-[submodule "go2_gazebo_sim"]
-	path = go2_gazebo_sim
-	url = https://github.com/OpenMind/go2_gazebo_sim.git
