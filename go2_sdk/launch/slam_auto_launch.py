@@ -78,7 +78,6 @@ def generate_launch_description():
                 default_value=use_sim,
                 description="Whether to use simulation",
             ),
-
             Node(
                 package="robot_state_publisher",
                 executable="robot_state_publisher",
@@ -94,7 +93,6 @@ def generate_launch_description():
                 output="screen",
                 condition=UnlessCondition(use_sim),
             ),
-
             # Node(
             #     package='rplidar_ros',
             #     executable='rplidar_node',
@@ -108,7 +106,6 @@ def generate_launch_description():
             #         'angle_compensate': angle_compensate
             #     }],
             #     output='screen'),
-
             Node(
                 package="tf2_ros",
                 executable="static_transform_publisher",
