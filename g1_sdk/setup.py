@@ -28,8 +28,8 @@ setup(
         (
             "share/" + package_name + "/config",
             [
-                "config/slam.yaml",
-                "config/nav2_parameters.yaml",
+                "config/slam_params.yaml",
+                "config/nav2_params.yaml",
             ],
         ),
         (
