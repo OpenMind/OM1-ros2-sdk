@@ -342,6 +342,15 @@ def generate_launch_description():
         ],
     )
 
+    # Go2 remapping node
+    go2_remapping_node = Node(
+        package="go2_gazebo_sim",
+        executable="go2_remapping_node",
+        name="go2_remapping_node",
+        output="screen",
+        parameters=[{"use_sim_time": use_sim_time}],
+    )
+
     # Nodes for teleoperation
     joy = Node(package="joy", executable="joy_node", name="joy_node", output="screen")
     # RB is the enable button
@@ -403,6 +412,8 @@ def generate_launch_description():
             controller_status_check,
             # Visualization (only if rviz flag is set)
             rviz2,
+            # Go2 remapping node
+            go2_remapping_node,
             # Teleoperation nodes
             joy,
             joy_teleops_node,
