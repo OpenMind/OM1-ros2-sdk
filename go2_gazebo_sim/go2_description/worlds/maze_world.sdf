@@ -1,43 +1,58 @@
-<sdf version='1.9'>
-  <world name='maze_world'>
-    <physics name='1ms' type='bullet-featherstone'>
+<?xml version="1.0" ?>
+<sdf version="1.8">
+  <world name="maze_world">
+    <physics name="1ms" type="bullet-featherstone">
       <max_step_size>0.001</max_step_size>
-      <real_time_factor>1</real_time_factor>
-      <real_time_update_rate>1000</real_time_update_rate>
+      <real_time_factor>1.0</real_time_factor>
     </physics>
-    <plugin name='gz::sim::systems::Physics' filename='gz-sim-physics-system'/>
-    <plugin name='gz::sim::systems::Sensors' filename='gz-sim-sensors-system'>
+
+    <!-- Plugins -->
+    <plugin
+      filename="gz-sim-physics-system"
+      name="gz::sim::systems::Physics">
+    </plugin>
+    <plugin
+      filename="gz-sim-sensors-system"
+      name="gz::sim::systems::Sensors">
       <render_engine>ogre2</render_engine>
     </plugin>
-    <plugin name='gz::sim::systems::UserCommands' filename='gz-sim-user-commands-system'/>
-    <plugin name='gz::sim::systems::SceneBroadcaster' filename='gz-sim-scene-broadcaster-system'/>
-    <gravity>0 0 -9.8</gravity>
-    <magnetic_field>6e-06 2.3e-05 -4.2e-05</magnetic_field>
-    <atmosphere type='adiabatic'/>
-    <scene>
-      <ambient>0.4 0.4 0.4 1</ambient>
-      <background>0.7 0.7 0.7 1</background>
-      <shadows>true</shadows>
-    </scene>
-    <model name='ground_plane'>
+    <plugin
+      filename="gz-sim-user-commands-system"
+      name="gz::sim::systems::UserCommands">
+    </plugin>
+    <plugin
+      filename="gz-sim-scene-broadcaster-system"
+      name="gz::sim::systems::SceneBroadcaster">
+    </plugin>
+
+    <!-- Lights -->
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <attenuation>
+        <range>1000</range>
+        <constant>0.9</constant>
+        <linear>0.01</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+    <!-- Ground Plane -->
+    <model name="ground_plane">
       <static>true</static>
-      <link name='link'>
-        <collision name='collision'>
+      <link name="link">
+        <collision name="collision">
           <geometry>
             <plane>
               <normal>0 0 1</normal>
               <size>100 100</size>
             </plane>
           </geometry>
-          <surface>
-            <friction>
-              <ode/>
-            </friction>
-            <bounce/>
-            <contact/>
-          </surface>
         </collision>
-        <visual name='visual'>
+        <visual name="visual">
           <geometry>
             <plane>
               <normal>0 0 1</normal>
@@ -50,43 +65,23 @@
             <specular>0.5 0.5 0.5 1</specular>
           </material>
         </visual>
-        <pose>0 0 0 0 -0 0</pose>
-        <inertial>
-          <pose>0 0 0 0 -0 0</pose>
-          <mass>1</mass>
-          <inertia>
-            <ixx>1</ixx>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyy>1</iyy>
-            <iyz>0</iyz>
-            <izz>1</izz>
-          </inertia>
-        </inertial>
-        <enable_wind>false</enable_wind>
       </link>
-      <pose>0 0 0 0 -0 0</pose>
-      <self_collide>false</self_collide>
     </model>
-    <model name='wall_north'>
-      <pose>0 8 1 0 -0 0</pose>
+
+    <!-- Outer Boundary Walls -->
+    <!-- North Wall -->
+    <model name="wall_north">
+      <pose>0 8 1 0 0 0</pose>
       <static>true</static>
-      <link name='link'>
-        <collision name='collision'>
+      <link name="link">
+        <collision name="collision">
           <geometry>
             <box>
               <size>16 0.2 2</size>
             </box>
           </geometry>
-          <surface>
-            <friction>
-              <ode/>
-            </friction>
-            <bounce/>
-            <contact/>
-          </surface>
         </collision>
-        <visual name='visual'>
+        <visual name="visual">
           <geometry>
             <box>
               <size>16 0.2 2</size>
@@ -98,42 +93,22 @@
             <specular>0.7 0.7 0.7 1</specular>
           </material>
         </visual>
-        <pose>0 0 0 0 -0 0</pose>
-        <inertial>
-          <pose>0 0 0 0 -0 0</pose>
-          <mass>1</mass>
-          <inertia>
-            <ixx>1</ixx>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyy>1</iyy>
-            <iyz>0</iyz>
-            <izz>1</izz>
-          </inertia>
-        </inertial>
-        <enable_wind>false</enable_wind>
       </link>
-      <self_collide>false</self_collide>
     </model>
-    <model name='wall_south'>
-      <pose>0 -8 1 0 -0 0</pose>
+
+    <!-- South Wall -->
+    <model name="wall_south">
+      <pose>0 -8 1 0 0 0</pose>
       <static>true</static>
-      <link name='link'>
-        <collision name='collision'>
+      <link name="link">
+        <collision name="collision">
           <geometry>
             <box>
               <size>16 0.2 2</size>
             </box>
           </geometry>
-          <surface>
-            <friction>
-              <ode/>
-            </friction>
-            <bounce/>
-            <contact/>
-          </surface>
         </collision>
-        <visual name='visual'>
+        <visual name="visual">
           <geometry>
             <box>
               <size>16 0.2 2</size>
@@ -145,42 +120,22 @@
             <specular>0.7 0.7 0.7 1</specular>
           </material>
         </visual>
-        <pose>0 0 0 0 -0 0</pose>
-        <inertial>
-          <pose>0 0 0 0 -0 0</pose>
-          <mass>1</mass>
-          <inertia>
-            <ixx>1</ixx>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyy>1</iyy>
-            <iyz>0</iyz>
-            <izz>1</izz>
-          </inertia>
-        </inertial>
-        <enable_wind>false</enable_wind>
       </link>
-      <self_collide>false</self_collide>
     </model>
-    <model name='wall_east'>
-      <pose>8 0 1 0 -0 0</pose>
+
+    <!-- East Wall -->
+    <model name="wall_east">
+      <pose>8 0 1 0 0 0</pose>
       <static>true</static>
-      <link name='link'>
-        <collision name='collision'>
+      <link name="link">
+        <collision name="collision">
           <geometry>
             <box>
               <size>0.2 16 2</size>
             </box>
           </geometry>
-          <surface>
-            <friction>
-              <ode/>
-            </friction>
-            <bounce/>
-            <contact/>
-          </surface>
         </collision>
-        <visual name='visual'>
+        <visual name="visual">
           <geometry>
             <box>
               <size>0.2 16 2</size>
@@ -192,42 +147,22 @@
             <specular>0.7 0.7 0.7 1</specular>
           </material>
         </visual>
-        <pose>0 0 0 0 -0 0</pose>
-        <inertial>
-          <pose>0 0 0 0 -0 0</pose>
-          <mass>1</mass>
-          <inertia>
-            <ixx>1</ixx>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyy>1</iyy>
-            <iyz>0</iyz>
-            <izz>1</izz>
-          </inertia>
-        </inertial>
-        <enable_wind>false</enable_wind>
       </link>
-      <self_collide>false</self_collide>
     </model>
-    <model name='wall_west'>
-      <pose>-8 0 1 0 -0 0</pose>
+
+    <!-- West Wall -->
+    <model name="wall_west">
+      <pose>-8 0 1 0 0 0</pose>
       <static>true</static>
-      <link name='link'>
-        <collision name='collision'>
+      <link name="link">
+        <collision name="collision">
           <geometry>
             <box>
               <size>0.2 16 2</size>
             </box>
           </geometry>
-          <surface>
-            <friction>
-              <ode/>
-            </friction>
-            <bounce/>
-            <contact/>
-          </surface>
         </collision>
-        <visual name='visual'>
+        <visual name="visual">
           <geometry>
             <box>
               <size>0.2 16 2</size>
@@ -239,42 +174,23 @@
             <specular>0.7 0.7 0.7 1</specular>
           </material>
         </visual>
-        <pose>0 0 0 0 -0 0</pose>
-        <inertial>
-          <pose>0 0 0 0 -0 0</pose>
-          <mass>1</mass>
-          <inertia>
-            <ixx>1</ixx>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyy>1</iyy>
-            <iyz>0</iyz>
-            <izz>1</izz>
-          </inertia>
-        </inertial>
-        <enable_wind>false</enable_wind>
       </link>
-      <self_collide>false</self_collide>
     </model>
-    <model name='maze_wall_h1'>
-      <pose>-2 5 1 0 -0 0</pose>
+
+    <!-- Maze Interior Walls - Creating narrow corridors -->
+    <!-- Horizontal Wall 1 (Top section) -->
+    <model name="maze_wall_h1">
+      <pose>-2 5 1 0 0 0</pose>
       <static>true</static>
-      <link name='link'>
-        <collision name='collision'>
+      <link name="link">
+        <collision name="collision">
           <geometry>
             <box>
               <size>8 0.2 2</size>
             </box>
           </geometry>
-          <surface>
-            <friction>
-              <ode/>
-            </friction>
-            <bounce/>
-            <contact/>
-          </surface>
         </collision>
-        <visual name='visual'>
+        <visual name="visual">
           <geometry>
             <box>
               <size>8 0.2 2</size>
@@ -286,42 +202,22 @@
             <specular>0.8 0.6 0.4 1</specular>
           </material>
         </visual>
-        <pose>0 0 0 0 -0 0</pose>
-        <inertial>
-          <pose>0 0 0 0 -0 0</pose>
-          <mass>1</mass>
-          <inertia>
-            <ixx>1</ixx>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyy>1</iyy>
-            <iyz>0</iyz>
-            <izz>1</izz>
-          </inertia>
-        </inertial>
-        <enable_wind>false</enable_wind>
       </link>
-      <self_collide>false</self_collide>
     </model>
-    <model name='maze_wall_h2'>
-      <pose>2.412 2.5 1 0 -0 0</pose>
+
+    <!-- Horizontal Wall 2 -->
+    <model name="maze_wall_h2">
+      <pose>2.412 2.5 1 0 0 0</pose>
       <static>true</static>
-      <link name='link'>
-        <collision name='collision'>
+      <link name="link">
+        <collision name="collision">
           <geometry>
             <box>
               <size>8 0.2 2</size>
             </box>
           </geometry>
-          <surface>
-            <friction>
-              <ode/>
-            </friction>
-            <bounce/>
-            <contact/>
-          </surface>
         </collision>
-        <visual name='visual'>
+        <visual name="visual">
           <geometry>
             <box>
               <size>8 0.2 2</size>
@@ -333,42 +229,24 @@
             <specular>0.8 0.6 0.4 1</specular>
           </material>
         </visual>
-        <pose>0 0 0 0 -0 0</pose>
-        <inertial>
-          <pose>0 0 0 0 -0 0</pose>
-          <mass>1</mass>
-          <inertia>
-            <ixx>1</ixx>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyy>1</iyy>
-            <iyz>0</iyz>
-            <izz>1</izz>
-          </inertia>
-        </inertial>
-        <enable_wind>false</enable_wind>
       </link>
-      <self_collide>false</self_collide>
     </model>
-    <model name='maze_wall_h4'>
-      <pose>2.265 -2.5 1 0 -0 0</pose>
+
+    <!-- Horizontal Wall 3 - REMOVED to keep origin clear for robot spawn -->
+
+    <!-- Horizontal Wall 4 -->
+    <model name="maze_wall_h4">
+      <pose>2.265 -2.5 1 0 0 0</pose>
       <static>true</static>
-      <link name='link'>
-        <collision name='collision'>
+      <link name="link">
+        <collision name="collision">
           <geometry>
             <box>
               <size>8 0.2 2</size>
             </box>
           </geometry>
-          <surface>
-            <friction>
-              <ode/>
-            </friction>
-            <bounce/>
-            <contact/>
-          </surface>
         </collision>
-        <visual name='visual'>
+        <visual name="visual">
           <geometry>
             <box>
               <size>8 0.2 2</size>
@@ -380,42 +258,22 @@
             <specular>0.8 0.6 0.4 1</specular>
           </material>
         </visual>
-        <pose>0 0 0 0 -0 0</pose>
-        <inertial>
-          <pose>0 0 0 0 -0 0</pose>
-          <mass>1</mass>
-          <inertia>
-            <ixx>1</ixx>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyy>1</iyy>
-            <iyz>0</iyz>
-            <izz>1</izz>
-          </inertia>
-        </inertial>
-        <enable_wind>false</enable_wind>
       </link>
-      <self_collide>false</self_collide>
     </model>
-    <model name='maze_wall_h5'>
-      <pose>-2.415 -5 1 0 -0 0</pose>
+
+    <!-- Horizontal Wall 5 (Bottom section) -->
+    <model name="maze_wall_h5">
+      <pose>-2.415 -5 1 0 0 0</pose>
       <static>true</static>
-      <link name='link'>
-        <collision name='collision'>
+      <link name="link">
+        <collision name="collision">
           <geometry>
             <box>
               <size>8 0.2 2</size>
             </box>
           </geometry>
-          <surface>
-            <friction>
-              <ode/>
-            </friction>
-            <bounce/>
-            <contact/>
-          </surface>
         </collision>
-        <visual name='visual'>
+        <visual name="visual">
           <geometry>
             <box>
               <size>8 0.2 2</size>
@@ -427,42 +285,22 @@
             <specular>0.8 0.6 0.4 1</specular>
           </material>
         </visual>
-        <pose>0 0 0 0 -0 0</pose>
-        <inertial>
-          <pose>0 0 0 0 -0 0</pose>
-          <mass>1</mass>
-          <inertia>
-            <ixx>1</ixx>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyy>1</iyy>
-            <iyz>0</iyz>
-            <izz>1</izz>
-          </inertia>
-        </inertial>
-        <enable_wind>false</enable_wind>
       </link>
-      <self_collide>false</self_collide>
     </model>
-    <model name='maze_wall_v1'>
-      <pose>-5 1.25 1 0 -0 0</pose>
+
+    <!-- Vertical Wall 1 (Left section) -->
+    <model name="maze_wall_v1">
+      <pose>-5 1.25 1 0 0 0</pose>
       <static>true</static>
-      <link name='link'>
-        <collision name='collision'>
+      <link name="link">
+        <collision name="collision">
           <geometry>
             <box>
               <size>0.2 7.5 2</size>
             </box>
           </geometry>
-          <surface>
-            <friction>
-              <ode/>
-            </friction>
-            <bounce/>
-            <contact/>
-          </surface>
         </collision>
-        <visual name='visual'>
+        <visual name="visual">
           <geometry>
             <box>
               <size>0.2 7.5 2</size>
@@ -474,42 +312,22 @@
             <specular>0.6 0.7 0.8 1</specular>
           </material>
         </visual>
-        <pose>0 0 0 0 -0 0</pose>
-        <inertial>
-          <pose>0 0 0 0 -0 0</pose>
-          <mass>1</mass>
-          <inertia>
-            <ixx>1</ixx>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyy>1</iyy>
-            <iyz>0</iyz>
-            <izz>1</izz>
-          </inertia>
-        </inertial>
-        <enable_wind>false</enable_wind>
       </link>
-      <self_collide>false</self_collide>
     </model>
-    <model name='maze_wall_v2'>
-      <pose>-2.5 -1.25 1 0 -0 0</pose>
+
+    <!-- Vertical Wall 2 -->
+    <model name="maze_wall_v2">
+      <pose>-2.5 -1.25 1 0 0 0</pose>
       <static>true</static>
-      <link name='link'>
-        <collision name='collision'>
+      <link name="link">
+        <collision name="collision">
           <geometry>
             <box>
               <size>0.2 7.5 2</size>
             </box>
           </geometry>
-          <surface>
-            <friction>
-              <ode/>
-            </friction>
-            <bounce/>
-            <contact/>
-          </surface>
         </collision>
-        <visual name='visual'>
+        <visual name="visual">
           <geometry>
             <box>
               <size>0.2 7.5 2</size>
@@ -521,42 +339,22 @@
             <specular>0.6 0.7 0.8 1</specular>
           </material>
         </visual>
-        <pose>0 0 0 0 -0 0</pose>
-        <inertial>
-          <pose>0 0 0 0 -0 0</pose>
-          <mass>1</mass>
-          <inertia>
-            <ixx>1</ixx>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyy>1</iyy>
-            <iyz>0</iyz>
-            <izz>1</izz>
-          </inertia>
-        </inertial>
-        <enable_wind>false</enable_wind>
       </link>
-      <self_collide>false</self_collide>
     </model>
-    <model name='maze_wall_v3'>
-      <pose>0 3.75 1 0 -0 0</pose>
+
+    <!-- Vertical Wall 3 (Center) -->
+    <model name="maze_wall_v3">
+      <pose>0 3.75 1 0 0 0</pose>
       <static>true</static>
-      <link name='link'>
-        <collision name='collision'>
+      <link name="link">
+        <collision name="collision">
           <geometry>
             <box>
               <size>0.2 5 2</size>
             </box>
           </geometry>
-          <surface>
-            <friction>
-              <ode/>
-            </friction>
-            <bounce/>
-            <contact/>
-          </surface>
         </collision>
-        <visual name='visual'>
+        <visual name="visual">
           <geometry>
             <box>
               <size>0.2 5 2</size>
@@ -568,42 +366,22 @@
             <specular>0.6 0.7 0.8 1</specular>
           </material>
         </visual>
-        <pose>0 0 0 0 -0 0</pose>
-        <inertial>
-          <pose>0 0 0 0 -0 0</pose>
-          <mass>1</mass>
-          <inertia>
-            <ixx>1</ixx>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyy>1</iyy>
-            <iyz>0</iyz>
-            <izz>1</izz>
-          </inertia>
-        </inertial>
-        <enable_wind>false</enable_wind>
       </link>
-      <self_collide>false</self_collide>
     </model>
-    <model name='maze_wall_v4'>
-      <pose>2.5 -3.75 1 0 -0 0</pose>
+
+    <!-- Vertical Wall 4 -->
+    <model name="maze_wall_v4">
+      <pose>2.5 -3.75 1 0 0 0</pose>
       <static>true</static>
-      <link name='link'>
-        <collision name='collision'>
+      <link name="link">
+        <collision name="collision">
           <geometry>
             <box>
               <size>0.2 5 2</size>
             </box>
           </geometry>
-          <surface>
-            <friction>
-              <ode/>
-            </friction>
-            <bounce/>
-            <contact/>
-          </surface>
         </collision>
-        <visual name='visual'>
+        <visual name="visual">
           <geometry>
             <box>
               <size>0.2 5 2</size>
@@ -615,42 +393,22 @@
             <specular>0.6 0.7 0.8 1</specular>
           </material>
         </visual>
-        <pose>0 0 0 0 -0 0</pose>
-        <inertial>
-          <pose>0 0 0 0 -0 0</pose>
-          <mass>1</mass>
-          <inertia>
-            <ixx>1</ixx>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyy>1</iyy>
-            <iyz>0</iyz>
-            <izz>1</izz>
-          </inertia>
-        </inertial>
-        <enable_wind>false</enable_wind>
       </link>
-      <self_collide>false</self_collide>
     </model>
-    <model name='maze_wall_v5'>
-      <pose>5 1.25 1 0 -0 0</pose>
+
+    <!-- Vertical Wall 5 (Right section) -->
+    <model name="maze_wall_v5">
+      <pose>5 1.25 1 0 0 0</pose>
       <static>true</static>
-      <link name='link'>
-        <collision name='collision'>
+      <link name="link">
+        <collision name="collision">
           <geometry>
             <box>
               <size>0.2 7.5 2</size>
             </box>
           </geometry>
-          <surface>
-            <friction>
-              <ode/>
-            </friction>
-            <bounce/>
-            <contact/>
-          </surface>
         </collision>
-        <visual name='visual'>
+        <visual name="visual">
           <geometry>
             <box>
               <size>0.2 7.5 2</size>
@@ -662,42 +420,23 @@
             <specular>0.6 0.7 0.8 1</specular>
           </material>
         </visual>
-        <pose>0 0 0 0 -0 0</pose>
-        <inertial>
-          <pose>0 0 0 0 -0 0</pose>
-          <mass>1</mass>
-          <inertia>
-            <ixx>1</ixx>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyy>1</iyy>
-            <iyz>0</iyz>
-            <izz>1</izz>
-          </inertia>
-        </inertial>
-        <enable_wind>false</enable_wind>
       </link>
-      <self_collide>false</self_collide>
     </model>
-    <model name='narrow_obstacle_1a'>
-      <pose>-3.5 3.75 0.5 0 -0 0</pose>
+
+    <!-- Narrow Corridor Obstacles - Testing tight spaces -->
+    <!-- Narrow passage 1 (0.9m wide) -->
+    <model name="narrow_obstacle_1a">
+      <pose>-3.5 3.75 0.5 0 0 0</pose>
       <static>true</static>
-      <link name='link'>
-        <collision name='collision'>
+      <link name="link">
+        <collision name="collision">
           <geometry>
             <box>
               <size>1 0.8 1</size>
             </box>
           </geometry>
-          <surface>
-            <friction>
-              <ode/>
-            </friction>
-            <bounce/>
-            <contact/>
-          </surface>
         </collision>
-        <visual name='visual'>
+        <visual name="visual">
           <geometry>
             <box>
               <size>1 0.8 1</size>
@@ -709,42 +448,21 @@
             <specular>0.9 0.3 0.3 1</specular>
           </material>
         </visual>
-        <pose>0 0 0 0 -0 0</pose>
-        <inertial>
-          <pose>0 0 0 0 -0 0</pose>
-          <mass>1</mass>
-          <inertia>
-            <ixx>1</ixx>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyy>1</iyy>
-            <iyz>0</iyz>
-            <izz>1</izz>
-          </inertia>
-        </inertial>
-        <enable_wind>false</enable_wind>
       </link>
-      <self_collide>false</self_collide>
     </model>
-    <model name='narrow_obstacle_1b'>
-      <pose>-3.5 1.25 0.5 0 -0 0</pose>
+
+    <model name="narrow_obstacle_1b">
+      <pose>-3.5 1.25 0.5 0 0 0</pose>
       <static>true</static>
-      <link name='link'>
-        <collision name='collision'>
+      <link name="link">
+        <collision name="collision">
           <geometry>
             <box>
               <size>1 0.8 1</size>
             </box>
           </geometry>
-          <surface>
-            <friction>
-              <ode/>
-            </friction>
-            <bounce/>
-            <contact/>
-          </surface>
         </collision>
-        <visual name='visual'>
+        <visual name="visual">
           <geometry>
             <box>
               <size>1 0.8 1</size>
@@ -756,42 +474,22 @@
             <specular>0.9 0.3 0.3 1</specular>
           </material>
         </visual>
-        <pose>0 0 0 0 -0 0</pose>
-        <inertial>
-          <pose>0 0 0 0 -0 0</pose>
-          <mass>1</mass>
-          <inertia>
-            <ixx>1</ixx>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyy>1</iyy>
-            <iyz>0</iyz>
-            <izz>1</izz>
-          </inertia>
-        </inertial>
-        <enable_wind>false</enable_wind>
       </link>
-      <self_collide>false</self_collide>
     </model>
-    <model name='narrow_obstacle_2a'>
-      <pose>3.5 -1.25 0.5 0 -0 0</pose>
+
+    <!-- Narrow passage 2 (0.85m wide) -->
+    <model name="narrow_obstacle_2a">
+      <pose>3.5 -1.25 0.5 0 0 0</pose>
       <static>true</static>
-      <link name='link'>
-        <collision name='collision'>
+      <link name="link">
+        <collision name="collision">
           <geometry>
             <box>
               <size>1 0.9 1</size>
             </box>
           </geometry>
-          <surface>
-            <friction>
-              <ode/>
-            </friction>
-            <bounce/>
-            <contact/>
-          </surface>
         </collision>
-        <visual name='visual'>
+        <visual name="visual">
           <geometry>
             <box>
               <size>1 0.9 1</size>
@@ -803,42 +501,21 @@
             <specular>0.3 0.9 0.3 1</specular>
           </material>
         </visual>
-        <pose>0 0 0 0 -0 0</pose>
-        <inertial>
-          <pose>0 0 0 0 -0 0</pose>
-          <mass>1</mass>
-          <inertia>
-            <ixx>1</ixx>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyy>1</iyy>
-            <iyz>0</iyz>
-            <izz>1</izz>
-          </inertia>
-        </inertial>
-        <enable_wind>false</enable_wind>
       </link>
-      <self_collide>false</self_collide>
     </model>
-    <model name='narrow_obstacle_2b'>
-      <pose>3.5 -3.75 0.5 0 -0 0</pose>
+
+    <model name="narrow_obstacle_2b">
+      <pose>3.5 -3.75 0.5 0 0 0</pose>
       <static>true</static>
-      <link name='link'>
-        <collision name='collision'>
+      <link name="link">
+        <collision name="collision">
           <geometry>
             <box>
               <size>1 0.9 1</size>
             </box>
           </geometry>
-          <surface>
-            <friction>
-              <ode/>
-            </friction>
-            <bounce/>
-            <contact/>
-          </surface>
         </collision>
-        <visual name='visual'>
+        <visual name="visual">
           <geometry>
             <box>
               <size>1 0.9 1</size>
@@ -850,47 +527,27 @@
             <specular>0.3 0.9 0.3 1</specular>
           </material>
         </visual>
-        <pose>0 0 0 0 -0 0</pose>
-        <inertial>
-          <pose>0 0 0 0 -0 0</pose>
-          <mass>1</mass>
-          <inertia>
-            <ixx>1</ixx>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyy>1</iyy>
-            <iyz>0</iyz>
-            <izz>1</izz>
-          </inertia>
-        </inertial>
-        <enable_wind>false</enable_wind>
       </link>
-      <self_collide>false</self_collide>
     </model>
-    <model name='cylinder_obstacle_1'>
-      <pose>-1 -3.5 0.5 0 -0 0</pose>
+
+    <!-- Cylindrical obstacles for variety -->
+    <model name="cylinder_obstacle_1">
+      <pose>-1 -3.5 0.5 0 0 0</pose>
       <static>true</static>
-      <link name='link'>
-        <collision name='collision'>
+      <link name="link">
+        <collision name="collision">
           <geometry>
             <cylinder>
-              <radius>0.40000000000000002</radius>
-              <length>1</length>
+              <radius>0.4</radius>
+              <length>1.0</length>
             </cylinder>
           </geometry>
-          <surface>
-            <friction>
-              <ode/>
-            </friction>
-            <bounce/>
-            <contact/>
-          </surface>
         </collision>
-        <visual name='visual'>
+        <visual name="visual">
           <geometry>
             <cylinder>
-              <radius>0.40000000000000002</radius>
-              <length>1</length>
+              <radius>0.4</radius>
+              <length>1.0</length>
             </cylinder>
           </geometry>
           <material>
@@ -899,47 +556,26 @@
             <specular>0.3 0.3 0.9 1</specular>
           </material>
         </visual>
-        <pose>0 0 0 0 -0 0</pose>
-        <inertial>
-          <pose>0 0 0 0 -0 0</pose>
-          <mass>1</mass>
-          <inertia>
-            <ixx>1</ixx>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyy>1</iyy>
-            <iyz>0</iyz>
-            <izz>1</izz>
-          </inertia>
-        </inertial>
-        <enable_wind>false</enable_wind>
       </link>
-      <self_collide>false</self_collide>
     </model>
-    <model name='cylinder_obstacle_2'>
-      <pose>1 1.25 0.5 0 -0 0</pose>
+
+    <model name="cylinder_obstacle_2">
+      <pose>1 1.25 0.5 0 0 0</pose>
       <static>true</static>
-      <link name='link'>
-        <collision name='collision'>
+      <link name="link">
+        <collision name="collision">
           <geometry>
             <cylinder>
-              <radius>0.34999999999999998</radius>
-              <length>1</length>
+              <radius>0.35</radius>
+              <length>1.0</length>
             </cylinder>
           </geometry>
-          <surface>
-            <friction>
-              <ode/>
-            </friction>
-            <bounce/>
-            <contact/>
-          </surface>
         </collision>
-        <visual name='visual'>
+        <visual name="visual">
           <geometry>
             <cylinder>
-              <radius>0.34999999999999998</radius>
-              <length>1</length>
+              <radius>0.35</radius>
+              <length>1.0</length>
             </cylinder>
           </geometry>
           <material>
@@ -948,42 +584,50 @@
             <specular>0.9 0.9 0.3 1</specular>
           </material>
         </visual>
-        <pose>0 0 0 0 -0 0</pose>
-        <inertial>
-          <pose>0 0 0 0 -0 0</pose>
-          <mass>1</mass>
-          <inertia>
-            <ixx>1</ixx>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyy>1</iyy>
-            <iyz>0</iyz>
-            <izz>1</izz>
-          </inertia>
-        </inertial>
-        <enable_wind>false</enable_wind>
       </link>
-      <self_collide>false</self_collide>
     </model>
-    <model name='ramp_downward'>
-      <pose>6 2.5 0.25 0 -0.262 0</pose>
+
+    <!-- Ramps/Slopes for testing inclined terrain navigation -->
+    <!-- Upward Ramp (West side) - 15 degree incline -->
+    <model name="ramp_upward">
+      <pose>-6 -2.5 0.25 0 0.262 0</pose>  <!-- 0.262 radians = 15 degrees -->
       <static>true</static>
-      <link name='link'>
-        <collision name='collision'>
+      <link name="link">
+        <collision name="collision">
           <geometry>
             <box>
               <size>3 2 0.1</size>
             </box>
           </geometry>
-          <surface>
-            <friction>
-              <ode/>
-            </friction>
-            <bounce/>
-            <contact/>
-          </surface>
         </collision>
-        <visual name='visual'>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>3 2 0.1</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.7 0.5 0.3 1</ambient>
+            <diffuse>0.7 0.5 0.3 1</diffuse>
+            <specular>0.7 0.5 0.3 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Downward Ramp (East side) - 15 degree decline -->
+    <model name="ramp_downward">
+      <pose>6 2.5 0.25 0 -0.262 0</pose>  <!-- -0.262 radians = -15 degrees -->
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>3 2 0.1</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
           <geometry>
             <box>
               <size>3 2 0.1</size>
@@ -995,42 +639,22 @@
             <specular>0.5 0.7 0.3 1</specular>
           </material>
         </visual>
-        <pose>0 0 0 0 -0 0</pose>
-        <inertial>
-          <pose>0 0 0 0 -0 0</pose>
-          <mass>1</mass>
-          <inertia>
-            <ixx>1</ixx>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyy>1</iyy>
-            <iyz>0</iyz>
-            <izz>1</izz>
-          </inertia>
-        </inertial>
-        <enable_wind>false</enable_wind>
       </link>
-      <self_collide>false</self_collide>
     </model>
-    <model name='step_platform'>
-      <pose>0 -6 0.15 0 -0 0</pose>
+
+    <!-- Small step/platform for variety -->
+    <model name="step_platform">
+      <pose>0 -6 0.15 0 0 0</pose>
       <static>true</static>
-      <link name='link'>
-        <collision name='collision'>
+      <link name="link">
+        <collision name="collision">
           <geometry>
             <box>
               <size>2 2 0.3</size>
             </box>
           </geometry>
-          <surface>
-            <friction>
-              <ode/>
-            </friction>
-            <bounce/>
-            <contact/>
-          </surface>
         </collision>
-        <visual name='visual'>
+        <visual name="visual">
           <geometry>
             <box>
               <size>2 2 0.3</size>
@@ -1042,46 +666,8 @@
             <specular>0.6 0.6 0.6 1</specular>
           </material>
         </visual>
-        <pose>0 0 0 0 -0 0</pose>
-        <inertial>
-          <pose>0 0 0 0 -0 0</pose>
-          <mass>1</mass>
-          <inertia>
-            <ixx>1</ixx>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyy>1</iyy>
-            <iyz>0</iyz>
-            <izz>1</izz>
-          </inertia>
-        </inertial>
-        <enable_wind>false</enable_wind>
       </link>
-      <self_collide>false</self_collide>
     </model>
-    <include>
-      <uri>file://<urdf-string></uri>
-      <name>go2</name>
-      <pose>-6.30532 -4.30339 0.208482 -0.015687 -0.014369 -2.32417</pose>
-    </include>
-    <light name='sun' type='directional'>
-      <pose>0 0 10 0 -0 0</pose>
-      <cast_shadows>true</cast_shadows>
-      <intensity>1</intensity>
-      <direction>-0.5 0.1 -0.9</direction>
-      <diffuse>0.8 0.8 0.8 1</diffuse>
-      <specular>0.2 0.2 0.2 1</specular>
-      <attenuation>
-        <range>1000</range>
-        <linear>0.01</linear>
-        <constant>0.90000000000000002</constant>
-        <quadratic>0.001</quadratic>
-      </attenuation>
-      <spot>
-        <inner_angle>0</inner_angle>
-        <outer_angle>0</outer_angle>
-        <falloff>0</falloff>
-      </spot>
-    </light>
+
   </world>
 </sdf>
