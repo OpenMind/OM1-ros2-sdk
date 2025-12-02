@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
 import rclpy
-from rclpy.node import Node
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Odometry
+from rclpy.node import Node
+
 
 class Go2RemappingNode(Node):
     """
@@ -19,7 +20,9 @@ class Go2RemappingNode(Node):
             Odometry, "/odom", self.odom_callback, 10
         )
 
-        self.robot_pose_publisher = self.create_publisher(PoseStamped, "/utlidar/robot_pose", 10)
+        self.robot_pose_publisher = self.create_publisher(
+            PoseStamped, "/utlidar/robot_pose", 10
+        )
 
     def odom_callback(self, msg: Odometry):
         """

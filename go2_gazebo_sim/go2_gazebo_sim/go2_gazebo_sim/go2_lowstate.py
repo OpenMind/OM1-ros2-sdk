@@ -2,8 +2,9 @@
 
 import rclpy
 from rclpy.node import Node
-from unitree_go.msg import LowState, IMUState, MotorState, BmsState
 from sensor_msgs.msg import JointState
+
+from unitree_go.msg import BmsState, IMUState, LowState, MotorState
 
 
 class Go2LowStateNode(Node):
@@ -18,10 +19,7 @@ class Go2LowStateNode(Node):
         self.lowstate_publisher = self.create_publisher(LowState, "/lowstate", 10)
 
         self.joint_state_subscriber = self.create_subscription(
-            JointState,
-            "/joint_states",
-            self.joint_state_callback,
-            10
+            JointState, "/joint_states", self.joint_state_callback, 10
         )
 
         self.timer = self.create_timer(0.01, self.publish_lowstate)
@@ -59,9 +57,18 @@ class Go2LowStateNode(Node):
 
         # Expected joint names from Gazebo in this order:
         expected_names = [
-            'rf_hip_joint', 'lf_lower_leg_joint', 'rf_lower_leg_joint', 'lf_upper_leg_joint',
-            'rh_hip_joint', 'rf_upper_leg_joint', 'rh_upper_leg_joint', 'rh_lower_leg_joint',
-            'lh_hip_joint', 'lf_hip_joint', 'lh_upper_leg_joint', 'lh_lower_leg_joint'
+            "rf_hip_joint",
+            "lf_lower_leg_joint",
+            "rf_lower_leg_joint",
+            "lf_upper_leg_joint",
+            "rh_hip_joint",
+            "rf_upper_leg_joint",
+            "rh_upper_leg_joint",
+            "rh_lower_leg_joint",
+            "lh_hip_joint",
+            "lf_hip_joint",
+            "lh_upper_leg_joint",
+            "lh_lower_leg_joint",
         ]
 
         name_to_index = {name: i for i, name in enumerate(self.latest_joint_state.name)}
@@ -77,7 +84,11 @@ class Go2LowStateNode(Node):
         for joint_name in expected_names:
             idx = name_to_index[joint_name]
             gazebo_positions.append(self.latest_joint_state.position[idx])
-            gazebo_velocities.append(self.latest_joint_state.velocity[idx] if idx < len(self.latest_joint_state.velocity) else 0.0)
+            gazebo_velocities.append(
+                self.latest_joint_state.velocity[idx]
+                if idx < len(self.latest_joint_state.velocity)
+                else 0.0
+            )
 
         # Reorder to Unitree convention: [rf_hip, rf_upper, rf_lower, lf_hip, lf_upper, lf_lower,
         #                                rh_hip, rh_upper, rh_lower, lh_hip, lh_upper, lh_lower]
@@ -110,27 +121,10 @@ class Go2LowStateNode(Node):
 
         # IMU State
         msg.imu_state = IMUState()
-        msg.imu_state.quaternion = [
-            0.0,
-            0.0,
-            0.0,
-            0.0
-        ]
-        msg.imu_state.gyroscope = [
-            0.0,
-            0.0,
-            0.0
-        ]
-        msg.imu_state.accelerometer = [
-            0.0,
-            0.0,
-            0.0
-        ]
-        msg.imu_state.rpy = [
-            0.0,
-            0.0,
-            0.0
-        ]
+        msg.imu_state.quaternion = [0.0, 0.0, 0.0, 0.0]
+        msg.imu_state.gyroscope = [0.0, 0.0, 0.0]
+        msg.imu_state.accelerometer = [0.0, 0.0, 0.0]
+        msg.imu_state.rpy = [0.0, 0.0, 0.0]
         msg.imu_state.temperature = 0
 
         # Motor States (20 motors total, 12 active + 8 inactive)
@@ -145,19 +139,21 @@ class Go2LowStateNode(Node):
         # Motor data with realistic temperatures and small torque estimates
         motor_data = []
         for i in range(12):
-            motor_data.append({
-                "mode": 1,
-                "q": unitree_positions[i],
-                "dq": unitree_velocities[i],
-                "ddq": 0.0,
-                "tau_est": 0.025 + (i % 3) * 0.01,  # Small varying torque estimates
-                "q_raw": 0.0,
-                "dq_raw": 0.0,
-                "ddq_raw": 0.0,
-                "temperature": 26 + (i % 6),  # Varying temps 26-31°C
-                "lost": 0,
-                "reserve": [0, 588]
-            })
+            motor_data.append(
+                {
+                    "mode": 1,
+                    "q": unitree_positions[i],
+                    "dq": unitree_velocities[i],
+                    "ddq": 0.0,
+                    "tau_est": 0.025 + (i % 3) * 0.01,  # Small varying torque estimates
+                    "q_raw": 0.0,
+                    "dq_raw": 0.0,
+                    "ddq_raw": 0.0,
+                    "temperature": 26 + (i % 6),  # Varying temps 26-31°C
+                    "lost": 0,
+                    "reserve": [0, 588],
+                }
+            )
 
         # Create motor state array with exactly 20 elements
         motor_states = []
@@ -204,8 +200,21 @@ class Go2LowStateNode(Node):
         msg.bms_state.bq_ntc = [25, 23]
         msg.bms_state.mcu_ntc = [29, 28]
         msg.bms_state.cell_vol = [
-            3654, 3663, 3664, 3663, 3662, 3662, 3663, 3653,
-            0, 0, 0, 0, 0, 0, 0  # Remaining cells are 0
+            3654,
+            3663,
+            3664,
+            3663,
+            3662,
+            3662,
+            3663,
+            3653,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,  # Remaining cells are 0
         ]
 
         # Foot force sensors
@@ -241,7 +250,9 @@ class Go2LowStateNode(Node):
 
         # Log every 100 messages (1 second at 100Hz)
         if self.tick_counter % 100 == 0:
-            joint_status = "No joint data" if self.latest_joint_state is None else "Joint data OK"
+            joint_status = (
+                "No joint data" if self.latest_joint_state is None else "Joint data OK"
+            )
             self.get_logger().debug(
                 f"Published LowState - Tick: {msg.tick}, "
                 f"Battery SOC: {msg.bms_state.soc}%, "

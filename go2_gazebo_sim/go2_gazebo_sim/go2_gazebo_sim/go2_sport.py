@@ -1,10 +1,18 @@
 #!/usr/bin/env python3
 
 import json
+
 import rclpy
-from rclpy.node import Node
 from geometry_msgs.msg import Twist
-from unitree_api.msg import Request, Response, ResponseHeader, ResponseStatus, RequestIdentity
+from rclpy.node import Node
+
+from unitree_api.msg import (
+    Request,
+    RequestIdentity,
+    Response,
+    ResponseHeader,
+    ResponseStatus,
+)
 
 
 class Go2SportNode(Node):
