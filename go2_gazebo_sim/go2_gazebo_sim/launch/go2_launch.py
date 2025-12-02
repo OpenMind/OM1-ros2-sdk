@@ -286,6 +286,10 @@ def generate_launch_description():
             "/scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan",
             "/odom@nav_msgs/msg/Odometry@gz.msgs.Odometry",
             "/rgb_image@sensor_msgs/msg/Image@gz.msgs.Image",
+            "/camera/realsense2_camera_node/depth/image_rect_raw@sensor_msgs/msg/Image@gz.msgs.Image",
+            "/camera/realsense2_camera_node/color/image_raw@sensor_msgs/msg/Image@gz.msgs.Image",
+            "/camera/realsense2_camera_node/depth/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo",
+            "/camera/realsense2_camera_node/color/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo",
             # ROS to Gazebo
             "/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist",
             "/joint_group_effort_controller/joint_trajectory@trajectory_msgs/msg/JointTrajectory]gz.msgs.JointTrajectory",
