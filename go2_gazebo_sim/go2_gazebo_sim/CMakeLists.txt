@@ -37,4 +37,16 @@ install(PROGRAMS
   RENAME go2_remapping_node
 )
 
+install(PROGRAMS
+  go2_gazebo_sim/go2_sport.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME go2_sport_node
+)
+
+install(PROGRAMS
+  go2_gazebo_sim/go2_lowstate.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME go2_lowstate_node
+)
+
 ament_package()

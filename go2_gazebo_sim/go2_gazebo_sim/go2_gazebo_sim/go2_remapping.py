@@ -5,7 +5,7 @@ from rclpy.node import Node
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Odometry
 
-class Go2Remapping(Node):
+class Go2RemappingNode(Node):
     """
     A ROS2 node that handles remapping of topics for the Go2 robot in Gazebo simulation.
     """
@@ -51,7 +51,7 @@ def main(args=None):
 
     node = None
     try:
-        node = Go2Remapping()
+        node = Go2RemappingNode()
         rclpy.spin(node)
     except KeyboardInterrupt:
         pass
