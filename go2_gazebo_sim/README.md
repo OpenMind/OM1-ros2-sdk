@@ -26,16 +26,18 @@ This repository contains the ROS 2 Gazebo simulation packages for the Unitree Go
     source install/setup.bash
     ```
 
-4.  Setup CycloneDDS
-    The network interface is your WiFi adapter. Replace `wlxbc071d7223b6` with your own network interface name found via `ifconfig` or `ip a`.
+4.  Setup CycloneDDS to your lo network interface by creating or editing the `cyclonedds.xml` file with the following content:
     ```bash
     <CycloneDDS>
         <Domain>
             <General>
-            <Interfaces>
-                <NetworkInterface name="wlxbc071d7223b6" priority="default" multicast="default" />
-            </Interfaces>
-            </General>
+                <Interfaces>
+                    <NetworkInterface address="127.0.0.1" priority="default" multicast="default" />
+                </Interfaces>
+        </General>
+            <Discovery>
+                <MaxAutoParticipantIndex>200</MaxAutoParticipantIndex>
+            </Discovery>
         </Domain>
     </CycloneDDS>
     ```
