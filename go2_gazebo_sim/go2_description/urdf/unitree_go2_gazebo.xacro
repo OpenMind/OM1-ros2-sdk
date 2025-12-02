@@ -1,0 +1,276 @@
+<?xml version="1.0"?>
+<robot>
+  <!-- Gazebo Sim plugins -->
+  <gazebo>
+    <plugin filename="gz-sim-pose-publisher-system" name="gz::sim::systems::PosePublisher">
+      <publish_link_pose>true</publish_link_pose>
+      <publish_sensor_pose>true</publish_sensor_pose>
+      <publish_collision_pose>false</publish_collision_pose>
+      <publish_visual_pose>false</publish_visual_pose>
+      <publish_nested_model_pose>false</publish_nested_model_pose>
+      <use_pose_vector_msg>true</use_pose_vector_msg>
+      <static_publisher>true</static_publisher>
+      <static_update_frequency>100</static_update_frequency>
+    </plugin>
+  </gazebo>
+
+  <!-- Robot-wide physics properties -->
+  <!-- <gazebo>
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics">
+      <engine>
+        <filename>gz-physics-bullet-plugin</filename>
+      </engine>
+    </plugin>
+  </gazebo> -->
+
+  <!-- ROS2 Control plugin -->
+  <gazebo>
+    <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+      <parameters>$(find go2_gazebo_sim)/config/ros_control/ros_control.yaml</parameters>
+      <robot_param_node>robot_state_publisher</robot_param_node>
+    </plugin>
+  </gazebo>
+
+  <!-- Odometry plugin -->
+  <gazebo>
+  <plugin filename="libignition-gazebo-odometry-publisher-system.so"
+          name="ignition::gazebo::systems::OdometryPublisher">
+      <odom_frame>odom</odom_frame>
+      <robot_base_frame>base_link</robot_base_frame>
+      <odom_topic>/odom</odom_topic>
+      <odom_publish_frequency>50</odom_publish_frequency>
+      <tf_topic>/tf</tf_topic>
+    </plugin>
+  </gazebo>
+
+  <!-- IMU plugin -->
+  <gazebo reference="imu_link">
+    <sensor name="imu_sensor" type="imu">
+      <always_on>true</always_on>
+      <update_rate>100</update_rate>
+      <visualize>true</visualize>
+      <topic>imu/data</topic>
+      <gz_frame_id>imu_link</gz_frame_id>
+      <imu>
+        <angular_velocity>
+          <x>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>2e-4</stddev>
+            </noise>
+          </x>
+          <y>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>2e-4</stddev>
+            </noise>
+          </y>
+          <z>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>2e-4</stddev>
+            </noise>
+          </z>
+        </angular_velocity>
+        <linear_acceleration>
+          <x>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>1.7e-2</stddev>
+            </noise>
+          </x>
+          <y>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>1.7e-2</stddev>
+            </noise>
+          </y>
+          <z>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>1.7e-2</stddev>
+            </noise>
+          </z>
+        </linear_acceleration>
+      </imu>
+      <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu">
+        <initial_orientation_as_reference>false</initial_orientation_as_reference>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+  <!-- Camera Plugin-->
+  <gazebo reference="camera_link">
+    <sensor name="rgb_camera" type="camera">
+      <pose>0 0.0 0 0 0 0</pose>
+      <camera>
+        <horizontal_fov>1.367</horizontal_fov>
+        <image>
+          <width>640</width>
+          <height>480</height>
+        </image>
+        <clip>
+          <near>0.05</near>
+          <far>200</far>
+        </clip>
+      </camera>
+      <gz_frame_id>camera_link</gz_frame_id>
+      <always_on>1</always_on>
+      <update_rate>10</update_rate>
+      <visualize>1</visualize>
+      <topic>rgb_image</topic>
+    </sensor>
+  </gazebo>
+
+  <!-- Head Camera Plugin (Downfacing RealSense) -->
+  <gazebo reference="camera_link">
+    <sensor name="head_depth_camera" type="depth_camera">
+      <pose>0 0 0 0 0 0</pose>
+      <camera>
+        <horizontal_fov>1.518</horizontal_fov> <!-- RealSense D435i approx FOV -->
+        <image>
+          <width>640</width>
+          <height>480</height>
+        </image>
+        <clip>
+          <near>0.1</near>
+          <far>10.0</far>
+        </clip>
+      </camera>
+      <gz_frame_id>camera_link</gz_frame_id>
+      <always_on>1</always_on>
+      <update_rate>30</update_rate>
+      <visualize>1</visualize>
+      <topic>camera/realsense2_camera_node/depth/image_rect_raw</topic>
+    </sensor>
+    <sensor name="head_rgb_camera" type="camera">
+      <pose>0 0 0 0 0 0</pose>
+      <camera>
+        <horizontal_fov>1.518</horizontal_fov>
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.05</near>
+          <far>10.0</far>
+        </clip>
+      </camera>
+      <gz_frame_id>camera_link</gz_frame_id>
+      <always_on>1</always_on>
+      <update_rate>30</update_rate>
+      <visualize>1</visualize>
+      <topic>camera/realsense2_camera_node/color/image_raw</topic>
+    </sensor>
+  </gazebo>
+
+  <!-- Main body -->
+  <gazebo reference="trunk">
+    <mu1>0.2</mu1>
+    <mu2>0.2</mu2>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+  </gazebo>
+
+  <!-- FL leg -->
+  <gazebo reference="lf_hip_link">
+    <mu1>0.2</mu1>
+    <mu2>0.2</mu2>
+  </gazebo>
+  <gazebo reference="lf_upper_leg_link">
+    <mu1>0.2</mu1>
+    <mu2>0.2</mu2>
+    <self_collide>1</self_collide>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+  </gazebo>
+  <gazebo reference="lf_lower_leg_link">
+    <mu1>0.2</mu1>
+    <mu2>0.2</mu2>
+    <self_collide>1</self_collide>
+  </gazebo>
+  <gazebo reference="lf_foot_link">
+    <mu1>0.6</mu1>
+    <mu2>0.6</mu2>
+    <self_collide>1</self_collide>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+  </gazebo>
+
+  <!-- FR leg -->
+  <gazebo reference="rf_hip_link">
+    <mu1>0.2</mu1>
+    <mu2>0.2</mu2>
+  </gazebo>
+  <gazebo reference="rf_upper_leg_link">
+    <mu1>0.2</mu1>
+    <mu2>0.2</mu2>
+    <self_collide>1</self_collide>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+  </gazebo>
+  <gazebo reference="rf_lower_leg_link">
+    <mu1>0.2</mu1>
+    <mu2>0.2</mu2>
+    <self_collide>1</self_collide>
+  </gazebo>
+  <gazebo reference="rf_foot_link">
+    <mu1>0.6</mu1>
+    <mu2>0.6</mu2>
+    <self_collide>1</self_collide>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+  </gazebo>
+
+  <!-- RL leg -->
+  <gazebo reference="lh_hip_link">
+    <mu1>0.2</mu1>
+    <mu2>0.2</mu2>
+  </gazebo>
+  <gazebo reference="lh_upper_leg_link">
+    <mu1>0.2</mu1>
+    <mu2>0.2</mu2>
+    <self_collide>1</self_collide>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+  </gazebo>
+  <gazebo reference="lh_lower_leg_link">
+    <mu1>0.2</mu1>
+    <mu2>0.2</mu2>
+    <self_collide>1</self_collide>
+  </gazebo>
+  <gazebo reference="lh_foot_link">
+    <mu1>0.6</mu1>
+    <mu2>0.6</mu2>
+    <self_collide>1</self_collide>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+  </gazebo>
+
+  <!-- RR leg -->
+  <gazebo reference="rh_hip_link">
+    <mu1>0.2</mu1>
+    <mu2>0.2</mu2>
+  </gazebo>
+  <gazebo reference="rh_upper_leg_link">
+    <mu1>0.2</mu1>
+    <mu2>0.2</mu2>
+    <self_collide>1</self_collide>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+  </gazebo>
+  <gazebo reference="rh_lower_leg_link">
+    <mu1>0.2</mu1>
+    <mu2>0.2</mu2>
+    <self_collide>1</self_collide>
+  </gazebo>
+  <gazebo reference="rh_foot_link">
+    <mu1>0.6</mu1>
+    <mu2>0.6</mu2>
+    <self_collide>1</self_collide>
+    <kp>10000.0</kp>
+    <kd>1.0</kd>
+  </gazebo>
+
+</robot>

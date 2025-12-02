@@ -65,6 +65,7 @@ RUN mkdir -p /app/unitree_sdk
 COPY . /app/unitree_sdk
 
 WORKDIR /app/unitree_sdk
+RUN git submodule update --init --recursive
 
 RUN rosdep install -y --ignore-src --from-paths . -r
 RUN pip install -e . --force-reinstall --ignore-installed --no-cache-dir

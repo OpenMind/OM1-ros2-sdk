@@ -1,0 +1,157 @@
+<?xml version="1.0"?>
+
+<robot name="go2"
+    xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <xacro:arg name="DEBUG" default="false"/>
+
+    <xacro:include filename="$(find go2_description)/urdf/const.xacro"/>
+    <xacro:include filename="$(find go2_description)/urdf/materials.xacro"/>
+    <xacro:include filename="$(find go2_description)/urdf/leg.xacro"/>
+    <!-- <xacro:include filename="$(find go2_description)/stairs.xacro"/> -->
+    <xacro:include filename="$(find go2_description)/urdf/unitree_go2_gazebo.xacro"/>
+    <!-- <xacro:include filename="$(find go2_description)/launch/stairs.urdf.xacro"/> -->
+    <xacro:include filename="$(find go2_description)/urdf/velodyne.xacro"/>
+    <xacro:include filename="$(find go2_description)/urdf/lidar_4D_lidar.xacro"/>
+    <!-- <xacro:stairs stairs="15" xpos="0" ypos="0" zpos="0" /> -->
+
+    <!-- Rotor related joint and link is only for demonstrate location. -->
+    <!-- Actually, the rotor will rotate and the joint is not fixed. Reduction ratio should be considered. -->
+
+    <!-- Debug mode will hung up the robot, use "true" or "false" to switch it. -->
+    <xacro:if value="$(arg DEBUG)">
+        <link name="world"/>
+        <joint name="base_static_joint" type="fixed">
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <parent link="world"/>
+            <child link="base_link"/>
+        </joint>
+    </xacro:if>
+
+    <link name="base_link">
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <box size="0.001 0.001 0.001"/>
+            </geometry>
+        </visual>
+    </link>
+
+    <joint name="floating_base" type="fixed">
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <parent link="base_link"/>
+        <child link="trunk"/>
+    </joint>
+
+    <link name="trunk">
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="file://$(find go2_description)/meshes/trunk.dae" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <box size="${trunk_length} ${trunk_width} ${trunk_height}"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <origin rpy="0 0 0" xyz="${trunk_com_x} ${trunk_com_y} ${trunk_com_z}"/>
+            <mass value="${trunk_mass}"/>
+            <inertia ixx="${trunk_ixx}" ixy="${trunk_ixy}" ixz="${trunk_ixz}" iyy="${trunk_iyy}" iyz="${trunk_iyz}" izz="${trunk_izz}"/>
+        </inertial>
+    </link>
+
+    <joint name="imu_joint" type="fixed">
+        <parent link="trunk"/>
+        <child link="imu_link"/>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+    </joint>
+
+    <link name="imu_link">
+        <inertial>
+            <mass value="0.001"/>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+        </inertial>
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <box size="0.001 0.001 0.001"/>
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <box size=".001 .001 .001"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <!-- Camera Link (Downfacing RealSense) -->
+    <link name="camera_link">
+        <inertial>
+            <mass value="0.01"/>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+        </inertial>
+        <visual>
+            <origin rpy="1.57 0 1.57" xyz="0.01 0 0"/>
+            <geometry>
+                <mesh filename="file://$(find go2_description)/meshes/d435.dae" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <box size="0.025 0.09 0.025"/>
+            </geometry>
+        </collision>
+    </link>
+    <joint name="camera_joint" type="fixed">
+        <parent link="trunk"/>
+        <child link="camera_link"/>
+        <origin rpy="0 0.5236 0" xyz="0.326 0 0.043"/>
+    </joint>
+
+
+
+    <!-- <joint name="lidar_l1_joint" type="fixed">
+        <parent link="base_link"/>
+        <child link="lidar_l1_link"/>
+        <origin rpy="2.94 0 1.5705" xyz="0.25 -0.038 -0.03"/>
+    </joint>
+
+    <link name="lidar_l1_link">
+        <inertial>
+            <mass value="0.5"/>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+        </inertial>
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="file://$(find go2_description)/meshes/L1_4D_Lidar.dae" scale="1 1 1"/>
+            </geometry>
+            <material name="black">
+                <color rgba="0.0 0.0 0.0 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="file://$(find go2_description)/meshes/L1_4D_Lidar.dae" scale="1 1 1"/>
+            </geometry>
+            <material name="black">
+                <color rgba="0.0 0.0 0.0 1.0"/>
+            </material>
+        </collision>
+    </link> -->
+
+    <xacro:leg name="rf" mirror="-1" mirror_dae= "False" front_hind="1" front_hind_dae="True" />
+    <xacro:leg name="lf" mirror="1" mirror_dae="True" front_hind="1" front_hind_dae="True" />
+    <xacro:leg name="rh" mirror="-1" mirror_dae="False" front_hind="-1" front_hind_dae="False" />
+    <xacro:leg name="lh" mirror="1" mirror_dae="True" front_hind="-1" front_hind_dae="False" />
+
+</robot>

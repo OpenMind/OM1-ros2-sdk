@@ -14,7 +14,7 @@ def generate_launch_description():
     with open(urdf_file, "r") as infp:
         robot_desc = infp.read()
 
-    slam_config_file = os.path.join(pkg_dir, "config", "slam.yaml")
+    slam_config_file = os.path.join(pkg_dir, "config", "slam_params.yaml")
 
     channel_type = LaunchConfiguration("channel_type", default="serial")
     serial_port = LaunchConfiguration("serial_port", default="/dev/ttyUSB0")

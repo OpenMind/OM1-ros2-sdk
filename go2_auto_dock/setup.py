@@ -26,7 +26,6 @@ setup(
     maintainer_email="147775420+openminddev@users.noreply.github.com",
     description="Unitree Go2 Autonomous Docking Package",
     license="Apache-2.0",
-    tests_require=["pytest"],
     entry_points={
         "console_scripts": [
             "apriltag_detector = go2_auto_dock.apriltag_detector:main",
