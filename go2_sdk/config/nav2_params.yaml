@@ -107,7 +107,7 @@ bt_navigator:
 controller_server:
   ros__parameters:
     use_sim_time: False
-    controller_frequency: 40.0  # Increased from 5.0 for MPPI
+    controller_frequency: 40.0
     min_x_velocity_threshold: 0.001
     min_y_velocity_threshold: 0.001
     min_theta_velocity_threshold: 0.001
@@ -132,7 +132,7 @@ controller_server:
       plugin: "nav2_mppi_controller::MPPIController"
       time_steps: 56  # Prediction horizon steps
       model_dt: 0.05  # Time between steps (50ms)
-      batch_size: 2000  # Number of trajectories to sample
+      batch_size: 2000
       vx_std: 0.2  # Std dev for forward velocity sampling
       vy_std: 0.0  # No lateral movement for quadruped
       wz_std: 0.4  # Std dev for rotational velocity sampling
@@ -309,8 +309,7 @@ local_costmap:
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 5.0
-        inflation_radius: 0.35 # lower inflation radius for tight space navigation
-
+        inflation_radius: 0.25
       always_send_full_costmap: True
 
 global_costmap:
@@ -348,7 +347,7 @@ global_costmap:
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 5.0
-        inflation_radius: 0.40
+        inflation_radius: 0.30
 
       always_send_full_costmap: True
 
