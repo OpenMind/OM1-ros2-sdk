@@ -32,9 +32,9 @@
     <joint name="velodyne_base_scan_joint" type="fixed">
         <origin rpy="0 0 0" xyz="0 0 0.0377"/>
         <parent link="velodyne_base_link"/>
-        <child link="velodyne"/>
+        <child link="laser"/>
     </joint>
-    <link name="velodyne">
+    <link name="laser">
         <inertial>
             <mass value="0.01"/>
             <origin xyz="0 0 0"/>
@@ -49,11 +49,12 @@
     </link>
 
     <!-- Gazebo Sim Velodyne Sensor plugin -->
-    <gazebo reference="velodyne">
+    <gazebo reference="laser">
         <sensor name="velodyne-VLP16" type="gpu_lidar">
+            <pose>0 0 0 0 0 3.14159</pose>
             <topic>scan</topic>
             <update_rate>10</update_rate>
-            <gz_frame_id>velodyne</gz_frame_id>
+            <gz_frame_id>laser</gz_frame_id>
             <lidar>
                 <scan>
                     <horizontal>
@@ -79,7 +80,7 @@
                     <mean>0.0</mean>
                     <stddev>0.008</stddev>
                 </noise>
-                <frame_id>velodyne</frame_id>
+                <frame_id>laser</frame_id>
             </lidar>
             <visualize>true</visualize>
 
