@@ -137,7 +137,7 @@ controller_server:
       vy_std: 0.0  # No lateral movement for quadruped
       wz_std: 0.4  # Std dev for rotational velocity sampling
       vx_max: 0.4  # Max forward velocity
-      vx_min: -0.15  # Max backward velocity
+      vx_min: -0.3  # Max backward velocity
       vy_max: 0.0
       wz_max: 1.2  # Max rotation rate
       iteration_count: 1  # MPPI iterations per control cycle
@@ -150,12 +150,21 @@ controller_server:
       regenerate_noises: False
 
       # Cost function weights (tune these for your needs)
-      critics: ["ConstraintCritic", "CostCritic", "GoalCritic", "GoalAngleCritic", "PathAlignCritic", "PathFollowCritic", "PathAngleCritic", "PreferForwardCritic"]
+      critics: ["ConstraintCritic", "ObstaclesCritic", "GoalCritic", "GoalAngleCritic", "PathAlignCritic", "PathFollowCritic", "PathAngleCritic", "PreferForwardCritic"]
 
       ConstraintCritic:
         enabled: True
         cost_power: 1
         cost_weight: 4.0
+
+      ObstaclesCritic:
+        enabled: True
+        cost_power: 1
+        cost_weight: 20.0
+        consider_footprint: False
+        collision_cost: 10000.0
+        collision_margin_distance: 0.1
+        near_goal_distance: 0.5
 
       GoalCritic:
         enabled: True
@@ -172,7 +181,7 @@ controller_server:
       PreferForwardCritic:
         enabled: True
         cost_power: 1
-        cost_weight: 3.0  # Penalize backward motion
+        cost_weight: 1.0  # Penalize backward motion
         threshold_to_consider: 0.5
 
       # Obstacle and path following
@@ -299,8 +308,8 @@ local_costmap:
 
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 1.5
-        inflation_radius: 0.23 # lower inflation radius for tight space navigation
+        cost_scaling_factor: 5.0
+        inflation_radius: 0.35 # lower inflation radius for tight space navigation
 
       always_send_full_costmap: True
 
@@ -338,8 +347,8 @@ global_costmap:
 
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 3.0
-        inflation_radius: 0.3
+        cost_scaling_factor: 5.0
+        inflation_radius: 0.40
 
       always_send_full_costmap: True
 
@@ -433,7 +442,7 @@ velocity_smoother:
     scale_velocities: False
     feedback: "OPEN_LOOP"
     max_velocity: [0.4, 0.0, 1.2]  # Updated for MPPI limits
-    min_velocity: [-0.15, 0.0, -1.2]
+    min_velocity: [-0.3, 0.0, -1.2]
     max_accel: [2.5, 0.0, 3.2]
     max_decel: [-2.5, 0.0, -3.2]
     odom_topic: "odom"
