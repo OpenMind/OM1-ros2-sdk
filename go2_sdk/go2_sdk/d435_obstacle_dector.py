@@ -56,7 +56,13 @@ class D435ObstacleDector(Node):
         except Exception as e:
             self.get_logger().error(f"Error processing depth info: {e}")
 
-    def image_to_world_vectorized(self, depth_image: np.ndarray, camera_ahead=0.3, camera_height=0.45, tilt_angle=55):
+    def image_to_world_vectorized(
+        self,
+        depth_image: np.ndarray,
+        camera_ahead=0.3,
+        camera_height=0.45,
+        tilt_angle=55,
+    ):
         """
         Vectorized conversion from image coordinates to world coordinates
 
