@@ -355,11 +355,11 @@ def generate_launch_description():
         parameters=[{"use_sim_time": use_sim_time}],
     )
 
-    # Go2 sport action node
-    go2_sport_action_node = Node(
+    # Go2 sport node
+    go2_sport_node = Node(
         package="go2_gazebo_sim",
-        executable="go2_sport_action_node",
-        name="go2_sport_action_node",
+        executable="go2_sport_node",
+        name="go2_sport_node",
         output="screen",
         parameters=[{"use_sim_time": use_sim_time}],
     )
@@ -443,8 +443,8 @@ def generate_launch_description():
             controller_status_check,
             # Visualization (only if rviz flag is set)
             rviz2,
-            # Go2 sport action node
-            go2_sport_action_node,
+            # Go2 sport node
+            go2_sport_node,
             # Go2 lowstate node
             go2_lowstate_node,
             # Go2 remapping node

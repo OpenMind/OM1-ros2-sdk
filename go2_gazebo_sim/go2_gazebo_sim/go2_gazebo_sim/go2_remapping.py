@@ -49,6 +49,7 @@ class Go2RemappingNode(Node):
         robot_pose.header.frame_id = "odom"
 
         robot_pose.pose.position = msg.pose.pose.position
+        robot_pose.pose.position.z += 0.3
         robot_pose.pose.orientation = msg.pose.pose.orientation
 
         self.robot_pose_publisher.publish(robot_pose)
