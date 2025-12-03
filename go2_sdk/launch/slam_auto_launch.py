@@ -3,7 +3,7 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.conditions import IfCondition, UnlessCondition
+from launch.conditions import UnlessCondition
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
@@ -129,7 +129,6 @@ def generate_launch_description():
                     "laser",
                 ],
                 output="screen",
-                condition=UnlessCondition(use_sim),
             ),
             Node(
                 package="go2_sdk",
@@ -214,14 +213,6 @@ def generate_launch_description():
                         ]
                     },
                 ],
-            ),
-            Node(
-                package="topic_tools",
-                executable="relay",
-                name="lidar_topic_relay",
-                arguments=["/unitree_lidar/points", "/utlidar/cloud_deskewed"],
-                output="screen",
-                condition=IfCondition(use_sim),
             ),
             Node(
                 package="nav2_controller",

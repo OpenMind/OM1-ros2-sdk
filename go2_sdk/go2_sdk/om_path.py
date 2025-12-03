@@ -220,59 +220,14 @@ class OMPath(Node):
 
     def obstacle_callback(self, obstacle_cloud_msg: PointCloud):
         """
-        Receive depth-based obstacle points in the camera frame and transform them
-        into the robot frame (self.robot_frame). The result is stored in
-        self.obstacle as a PointCloud in robot frame.
+        Store obstacle point cloud message.
+
+        Parameters:
+        -----------
+        obstacle_cloud_msg : sensor_msgs.msg.PointCloud
+            The incoming obstacle point cloud message.
         """
-        source_frame = (
-            obstacle_cloud_msg.header.frame_id
-        )  # e.g. "camera_depth_optical_frame"
-        target_frame = self.robot_frame  # e.g. "base_link"
-
-        try:
-            transform_camera_to_robot = self.tf_buffer.lookup_transform(
-                target_frame,
-                source_frame,
-                Time.from_msg(obstacle_cloud_msg.header.stamp),
-            )
-        except TransformException as ex:
-            self.get_logger().warn(
-                f"TF lookup failed for depth obstacles {source_frame} -> {target_frame}: {ex}"
-            )
-            return
-
-        # PointCloud expressed in robot frame
-        obstacle_cloud_robot_frame = PointCloud()
-        obstacle_cloud_robot_frame.header.stamp = obstacle_cloud_msg.header.stamp
-        obstacle_cloud_robot_frame.header.frame_id = target_frame
-        obstacle_cloud_robot_frame.points = []
-
-        point_in_source_frame = PointStamped()
-        point_in_source_frame.header = obstacle_cloud_msg.header
-
-        for point in obstacle_cloud_msg.points:
-            # Fill input point (camera frame)
-            point_in_source_frame.point.x = float(point.x)
-            point_in_source_frame.point.y = float(point.y)
-            point_in_source_frame.point.z = float(point.z)
-
-            try:
-                point_in_robot_frame = do_transform_point(
-                    point_in_source_frame, transform_camera_to_robot
-                )
-            except TransformException as ex:
-                self.get_logger().warn(f"Failed to transform depth point: {ex}")
-                continue
-
-            transformed_point = Point()
-            transformed_point.x = point_in_robot_frame.point.x
-            transformed_point.y = point_in_robot_frame.point.y
-            transformed_point.z = point_in_robot_frame.point.z
-
-            obstacle_cloud_robot_frame.points.append(transformed_point)
-
-        # Store the transformed cloud for later use in scan_callback
-        self.obstacle = obstacle_cloud_robot_frame
+        self.obstacle = obstacle_cloud_msg
 
     def _rot_array_deg(self, arr_xy: np.ndarray, yaw_deg: float) -> np.ndarray:
         """

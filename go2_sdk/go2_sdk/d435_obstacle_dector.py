@@ -106,18 +106,17 @@ class D435ObstacleDector(Node):
         if not np.any(obstacle_mask):
             return []
 
-        # Only select which points are obstacles, but output coordinates are still in camera frame
-        cam_x_filtered = cam_x[obstacle_mask]
-        cam_y_filtered = cam_y[obstacle_mask]
-        cam_z_filtered = cam_z[obstacle_mask]
+        world_x_filtered = points_world[0][obstacle_mask]
+        world_y_filtered = points_world[1][obstacle_mask]
+        world_z_filtered = points_world[2][obstacle_mask]
 
         obstacles = []
-        for i in range(len(cam_x_filtered)):
+        for i in range(len(world_x_filtered)):
             obstacles.append(
                 Point32(
-                    x=float(cam_x_filtered[i]),
-                    y=float(cam_y_filtered[i]),
-                    z=float(cam_z_filtered[i]),
+                    x=float(world_x_filtered[i]),
+                    y=float(world_y_filtered[i]),
+                    z=float(world_z_filtered[i]),
                 )
             )
 
@@ -135,7 +134,8 @@ class D435ObstacleDector(Node):
             self.get_logger().debug(f"Detected {len(self.obstacle)} obstacles")
 
             pc_msg = PointCloud()
-            pc_msg.header = msg.header
+            pc_msg.header.stamp = msg.header.stamp
+            pc_msg.header.frame_id = "base_link"
             pc_msg.points = obstacle
             self.obstacle_pub.publish(pc_msg)
 
