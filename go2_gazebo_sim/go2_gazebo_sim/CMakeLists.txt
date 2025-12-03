@@ -49,4 +49,10 @@ install(PROGRAMS
   RENAME go2_lowstate_node
 )
 
+install(PROGRAMS
+  go2_gazebo_sim/intel435_depth.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME intel435_depth_node
+)
+
 ament_package()

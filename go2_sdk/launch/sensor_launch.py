@@ -1,7 +1,12 @@
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.conditions import IfCondition
-from launch.substitutions import EnvironmentVariable, LaunchConfiguration
+from launch.conditions import IfCondition, UnlessCondition
+from launch.substitutions import (
+    AndSubstitution,
+    EnvironmentVariable,
+    LaunchConfiguration,
+    NotSubstitution,
+)
 from launch_ros.actions import Node
 
 
@@ -39,6 +44,10 @@ def generate_launch_description():
     d435_camera_stream_enable = LaunchConfiguration(
         "d435_camera_stream_enable",
         default=EnvironmentVariable("D435_CAMERA_STREAM_ENABLE", default_value="true"),
+    )
+    use_sim = LaunchConfiguration(
+        "use_sim",
+        default=EnvironmentVariable("USE_SIM", default_value="false"),
     )
 
     return LaunchDescription(
@@ -88,6 +97,11 @@ def generate_launch_description():
                 default_value=d435_camera_stream_enable,
                 description="Enable or disable the d435_camera_stream node (can be set via D435_CAMERA_STREAM_ENABLE environment variable)",
             ),
+            DeclareLaunchArgument(
+                "use_sim",
+                default_value=use_sim,
+                description="Enable or disable simulation mode (can be set via USE_SIM environment variable)",
+            ),
             Node(
                 package="rplidar_ros",
                 executable="rplidar_node",
@@ -105,6 +119,7 @@ def generate_launch_description():
                 output="screen",
                 respawn=True,
                 respawn_delay=2.0,
+                condition=UnlessCondition(use_sim),
             ),
             Node(
                 package="realsense2_camera",
@@ -126,6 +141,7 @@ def generate_launch_description():
                 output="screen",
                 respawn=True,
                 respawn_delay=2.0,
+                condition=UnlessCondition(use_sim),
             ),
             Node(
                 package="depth_image_proc",
@@ -157,7 +173,7 @@ def generate_launch_description():
                     "--roll",
                     "0",
                     "--pitch",
-                    "0.5934119457",
+                    "0.610865",
                     "--yaw",
                     "0",
                     "--frame-id",
@@ -168,6 +184,7 @@ def generate_launch_description():
                 output="screen",
                 respawn=True,
                 respawn_delay=2.0,
+                condition=UnlessCondition(use_sim),
             ),
             Node(
                 package="topic_tools",
@@ -177,6 +194,7 @@ def generate_launch_description():
                 output="screen",
                 respawn=True,
                 respawn_delay=2.0,
+                condition=UnlessCondition(use_sim),
             ),
             Node(
                 package="go2_sdk",
@@ -209,7 +227,9 @@ def generate_launch_description():
                 output="screen",
                 respawn=True,
                 respawn_delay=2.0,
-                condition=IfCondition(go2_camera_stream_enable),
+                condition=IfCondition(
+                    AndSubstitution(go2_camera_stream_enable, NotSubstitution(use_sim))
+                ),
             ),
             Node(
                 package="go2_sdk",
@@ -218,7 +238,9 @@ def generate_launch_description():
                 output="screen",
                 respawn=True,
                 respawn_delay=2.0,
-                condition=IfCondition(d435_camera_stream_enable),
+                condition=IfCondition(
+                    AndSubstitution(d435_camera_stream_enable, NotSubstitution(use_sim))
+                ),
             ),
         ]
     )

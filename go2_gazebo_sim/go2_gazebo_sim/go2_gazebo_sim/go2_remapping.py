@@ -4,6 +4,7 @@ import rclpy
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Odometry
 from rclpy.node import Node
+from sensor_msgs.msg import PointCloud2
 
 
 class Go2RemappingNode(Node):
@@ -22,6 +23,14 @@ class Go2RemappingNode(Node):
 
         self.robot_pose_publisher = self.create_publisher(
             PoseStamped, "/utlidar/robot_pose", 10
+        )
+
+        self.lidar_subscription = self.create_subscription(
+            PointCloud2, "/unitree_lidar/points", self.lidar_callback, 10
+        )
+
+        self.lidar_publisher = self.create_publisher(
+            PointCloud2, "/utlidar/cloud_deskewed", 10
         )
 
     def odom_callback(self, msg: Odometry):
@@ -44,6 +53,19 @@ class Go2RemappingNode(Node):
 
         self.robot_pose_publisher.publish(robot_pose)
         self.get_logger().debug("Published remapped robot pose with frame_id: odom")
+
+    def lidar_callback(self, msg: PointCloud2):
+        """
+        Callback function for LiDAR point cloud messages.
+        Remaps LiDAR data from /unitree_lidar/points to /utlidar/cloud_deskewed.
+
+        Parameters:
+        -----------
+        msg : sensor_msgs.msg.PointCloud2
+            The incoming LiDAR point cloud message.
+        """
+        self.lidar_publisher.publish(msg)
+        self.get_logger().debug("Published remapped LiDAR point cloud")
 
 
 def main(args=None):

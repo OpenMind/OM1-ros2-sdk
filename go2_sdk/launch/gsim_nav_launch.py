@@ -75,7 +75,6 @@ def generate_launch_description():
             parameters=[nav2_config, {"use_sim_time": use_sim_time}],
             remappings=[
                 ("/cmd_vel", "/cmd_vel_nav"),
-                ("/utlidar/cloud_deskewed", "/unitree_lidar/points"),
             ],
         ),
         Node(

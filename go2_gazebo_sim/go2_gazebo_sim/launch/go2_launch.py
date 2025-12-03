@@ -286,7 +286,7 @@ def generate_launch_description():
             "/scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan",
             "/odom@nav_msgs/msg/Odometry@gz.msgs.Odometry",
             "/rgb_image@sensor_msgs/msg/Image@gz.msgs.Image",
-            "/camera/realsense2_camera_node/depth/image_rect_raw@sensor_msgs/msg/Image@gz.msgs.Image",
+            "/camera/realsense2_camera_node/depth/image_rect_gazebo_raw@sensor_msgs/msg/Image@gz.msgs.Image",
             "/camera/realsense2_camera_node/color/image_raw@sensor_msgs/msg/Image@gz.msgs.Image",
             "/camera/realsense2_camera_node/depth/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo",
             "/camera/realsense2_camera_node/color/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo",
@@ -373,6 +373,15 @@ def generate_launch_description():
         parameters=[{"use_sim_time": use_sim_time}],
     )
 
+    # depth remapping node for Intel D435
+    intel435_depth_node = Node(
+        package="go2_gazebo_sim",
+        executable="intel435_depth_node",
+        name="intel435_depth_node",
+        output="screen",
+        parameters=[{"use_sim_time": use_sim_time}],
+    )
+
     # Nodes for teleoperation
     joy = Node(package="joy", executable="joy_node", name="joy_node", output="screen")
     # RB is the enable button
@@ -440,6 +449,8 @@ def generate_launch_description():
             go2_lowstate_node,
             # Go2 remapping node
             go2_remapping_node,
+            # Intel D435 depth remapping node
+            intel435_depth_node,
             # Teleoperation nodes
             joy,
             joy_teleops_node,
