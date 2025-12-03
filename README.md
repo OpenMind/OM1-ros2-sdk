@@ -8,8 +8,7 @@ This package integrates:
 - **RPLiDAR** for laser scanning
 - **SLAM Toolbox** for mapping and localization
 - **Nav2** for autonomous navigation
-- **Transform broadcasting** for robot pose integration
-- **RViz visualization** for real-time monitoring
+- **Gazebo Simulatore** for **Unitree Go2**
 
 ## Features
 
@@ -18,9 +17,9 @@ This package integrates:
 - **Navigation**: Integration with Nav2 for autonomous navigation
 - **Robot Control**: Direct integration with Unitree Go2 movement commands
 - **Visualization**: Pre-configured RViz setup for monitoring
-- **Transform Management**: Automatic handling of coordinate frame transforms
 - **Auto Charging**: AprilTag-based visual docking combined with Nav2 navigation
 - **3D Slam Map**: Builds a 3D SLAM map to help the robot navigate
+- **Gazebo Simulatore**: Simulator environment for OM1
 
 ## Prerequisites
 
@@ -322,6 +321,50 @@ Open the network settings and find the network interface that the robot is conne
 
 Then you can subscribe to the topics published by the Orin AGX and the Unitree Go2 robot.
 
+## Gazebo Setup
+
+To set up the **Gazebo Simulator**, please install **ROS2 Humble** first.
+
+> [!NOTE]
+>
+> If you are using **ROS2 Jazzy**, you might need to manually modify the configuration file for **SLAM** and **NAV2** to ensure compatibility.
+
+Once **ROS2 Humble** is installed, use the following **CycloneDDS** configuration. It uses `lo` as the network interface.
+
+```xml
+<CycloneDDS>
+    <Domain>
+        <General>
+            <Interfaces>
+                <NetworkInterface address="127.0.0.1" priority="default" multicast="default" />
+            </Interfaces>
+    </General>
+        <Discovery>
+            <MaxAutoParticipantIndex>200</MaxAutoParticipantIndex>
+        </Discovery>
+    </Domain>
+</CycloneDDS>
+```
+
+Then you can start **Gazebo Simulator** through the following commands.
+
+- Start the **Gazebo Simulator**
+
+  ```bash
+  ros2 launch go2_gazebo_sim go2_launch.py
+  ```
+
+- Start the **OM1 sensor** to generate the `OM Path`
+
+  ```bash
+  ros2 launch go2_sdk sensor_launch.py use_sim:=true
+  ```
+
+- Start the  **Auto SLAM** to automatically generate the map
+
+  ```bash
+  ros2 launch go2_sdk slam_auto_launch.py use_sim:=true
+  ```
 
 ## Troubleshooting
 
