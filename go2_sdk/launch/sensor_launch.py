@@ -1,7 +1,12 @@
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.conditions import IfCondition, UnlessCondition
-from launch.substitutions import EnvironmentVariable, LaunchConfiguration, AndSubstitution, NotSubstitution
+from launch.substitutions import (
+    AndSubstitution,
+    EnvironmentVariable,
+    LaunchConfiguration,
+    NotSubstitution,
+)
 from launch_ros.actions import Node
 
 
@@ -222,7 +227,9 @@ def generate_launch_description():
                 output="screen",
                 respawn=True,
                 respawn_delay=2.0,
-                condition=IfCondition(AndSubstitution(go2_camera_stream_enable, NotSubstitution(use_sim))),
+                condition=IfCondition(
+                    AndSubstitution(go2_camera_stream_enable, NotSubstitution(use_sim))
+                ),
             ),
             Node(
                 package="go2_sdk",
@@ -231,7 +238,9 @@ def generate_launch_description():
                 output="screen",
                 respawn=True,
                 respawn_delay=2.0,
-                condition=IfCondition(AndSubstitution(d435_camera_stream_enable, NotSubstitution(use_sim))),
+                condition=IfCondition(
+                    AndSubstitution(d435_camera_stream_enable, NotSubstitution(use_sim))
+                ),
             ),
         ]
     )

@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
-import rclpy
 import numpy as np
-from sensor_msgs.msg import Image
-from rclpy.node import Node
+import rclpy
 from cv_bridge import CvBridge
+from rclpy.node import Node
+from sensor_msgs.msg import Image
+
 
 class Intel435DepthNode(Node):
     """
@@ -49,19 +50,26 @@ class Intel435DepthNode(Node):
             if cv_image.dtype == np.float32:
                 processed_image = cv_image * 1000.0
             elif cv_image.dtype == np.uint16:
-                processed_image = (cv_image.astype(np.float32) * 1000.0).astype(np.uint16)
+                processed_image = (cv_image.astype(np.float32) * 1000.0).astype(
+                    np.uint16
+                )
             else:
                 processed_image = cv_image * 1000
 
-            output_msg = self.bridge.cv2_to_imgmsg(processed_image, encoding=msg.encoding)
+            output_msg = self.bridge.cv2_to_imgmsg(
+                processed_image, encoding=msg.encoding
+            )
             output_msg.header = msg.header
             self.depth_image_publisher.publish(output_msg)
 
-            self.get_logger().debug(f"Published remapped depth image with shape: {cv_image.shape}")
+            self.get_logger().debug(
+                f"Published remapped depth image with shape: {cv_image.shape}"
+            )
 
         except Exception as e:
             self.get_logger().error(f"Error processing depth image: {str(e)}")
             self.depth_image_publisher.publish(msg)
+
 
 def main(args=None):
     """

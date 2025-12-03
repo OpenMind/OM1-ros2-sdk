@@ -3,8 +3,8 @@
 import rclpy
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Odometry
-from sensor_msgs.msg import PointCloud2
 from rclpy.node import Node
+from sensor_msgs.msg import PointCloud2
 
 
 class Go2RemappingNode(Node):

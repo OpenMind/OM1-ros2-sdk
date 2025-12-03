@@ -3,13 +3,11 @@ import math
 import numpy as np
 import rclpy
 import tf2_ros
-from geometry_msgs.msg import Point, PointStamped
+from geometry_msgs.msg import Point
 from rclpy.node import Node
 from rclpy.time import Time
 from sensor_msgs.msg import LaserScan, PointCloud, PointCloud2
 from sensor_msgs_py import point_cloud2 as pc2
-from tf2_geometry_msgs import do_transform_point
-from tf2_ros import TransformException
 from visualization_msgs.msg import Marker, MarkerArray
 
 from om_api.msg import Paths
