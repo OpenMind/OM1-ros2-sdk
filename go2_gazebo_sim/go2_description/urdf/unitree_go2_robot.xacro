@@ -112,7 +112,7 @@
     <joint name="camera_joint" type="fixed">
         <parent link="trunk"/>
         <child link="camera_link"/>
-        <origin rpy="0 0.6109 0" xyz="0.33 0 0.065"/>
+        <origin rpy="0 0.6109 0" xyz="0.33 0 0.085"/>
     </joint>
 
 

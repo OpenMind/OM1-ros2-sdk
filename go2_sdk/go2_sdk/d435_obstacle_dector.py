@@ -38,7 +38,15 @@ class D435ObstacleDector(Node):
 
         self.get_logger().info("Intel435ObstacleDector node started")
 
-    def depth_info_callback(self, msg):
+    def depth_info_callback(self, msg: CameraInfo):
+        """
+        Callback function for depth camera info messages.
+
+        Parameters:
+        -----------
+        msg : sensor_msgs.msg.CameraInfo
+            The incoming camera info message.
+        """
         try:
             self.camera_info = msg
             self.fx = msg.k[0]
@@ -48,9 +56,20 @@ class D435ObstacleDector(Node):
         except Exception as e:
             self.get_logger().error(f"Error processing depth info: {e}")
 
-    def image_to_world_vectorized(self, depth_image, camera_height=0.45, tilt_angle=55):
+    def image_to_world_vectorized(self, depth_image: np.ndarray, camera_ahead=0.3, camera_height=0.45, tilt_angle=55):
         """
         Vectorized conversion from image coordinates to world coordinates
+
+        Parameters:
+        -----------
+        depth_image : np.ndarray
+            The depth image as a 2D numpy array.
+        camera_ahead : float
+            The forward offset of the camera from the robot base (in meters).
+        camera_height : float
+            The height of the camera from the ground (in meters).
+        tilt_angle : float
+            The tilt angle of the camera in degrees.
         """
         if self.fx is None or self.fy is None or self.cx is None or self.cy is None:
             self.get_logger().debug("Camera intrinsics not available yet")
@@ -97,7 +116,7 @@ class D435ObstacleDector(Node):
         R_combined = R_align @ R_tilt
         points_world = R_combined @ points_camera
 
-        camera_position_world = np.array([[0], [0], [camera_height]])
+        camera_position_world = np.array([[camera_ahead], [0], [camera_height]])
         points_world = points_world + camera_position_world
 
         world_z = points_world[2]  # up
@@ -122,7 +141,15 @@ class D435ObstacleDector(Node):
 
         return obstacles
 
-    def depth_callback(self, msg):
+    def depth_callback(self, msg: Image):
+        """
+        Callback function for depth image messages.
+
+        Parameters:
+        -----------
+        msg : sensor_msgs.msg.Image
+            The incoming depth image message.
+        """
         try:
             depth_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding="passthrough")
 

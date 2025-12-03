@@ -65,6 +65,10 @@ QuadrupedController::QuadrupedController():
     this->get_parameter("joint_controller_topic",      joint_control_topic);
     this->get_parameter("loop_rate",                   loop_rate);
     this->get_parameter("urdf",                        urdf);
+    this->get_parameter_or("cmd_vel_timeout", cmd_vel_timeout_, 1.0);
+
+    cmd_vel_received_ = false;
+    last_cmd_vel_time_ = this->get_clock()->now();
 
     cmd_vel_subscription_ = this->create_subscription<geometry_msgs::msg::Twist>(
         "cmd_vel/smooth", 10, std::bind(&QuadrupedController::cmdVelCallback_, this,  std::placeholders::_1));
@@ -95,7 +99,13 @@ QuadrupedController::QuadrupedController():
 
     loop_timer_ = this->create_wall_timer(
          std::chrono::duration_cast<std::chrono::milliseconds>(period), std::bind(&QuadrupedController::controlLoop_, this));
+
+    timeout_timer_ = this->create_wall_timer(
+         std::chrono::milliseconds(100), std::bind(&QuadrupedController::checkCmdVelTimeout_, this));
+
     req_pose_.position.z = gait_config_.nominal_height;
+
+    RCLCPP_INFO(this->get_logger(), "QuadrupedController initialized with cmd_vel timeout: %.1f seconds", cmd_vel_timeout_);
 }
 
 void QuadrupedController::controlLoop_()
@@ -118,6 +128,30 @@ void QuadrupedController::cmdVelCallback_(const geometry_msgs::msg::Twist::Share
     req_vel_.linear.x = msg->linear.x;
     req_vel_.linear.y = msg->linear.y;
     req_vel_.angular.z = msg->angular.z;
+
+    last_cmd_vel_time_ = this->get_clock()->now();
+    cmd_vel_received_ = true;
+
+    RCLCPP_DEBUG(this->get_logger(), "Received cmd_vel: vx=%.3f, vy=%.3f, vz=%.3f",
+                 msg->linear.x, msg->linear.y, msg->angular.z);
+}
+
+void QuadrupedController::checkCmdVelTimeout_()
+{
+    if (!cmd_vel_received_) {
+        return;
+    }
+
+    auto current_time = this->get_clock()->now();
+    auto time_since_last_cmd = (current_time - last_cmd_vel_time_).seconds();
+
+    if (time_since_last_cmd > cmd_vel_timeout_) {
+        bool was_moving = (req_vel_.linear.x != 0.0 || req_vel_.linear.y != 0.0 || req_vel_.angular.z != 0.0);
+
+        req_vel_.linear.x = 0.0;
+        req_vel_.linear.y = 0.0;
+        req_vel_.angular.z = 0.0;
+    }
 }
 
 void QuadrupedController::cmdPoseCallback_(const geometry_msgs::msg::Pose::SharedPtr msg)
