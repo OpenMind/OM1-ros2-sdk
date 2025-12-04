@@ -8,6 +8,7 @@ from launch.actions import (
     ExecuteProcess,
     IncludeLaunchDescription,
     TimerAction,
+    SetEnvironmentVariable,
 )
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -32,7 +33,25 @@ def generate_launch_description():
     gait_config = os.path.join(go2_gazebo_sim, "config/gait/gait.yaml")
     links_config = os.path.join(go2_gazebo_sim, "config/links/links.yaml")
     default_model_path = os.path.join(go2_description, "urdf/unitree_go2_robot.xacro")
-    default_world_path = os.path.join(go2_description, "worlds/maze_world.sdf")
+    default_world_path = os.path.join(go2_description, "worlds/home_world.sdf")
+
+    # Add go2_description/models to GZ_SIM_RESOURCE_PATH
+    go2_description_models = os.path.join(go2_description, "models")
+
+    # Ensure GZ_SIM_RESOURCE_PATH includes the models directory
+    current_gz_resource_path = os.environ.get("GZ_SIM_RESOURCE_PATH", "")
+    if go2_description_models not in current_gz_resource_path:
+        if current_gz_resource_path:
+            new_gz_resource_path = current_gz_resource_path + ":" + go2_description_models
+        else:
+            new_gz_resource_path = go2_description_models
+    else:
+        new_gz_resource_path = current_gz_resource_path
+
+    set_gz_resource_path = SetEnvironmentVariable(
+        name="GZ_SIM_RESOURCE_PATH",
+        value=new_gz_resource_path
+    )
 
     declare_use_sim_time = DeclareLaunchArgument(
         "use_sim_time",
@@ -247,6 +266,31 @@ def generate_launch_description():
         }.items(),
     )
 
+    # Spawn ArUco Marker
+    # We use the absolute path to the model.sdf to avoid model:// URI resolution issues
+    aruco_model_path = os.path.join(go2_description, "models/aruco_marker/model.sdf")
+
+    gazebo_spawn_aruco = Node(
+        package="ros_gz_sim",
+        executable="create",
+        name="spawn_aruco",
+        output="screen",
+        arguments=[
+            "-name",
+            "aruco_marker",
+            "-file",
+            aruco_model_path,
+            "-x",
+            "-1.91",
+            "-y",
+            "-1.99",
+            "-z",
+            "0.1",
+            "-Y",
+            "1.57",
+        ],
+    )
+
     # Spawn robot in Gazebo Sim
     gazebo_spawn_robot = Node(
         package="ros_gz_sim",
@@ -410,6 +454,7 @@ def generate_launch_description():
     return LaunchDescription(
         [
             # Launch arguments
+            set_gz_resource_path,
             declare_use_sim_time,
             declare_rviz,
             declare_robot_name,
@@ -427,6 +472,7 @@ def generate_launch_description():
             gz_sim,
             robot_state_publisher_node,
             gazebo_spawn_robot,
+            gazebo_spawn_aruco,
             gazebo_bridge,
             # CHAMP controller nodes
             quadruped_controller_node,
