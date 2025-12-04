@@ -378,6 +378,7 @@ planner_server:
       allow_unknown: True  # Allow planning through unknown space
       max_iterations: 1000000
       max_on_approach_iterations: 1000
+      max_planning_time: 5.0
       smooth_path: True
       #Add cost_travel_multiplier to prefer free space
       cost_travel_multiplier: 2.0 # Higher = prefer low cost areas vs short path
