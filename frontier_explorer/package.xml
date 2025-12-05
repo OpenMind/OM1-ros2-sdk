@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>explore_lite_py</name>
+  <name>frontier_explorer</name>
   <version>0.0.1</version>
-  <description>Python implementation of explore_lite</description>
-  <maintainer email="user@example.com">User</maintainer>
+  <description>Frontier explorer</description>
+  <maintainer email="hello@openmind.org">User</maintainer>
   <license>BSD</license>
 
   <buildtool_depend>ament_python</buildtool_depend>

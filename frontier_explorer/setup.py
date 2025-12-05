@@ -2,7 +2,7 @@ from setuptools import setup
 import os
 from glob import glob
 
-package_name = 'explore_lite_py'
+package_name = 'frontier_explorer'
 
 setup(
     name=package_name,
@@ -18,12 +18,12 @@ setup(
     install_requires=['setuptools'],
     zip_safe=True,
     maintainer='User',
-    maintainer_email='user@example.com',
-    description='Python implementation of explore_lite',
+    maintainer_email='hello@openmind.org',
+    description='Frontier explorer',
     license='BSD',
     entry_points={
         'console_scripts': [
-            'explore = explore_lite_py.explore:main',
+            'explore = frontier_explorer.explore:main',
         ],
     },
 )

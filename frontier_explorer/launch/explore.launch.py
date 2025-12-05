@@ -12,7 +12,7 @@ def generate_launch_description():
     ld = LaunchDescription()
 
     config = os.path.join(
-        get_package_share_directory("explore_lite_py"), "config", "params.yaml"
+        get_package_share_directory("frontier_explorer"), "config", "params.yaml"
     )
 
     use_sim_time = LaunchConfiguration("use_sim_time")
@@ -30,7 +30,7 @@ def generate_launch_description():
     remappings = [("/tf", "tf"), ("/tf_static", "tf_static")]
 
     node = Node(
-        package="explore_lite_py",
+        package="frontier_explorer",
         name="explore_node",
         namespace=namespace,
         executable="explore",
