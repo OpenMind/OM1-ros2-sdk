@@ -37,9 +37,13 @@ class Explore(Node):
         self.prev_goal = None
         self.current_goal_handle = None
 
+        self.last_robot_pose = None
+        self.last_pose_time = None
+
         # Parameters
         self.declare_parameter('planner_frequency', 1.0)
         self.declare_parameter('progress_timeout', 30.0)
+        self.declare_parameter('min_velocity_threshold', 0.01)
         self.declare_parameter('blacklist_attempts', 3)
         self.declare_parameter('blacklist_duration', 300.0)
         self.declare_parameter('visualize', False)
@@ -51,6 +55,7 @@ class Explore(Node):
 
         self.planner_frequency = self.get_parameter('planner_frequency').value
         self.progress_timeout = self.get_parameter('progress_timeout').value
+        self.min_velocity_threshold = self.get_parameter('min_velocity_threshold').value
         self.blacklist_attempts = self.get_parameter('blacklist_attempts').value
         self.blacklist_duration = self.get_parameter('blacklist_duration').value
         self.visualize = self.get_parameter('visualize').value
@@ -176,6 +181,51 @@ class Explore(Node):
         self.last_markers_count = id
         self.marker_array_publisher.publish(markers_msg)
 
+    def check_robot_progress(self, current_pose: Point) -> bool:
+        """
+        Check if the robot is making progress using velocity-based detection.
+
+        Progress is defined as the robot moving at a velocity above the threshold,
+        regardless of whether it's getting closer to the goal (handles obstacle avoidance).
+
+        Parameters:
+        ----------
+        current_pose: Point
+            The robot's current position.
+
+        Returns:
+        -------
+        bool
+            True if robot is making progress (moving), False if stuck.
+        """
+        current_time = self.get_clock().now()
+
+        if self.last_robot_pose is None or self.last_pose_time is None:
+            self.last_robot_pose = current_pose
+            self.last_pose_time = current_time
+            return True
+
+        time_delta = (current_time - self.last_pose_time).nanoseconds / 1e9
+
+        if time_delta < 0.1:
+            return True
+
+        dx = current_pose.x - self.last_robot_pose.x
+        dy = current_pose.y - self.last_robot_pose.y
+        distance = math.sqrt(dx*dx + dy*dy)
+
+        velocity = distance / time_delta
+
+        self.last_robot_pose = current_pose
+        self.last_pose_time = current_time
+
+        is_moving = velocity >= self.min_velocity_threshold
+
+        if not is_moving:
+            self.logger.debug(f"Robot velocity: {velocity:.3f} m/s (threshold: {self.min_velocity_threshold:.3f} m/s)")
+
+        return is_moving
+
     def make_plan(self):
         """
         Main planning loop that searches for frontiers and sends navigation goals.
@@ -235,7 +285,6 @@ class Explore(Node):
             info = f"Exploring - {len(frontiers)} frontiers available"
             self.publish_exploration_status(False, info)
 
-        # Timeout check
         if self.prev_goal is not None:
             same_goal = self.same_point(self.prev_goal, target_position)
         else:
@@ -243,13 +292,26 @@ class Explore(Node):
 
         self.prev_goal = target_position
 
-        if not same_goal or self.prev_distance > frontier.min_distance:
+        is_making_progress = self.check_robot_progress(pose.position)
+
+        getting_closer = self.prev_distance > frontier.min_distance
+
+        # Reset progress timer if:
+        # 1. Goal changed (new frontier selected)
+        # 2. Robot is moving (velocity-based)
+        # 3. Robot is getting closer to goal (distance-based backup)
+        if not same_goal or is_making_progress or getting_closer:
             self.last_progress = self.get_clock().now()
             self.prev_distance = frontier.min_distance
 
-        if (self.get_clock().now() - self.last_progress).nanoseconds / 1e9 > self.progress_timeout and not self.resuming:
+        # Timeout check - only trigger if robot is truly stuck
+        time_since_progress = (self.get_clock().now() - self.last_progress).nanoseconds / 1e9
+
+        if time_since_progress > self.progress_timeout and not self.resuming:
             self.add_to_blacklist(target_position)
-            self.logger.warn(f"Progress timeout ({self.progress_timeout}s). Adding current goal to black list.")
+            self.logger.warn(f"Robot stuck for {time_since_progress:.1f}s (no movement detected). Adding goal to blacklist.")
+            self.last_robot_pose = None
+            self.last_pose_time = None
             self.make_plan()
             return
 
@@ -259,7 +321,8 @@ class Explore(Node):
         if same_goal:
             return
 
-        self.logger.info(f"Sending goal to move base nav2: ({target_position.x:.2f}, {target_position.y:.2f})")
+        distance_to_goal = frontier.min_distance
+        self.logger.info(f"Sending goal to move base nav2: ({target_position.x:.2f}, {target_position.y:.2f}) at {distance_to_goal:.1f}m distance")
 
         goal_msg = NavigateToPose.Goal()
         goal_msg.pose.pose.position = target_position
@@ -313,28 +376,30 @@ class Explore(Node):
 
         result = future.result()
         status = result.status
-        # status 4 is SUCCEEDED, 5 is CANCELED, 6 is ABORTED in rclpy action client result?
-        # Actually result.status is from action_msgs/msg/GoalStatus
-        # STATUS_SUCCEEDED = 4
-        # STATUS_ABORTED = 6
-        # STATUS_CANCELED = 5
 
         from action_msgs.msg import GoalStatus
 
         if status == GoalStatus.STATUS_SUCCEEDED:
             self.logger.debug("Goal was successful")
+            self.last_robot_pose = None
+            self.last_pose_time = None
         elif status == GoalStatus.STATUS_ABORTED:
-            self.logger.warn("Goal was aborted. Goal was aborted")
+            self.logger.warn("Goal was aborted")
             self.add_to_blacklist(frontier_goal)
-            self.logger.warn("Adding current goal to black list")
+            self.logger.warn("Adding current goal to blacklist")
+            self.last_robot_pose = None
+            self.last_pose_time = None
             return
         elif status == GoalStatus.STATUS_CANCELED:
             self.logger.debug("Goal was canceled")
+            self.last_robot_pose = None
+            self.last_pose_time = None
             return
         else:
             self.logger.warn("Unknown result code from move base nav2")
 
         self.make_plan()
+
     def start(self):
         """
         Start the exploration process.
@@ -374,6 +439,9 @@ class Explore(Node):
         self.resuming = True
         self.logger.info("Exploration resuming.")
         self.exploration_complete = False
+        # Reset velocity tracking
+        self.last_robot_pose = None
+        self.last_pose_time = None
         self.publish_exploration_status(False, "Exploration resumed")
         self.exploring_timer.reset()
         self.make_plan()
@@ -465,13 +533,21 @@ class Explore(Node):
         key = (round(goal.x, 1), round(goal.y, 1))
         if key in self.frontier_blacklist:
             data = self.frontier_blacklist[key]
+
+            # Give up after max attempts
             if data['attempts'] >= self.blacklist_attempts:
                 self.get_logger().info(f"Goal ({goal.x:.2f}, {goal.y:.2f}) blacklisted due to too many attempts")
                 return True
+
+            # Retry after blacklist duration
             time_since_last = (self.get_clock().now() - data['last_attempt']).nanoseconds / 1e9
             if time_since_last < self.blacklist_duration:
                 self.get_logger().info(f"Goal ({goal.x:.2f}, {goal.y:.2f}) still blacklisted, last attempt {time_since_last:.1f}s ago")
                 return True
+            else:
+                self.get_logger().info(f"Goal ({goal.x:.2f}, {goal.y:.2f}) removed from blacklist after timeout")
+                del self.frontier_blacklist[key]
+
         return False
 
     def add_to_blacklist(self, goal: Point):
