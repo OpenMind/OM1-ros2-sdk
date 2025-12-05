@@ -1,11 +1,13 @@
-import rclpy
-from rclpy.node import Node
-from nav_msgs.msg import OccupancyGrid
-from map_msgs.msg import OccupancyGridUpdate
-from geometry_msgs.msg import Pose
-from tf2_ros import Buffer, TransformListener
-import numpy as np
 import threading
+
+import numpy as np
+import rclpy
+from geometry_msgs.msg import Pose
+from map_msgs.msg import OccupancyGridUpdate
+from nav_msgs.msg import OccupancyGrid
+from rclpy.node import Node
+from tf2_ros import Buffer
+
 
 class Costmap2DClient:
     """Client for accessing and managing costmap data from Nav2.
@@ -37,26 +39,23 @@ class Costmap2DClient:
         self._lock = threading.Lock()
 
         # Parameters
-        self.node.declare_parameter('robot_base_frame', 'base_link')
-        self.node.declare_parameter('costmap_topic', 'costmap')
-        self.node.declare_parameter('costmap_updates_topic', 'costmap_updates')
+        self.node.declare_parameter("robot_base_frame", "base_link")
+        self.node.declare_parameter("costmap_topic", "costmap")
+        self.node.declare_parameter("costmap_updates_topic", "costmap_updates")
 
-        self.robot_base_frame = self.node.get_parameter('robot_base_frame').value
-        costmap_topic = self.node.get_parameter('costmap_topic').value
-        costmap_updates_topic = self.node.get_parameter('costmap_updates_topic').value
+        self.robot_base_frame = self.node.get_parameter("robot_base_frame").value
+        costmap_topic = self.node.get_parameter("costmap_topic").value
+        costmap_updates_topic = self.node.get_parameter("costmap_updates_topic").value
 
         # Subscriptions
         self.costmap_sub = self.node.create_subscription(
-            OccupancyGrid,
-            costmap_topic,
-            self.costmap_callback,
-            10
+            OccupancyGrid, costmap_topic, self.costmap_callback, 10
         )
         self.costmap_updates_sub = self.node.create_subscription(
             OccupancyGridUpdate,
             costmap_updates_topic,
             self.costmap_updates_callback,
-            10
+            10,
         )
 
         self.node.get_logger().info("Waiting for costmap to be ready...")
@@ -77,7 +76,9 @@ class Costmap2DClient:
         """
         with self._lock:
             self.costmap_info = msg.info
-            self.costmap = np.array(msg.data, dtype=np.int8).reshape(msg.info.height, msg.info.width)
+            self.costmap = np.array(msg.data, dtype=np.int8).reshape(
+                msg.info.height, msg.info.width
+            )
             self.global_frame = msg.header.frame_id
 
     def costmap_updates_callback(self, msg: OccupancyGridUpdate):
@@ -97,7 +98,7 @@ class Costmap2DClient:
 
             # Update the costmap
             data = np.array(msg.data, dtype=np.int8).reshape(msg.height, msg.width)
-            self.costmap[msg.y:msg.y+msg.height, msg.x:msg.x+msg.width] = data
+            self.costmap[msg.y : msg.y + msg.height, msg.x : msg.x + msg.width] = data
 
     def get_robot_pose(self) -> Pose:
         """Get the current pose of the robot in the global frame.
@@ -115,9 +116,7 @@ class Costmap2DClient:
                 return Pose()
 
             trans = self.tf_buffer.lookup_transform(
-                self.global_frame,
-                self.robot_base_frame,
-                rclpy.time.Time()
+                self.global_frame, self.robot_base_frame, rclpy.time.Time()
             )
 
             pose = Pose()

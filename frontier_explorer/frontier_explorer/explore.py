@@ -1,16 +1,18 @@
-import rclpy
-from rclpy.node import Node
-from rclpy.action import ActionClient
-from rclpy.duration import Duration
-from rclpy.time import Time
-from geometry_msgs.msg import PoseStamped, Point
-from std_msgs.msg import Bool, String, ColorRGBA
-from visualization_msgs.msg import MarkerArray, Marker
-from nav2_msgs.action import NavigateToPose
-from tf2_ros import Buffer, TransformListener, TransformException
 import math
+
+import rclpy
 from explore_lite_py.costmap_client import Costmap2DClient
 from explore_lite_py.frontier_search import FrontierSearch
+from geometry_msgs.msg import Point, PoseStamped
+from nav2_msgs.action import NavigateToPose
+from rclpy.action import ActionClient
+from rclpy.duration import Duration
+from rclpy.node import Node
+from rclpy.time import Time
+from std_msgs.msg import Bool, ColorRGBA, String
+from tf2_ros import Buffer, TransformException, TransformListener
+from visualization_msgs.msg import Marker, MarkerArray
+
 
 class Explore(Node):
     def __init__(self):
@@ -20,7 +22,7 @@ class Explore(Node):
         Sets up the navigation action client, costmap client, frontier search,
         publishers, subscriptions, and begins the exploration process.
         """
-        super().__init__('explore_node')
+        super().__init__("explore_node")
 
         self.logger = self.get_logger()
         self.tf_buffer = Buffer()
@@ -41,52 +43,69 @@ class Explore(Node):
         self.last_pose_time = None
 
         # Parameters
-        self.declare_parameter('planner_frequency', 1.0)
-        self.declare_parameter('progress_timeout', 30.0)
-        self.declare_parameter('min_velocity_threshold', 0.01)
-        self.declare_parameter('blacklist_attempts', 3)
-        self.declare_parameter('blacklist_duration', 300.0)
-        self.declare_parameter('visualize', False)
-        self.declare_parameter('potential_scale', 1e-3)
-        self.declare_parameter('orientation_scale', 0.0)
-        self.declare_parameter('gain_scale', 1.0)
-        self.declare_parameter('min_frontier_size', 0.5)
-        self.declare_parameter('return_to_init', False)
+        self.declare_parameter("planner_frequency", 1.0)
+        self.declare_parameter("progress_timeout", 30.0)
+        self.declare_parameter("min_velocity_threshold", 0.01)
+        self.declare_parameter("blacklist_attempts", 3)
+        self.declare_parameter("blacklist_duration", 300.0)
+        self.declare_parameter("visualize", False)
+        self.declare_parameter("potential_scale", 1e-3)
+        self.declare_parameter("orientation_scale", 0.0)
+        self.declare_parameter("gain_scale", 1.0)
+        self.declare_parameter("min_frontier_size", 0.5)
+        self.declare_parameter("return_to_init", False)
 
-        self.planner_frequency = self.get_parameter('planner_frequency').value
-        self.progress_timeout = self.get_parameter('progress_timeout').value
-        self.min_velocity_threshold = self.get_parameter('min_velocity_threshold').value
-        self.blacklist_attempts = self.get_parameter('blacklist_attempts').value
-        self.blacklist_duration = self.get_parameter('blacklist_duration').value
-        self.visualize = self.get_parameter('visualize').value
-        self.potential_scale = self.get_parameter('potential_scale').value
-        self.orientation_scale = self.get_parameter('orientation_scale').value
-        self.gain_scale = self.get_parameter('gain_scale').value
-        self.min_frontier_size = self.get_parameter('min_frontier_size').value
-        self.return_to_init = self.get_parameter('return_to_init').value
-        self.robot_base_frame = self.get_parameter('robot_base_frame').value
+        self.planner_frequency = self.get_parameter("planner_frequency").value
+        self.progress_timeout = self.get_parameter("progress_timeout").value
+        self.min_velocity_threshold = self.get_parameter("min_velocity_threshold").value
+        self.blacklist_attempts = self.get_parameter("blacklist_attempts").value
+        self.blacklist_duration = self.get_parameter("blacklist_duration").value
+        self.visualize = self.get_parameter("visualize").value
+        self.potential_scale = self.get_parameter("potential_scale").value
+        self.orientation_scale = self.get_parameter("orientation_scale").value
+        self.gain_scale = self.get_parameter("gain_scale").value
+        self.min_frontier_size = self.get_parameter("min_frontier_size").value
+        self.return_to_init = self.get_parameter("return_to_init").value
+        self.robot_base_frame = self.get_parameter("robot_base_frame").value
 
-        self.move_base_client = ActionClient(self, NavigateToPose, 'navigate_to_pose')
+        self.move_base_client = ActionClient(self, NavigateToPose, "navigate_to_pose")
 
-        self.search = FrontierSearch(self.costmap_client, self.potential_scale, self.gain_scale, self.min_frontier_size)
+        self.search = FrontierSearch(
+            self.costmap_client,
+            self.potential_scale,
+            self.gain_scale,
+            self.min_frontier_size,
+        )
 
         if self.visualize:
-            self.marker_array_publisher = self.create_publisher(MarkerArray, 'explore/frontiers', 10)
+            self.marker_array_publisher = self.create_publisher(
+                MarkerArray, "explore/frontiers", 10
+            )
 
-        self.exploration_status_publisher = self.create_publisher(Bool, 'explore/status', 10)
-        self.exploration_info_publisher = self.create_publisher(String, 'explore/info', 10)
+        self.exploration_status_publisher = self.create_publisher(
+            Bool, "explore/status", 10
+        )
+        self.exploration_info_publisher = self.create_publisher(
+            String, "explore/info", 10
+        )
 
-        self.resume_subscription = self.create_subscription(Bool, 'explore/resume', self.resume_callback, 10)
+        self.resume_subscription = self.create_subscription(
+            Bool, "explore/resume", self.resume_callback, 10
+        )
 
         self.logger.info("Waiting to connect to move_base nav2 server")
         self.move_base_client.wait_for_server()
         self.logger.info("Connected to move_base nav2 server")
 
         if self.return_to_init:
-            self.logger.info("Will attempt to get initial pose for return-to-start feature")
+            self.logger.info(
+                "Will attempt to get initial pose for return-to-start feature"
+            )
 
         self.logger.info("Starting exploration...")
-        self.exploring_timer = self.create_timer(1.0 / self.planner_frequency, self.make_plan)
+        self.exploring_timer = self.create_timer(
+            1.0 / self.planner_frequency, self.make_plan
+        )
 
         self.status_reporter_timer = self.create_timer(5.0, self.report_status)
 
@@ -161,7 +180,11 @@ class Explore(Node):
             m_sphere.action = Marker.ADD
             m_sphere.pose.position = frontier.initial
             m_sphere.pose.orientation.w = 1.0
-            scale = min(abs(min_cost * 0.4 / frontier.cost), 0.5) if frontier.cost != 0 else 0.1
+            scale = (
+                min(abs(min_cost * 0.4 / frontier.cost), 0.5)
+                if frontier.cost != 0
+                else 0.1
+            )
             m_sphere.scale.x = scale
             m_sphere.scale.y = scale
             m_sphere.scale.z = scale
@@ -212,7 +235,7 @@ class Explore(Node):
 
         dx = current_pose.x - self.last_robot_pose.x
         dy = current_pose.y - self.last_robot_pose.y
-        distance = math.sqrt(dx*dx + dy*dy)
+        distance = math.sqrt(dx * dx + dy * dy)
 
         velocity = distance / time_delta
 
@@ -222,7 +245,9 @@ class Explore(Node):
         is_moving = velocity >= self.min_velocity_threshold
 
         if not is_moving:
-            self.logger.debug(f"Robot velocity: {velocity:.3f} m/s (threshold: {self.min_velocity_threshold:.3f} m/s)")
+            self.logger.debug(
+                f"Robot velocity: {velocity:.3f} m/s (threshold: {self.min_velocity_threshold:.3f} m/s)"
+            )
 
         return is_moving
 
@@ -245,7 +270,9 @@ class Explore(Node):
         if not frontiers:
             self.logger.warn("No frontiers found, stopping.")
             self.exploration_complete = True
-            self.publish_exploration_status(True, "No frontiers found - exploration complete")
+            self.publish_exploration_status(
+                True, "No frontiers found - exploration complete"
+            )
             self.stop(True)
             return
 
@@ -263,12 +290,17 @@ class Explore(Node):
             candidate = f.centroid
 
             # If centroid is too close to the robot, use the closest point on the frontier instead
-            dist_to_centroid = math.sqrt((candidate.x - pose.position.x)**2 + (candidate.y - pose.position.y)**2)
+            dist_to_centroid = math.sqrt(
+                (candidate.x - pose.position.x) ** 2
+                + (candidate.y - pose.position.y) ** 2
+            )
             if dist_to_centroid < 0.5:
                 candidate = f.middle
                 if self.goal_on_blacklist(candidate):
                     continue
-                self.logger.info(f"Centroid is too close ({dist_to_centroid:.2f}m), using closest frontier point instead")
+                self.logger.info(
+                    f"Centroid is too close ({dist_to_centroid:.2f}m), using closest frontier point instead"
+                )
 
             frontier = f
             target_position = candidate
@@ -277,7 +309,9 @@ class Explore(Node):
         if frontier is None:
             self.logger.warn("All frontiers traversed/tried out, stopping.")
             self.exploration_complete = True
-            self.publish_exploration_status(True, "All frontiers explored - exploration complete")
+            self.publish_exploration_status(
+                True, "All frontiers explored - exploration complete"
+            )
             self.stop(True)
             return
 
@@ -305,11 +339,15 @@ class Explore(Node):
             self.prev_distance = frontier.min_distance
 
         # Timeout check - only trigger if robot is truly stuck
-        time_since_progress = (self.get_clock().now() - self.last_progress).nanoseconds / 1e9
+        time_since_progress = (
+            self.get_clock().now() - self.last_progress
+        ).nanoseconds / 1e9
 
         if time_since_progress > self.progress_timeout and not self.resuming:
             self.add_to_blacklist(target_position)
-            self.logger.warn(f"Robot stuck for {time_since_progress:.1f}s (no movement detected). Adding goal to blacklist.")
+            self.logger.warn(
+                f"Robot stuck for {time_since_progress:.1f}s (no movement detected). Adding goal to blacklist."
+            )
             self.last_robot_pose = None
             self.last_pose_time = None
             self.make_plan()
@@ -322,7 +360,9 @@ class Explore(Node):
             return
 
         distance_to_goal = frontier.min_distance
-        self.logger.info(f"Sending goal to move base nav2: ({target_position.x:.2f}, {target_position.y:.2f}) at {distance_to_goal:.1f}m distance")
+        self.logger.info(
+            f"Sending goal to move base nav2: ({target_position.x:.2f}, {target_position.y:.2f}) at {distance_to_goal:.1f}m distance"
+        )
 
         goal_msg = NavigateToPose.Goal()
         goal_msg.pose.pose.position = target_position
@@ -331,7 +371,9 @@ class Explore(Node):
         goal_msg.pose.header.stamp = self.get_clock().now().to_msg()
 
         future = self.move_base_client.send_goal_async(goal_msg)
-        future.add_done_callback(lambda f: self.goal_response_callback(f, target_position))
+        future.add_done_callback(
+            lambda f: self.goal_response_callback(f, target_position)
+        )
 
     def goal_response_callback(self, future: object, target_position: Point):
         """
@@ -346,14 +388,16 @@ class Explore(Node):
         """
         goal_handle = future.result()
         if not goal_handle.accepted:
-            self.logger.info('Goal rejected :(')
+            self.logger.info("Goal rejected :(")
             return
 
-        self.logger.info('Goal accepted')
+        self.logger.info("Goal accepted")
         self.current_goal_handle = goal_handle
 
         result_future = goal_handle.get_result_async()
-        result_future.add_done_callback(lambda f: self.reached_goal(f, target_position, goal_handle))
+        result_future.add_done_callback(
+            lambda f: self.reached_goal(f, target_position, goal_handle)
+        )
 
     def reached_goal(self, future: object, frontier_goal: Point, goal_handle):
         """
@@ -482,10 +526,7 @@ class Explore(Node):
 
             # Try to get current transform
             t = self.tf_buffer.lookup_transform(
-                map_frame,
-                self.robot_base_frame,
-                Time(),
-                timeout=Duration(seconds=0.1)
+                map_frame, self.robot_base_frame, Time(), timeout=Duration(seconds=0.1)
             )
 
             self.initial_pose = PoseStamped()
@@ -494,10 +535,14 @@ class Explore(Node):
             self.initial_pose.pose.position.z = t.transform.translation.z
             self.initial_pose.pose.orientation = t.transform.rotation
 
-            self.logger.info(f"Initial pose captured: ({self.initial_pose.pose.position.x:.2f}, {self.initial_pose.pose.position.y:.2f})")
+            self.logger.info(
+                f"Initial pose captured: ({self.initial_pose.pose.position.x:.2f}, {self.initial_pose.pose.position.y:.2f})"
+            )
 
         except TransformException as ex:
-            self.logger.debug(f"Still waiting for transform to capture initial pose: {ex}")
+            self.logger.debug(
+                f"Still waiting for transform to capture initial pose: {ex}"
+            )
 
     def publish_exploration_status(self, complete: bool, info: str):
         """
@@ -518,7 +563,9 @@ class Explore(Node):
             info_msg = String()
             info_msg.data = info
             self.exploration_info_publisher.publish(info_msg)
-            self.logger.info(f"Exploration status: {'COMPLETE' if complete else 'ACTIVE'} - {info}")
+            self.logger.info(
+                f"Exploration status: {'COMPLETE' if complete else 'ACTIVE'} - {info}"
+            )
 
     def goal_on_blacklist(self, goal: Point):
         """
@@ -535,17 +582,25 @@ class Explore(Node):
             data = self.frontier_blacklist[key]
 
             # Give up after max attempts
-            if data['attempts'] >= self.blacklist_attempts:
-                self.get_logger().info(f"Goal ({goal.x:.2f}, {goal.y:.2f}) blacklisted due to too many attempts")
+            if data["attempts"] >= self.blacklist_attempts:
+                self.get_logger().info(
+                    f"Goal ({goal.x:.2f}, {goal.y:.2f}) blacklisted due to too many attempts"
+                )
                 return True
 
             # Retry after blacklist duration
-            time_since_last = (self.get_clock().now() - data['last_attempt']).nanoseconds / 1e9
+            time_since_last = (
+                self.get_clock().now() - data["last_attempt"]
+            ).nanoseconds / 1e9
             if time_since_last < self.blacklist_duration:
-                self.get_logger().info(f"Goal ({goal.x:.2f}, {goal.y:.2f}) still blacklisted, last attempt {time_since_last:.1f}s ago")
+                self.get_logger().info(
+                    f"Goal ({goal.x:.2f}, {goal.y:.2f}) still blacklisted, last attempt {time_since_last:.1f}s ago"
+                )
                 return True
             else:
-                self.get_logger().info(f"Goal ({goal.x:.2f}, {goal.y:.2f}) removed from blacklist after timeout")
+                self.get_logger().info(
+                    f"Goal ({goal.x:.2f}, {goal.y:.2f}) removed from blacklist after timeout"
+                )
                 del self.frontier_blacklist[key]
 
         return False
@@ -561,14 +616,16 @@ class Explore(Node):
         """
         key = (round(goal.x, 1), round(goal.y, 1))
         if key in self.frontier_blacklist:
-            self.frontier_blacklist[key]['attempts'] += 1
-            self.frontier_blacklist[key]['last_attempt'] = self.get_clock().now()
+            self.frontier_blacklist[key]["attempts"] += 1
+            self.frontier_blacklist[key]["last_attempt"] = self.get_clock().now()
         else:
             self.frontier_blacklist[key] = {
-                'attempts': 1,
-                'last_attempt': self.get_clock().now()
+                "attempts": 1,
+                "last_attempt": self.get_clock().now(),
             }
-        self.get_logger().info(f"Added/updated goal ({goal.x:.2f}, {goal.y:.2f}) in blacklist with {self.frontier_blacklist[key]['attempts']} attempts")
+        self.get_logger().info(
+            f"Added/updated goal ({goal.x:.2f}, {goal.y:.2f}) in blacklist with {self.frontier_blacklist[key]['attempts']} attempts"
+        )
 
     def same_point(self, p1: Point, p2: Point):
         """Check if two points are essentially the same location.
@@ -587,7 +644,7 @@ class Explore(Node):
         """
         dx = p1.x - p2.x
         dy = p1.y - p2.y
-        dist = math.sqrt(dx*dx + dy*dy)
+        dist = math.sqrt(dx * dx + dy * dy)
         return dist < 0.01
 
     def report_status(self):
@@ -601,6 +658,7 @@ class Explore(Node):
             self.publish_exploration_status(True, "Exploration complete")
         else:
             self.publish_exploration_status(False, "Exploring")
+
 
 def main(args=None):
     """
@@ -619,5 +677,6 @@ def main(args=None):
     node.destroy_node()
     rclpy.shutdown()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

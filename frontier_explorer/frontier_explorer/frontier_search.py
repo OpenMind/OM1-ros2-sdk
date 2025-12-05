@@ -1,17 +1,17 @@
+import math
+from collections import deque
+
+import numpy as np
 import rclpy
-from rclpy.node import Node
+from explore_lite_py.costmap_client import Costmap2DClient
 from geometry_msgs.msg import Point
 from nav_msgs.msg import OccupancyGrid
-import numpy as np
-from collections import deque
-import math
-
-from explore_lite_py.costmap_client import Costmap2DClient
 
 # Constants
 NO_INFORMATION = -1
 FREE_SPACE = 0
 LETHAL_OBSTACLE = 100
+
 
 class Frontier:
     """
@@ -26,12 +26,13 @@ class Frontier:
         Initialize a Frontier with default values.
         """
         self.size = 0
-        self.min_distance = float('inf')
+        self.min_distance = float("inf")
         self.cost = 0.0
         self.initial = Point()
         self.centroid = Point()
         self.middle = Point()
         self.points = []
+
 
 class FrontierSearch:
     """
@@ -41,7 +42,13 @@ class FrontierSearch:
     and unknown areas. Computes costs for each frontier to prioritize exploration targets.
     """
 
-    def __init__(self, costmap_client: Costmap2DClient, potential_scale: float, gain_scale: float, min_frontier_size: float):
+    def __init__(
+        self,
+        costmap_client: Costmap2DClient,
+        potential_scale: float,
+        gain_scale: float,
+        min_frontier_size: float,
+    ):
         """Initialize the FrontierSearch with costmap client and search parameters.
 
         Parameters:
@@ -128,7 +135,7 @@ class FrontierSearch:
                         visited_start.add((ny, nx))
                         q.append((ny, nx))
 
-                if len(visited_start) > 100: # Limit search
+                if len(visited_start) > 100:  # Limit search
                     break
 
             if not found_free:
@@ -143,25 +150,41 @@ class FrontierSearch:
 
             for ny, nx in self.nhood4(cy, cx, size_x, size_y):
                 if not visited_flag[ny, nx]:
-                    if costmap[ny, nx] == costmap[cy, cx] and costmap[ny, nx] == FREE_SPACE:
+                    if (
+                        costmap[ny, nx] == costmap[cy, cx]
+                        and costmap[ny, nx] == FREE_SPACE
+                    ):
                         # If neighbor is free and unvisited, add to BFS
                         visited_flag[ny, nx] = True
                         bfs.append((ny, nx))
-                    elif self.is_new_frontier_cell(ny, nx, frontier_flag, costmap, size_x, size_y):
+                    elif self.is_new_frontier_cell(
+                        ny, nx, frontier_flag, costmap, size_x, size_y
+                    ):
                         frontier_flag[ny, nx] = True
-                        new_frontier = self.build_new_frontier(ny, nx, position, frontier_flag, costmap, info)
-                        if new_frontier.size * info.resolution >= self.min_frontier_size:
+                        new_frontier = self.build_new_frontier(
+                            ny, nx, position, frontier_flag, costmap, info
+                        )
+                        if (
+                            new_frontier.size * info.resolution
+                            >= self.min_frontier_size
+                        ):
                             frontier_list.append(new_frontier)
 
         if frontier_list:
-            frontier_positions = np.array([[f.centroid.x, f.centroid.y] for f in frontier_list])
+            frontier_positions = np.array(
+                [[f.centroid.x, f.centroid.y] for f in frontier_list]
+            )
             robot_pos = np.array([position.x, position.y])
 
-            distances_to_centroid = np.linalg.norm(frontier_positions - robot_pos, axis=1)
+            distances_to_centroid = np.linalg.norm(
+                frontier_positions - robot_pos, axis=1
+            )
 
             sizes = np.array([f.size for f in frontier_list])
 
-            costs = (self.potential_scale * distances_to_centroid) - (self.gain_scale * sizes * info.resolution)
+            costs = (self.potential_scale * distances_to_centroid) - (
+                self.gain_scale * sizes * info.resolution
+            )
 
             for i, frontier in enumerate(frontier_list):
                 frontier.cost = costs[i]
@@ -170,7 +193,15 @@ class FrontierSearch:
 
         return frontier_list
 
-    def build_new_frontier(self, initial_cy: int, initial_cx: int, reference_pos: Point, frontier_flag: np.ndarray, costmap: np.ndarray, info: OccupancyGrid.info) -> Frontier:
+    def build_new_frontier(
+        self,
+        initial_cy: int,
+        initial_cx: int,
+        reference_pos: Point,
+        frontier_flag: np.ndarray,
+        costmap: np.ndarray,
+        info: OccupancyGrid.info,
+    ) -> Frontier:
         """
         Build a complete frontier region starting from an initial frontier cell.
 
@@ -202,7 +233,7 @@ class FrontierSearch:
         output.centroid.x = 0.0
         output.centroid.y = 0.0
         output.size = 1
-        output.min_distance = float('inf')
+        output.min_distance = float("inf")
 
         ix = info.origin.position.x + (initial_cx + 0.5) * info.resolution
         iy = info.origin.position.y + (initial_cy + 0.5) * info.resolution
@@ -219,7 +250,9 @@ class FrontierSearch:
 
             # Try adding cells in 8-connected neighborhood
             for ny, nx in self.nhood8(cy, cx, size_x, size_y):
-                if self.is_new_frontier_cell(ny, nx, frontier_flag, costmap, size_x, size_y):
+                if self.is_new_frontier_cell(
+                    ny, nx, frontier_flag, costmap, size_x, size_y
+                ):
                     frontier_flag[ny, nx] = True
 
                     wx = info.origin.position.x + (nx + 0.5) * info.resolution
@@ -234,7 +267,9 @@ class FrontierSearch:
                     output.centroid.x += wx
                     output.centroid.y += wy
 
-                    dist = math.sqrt((reference_pos.x - wx)**2 + (reference_pos.y - wy)**2)
+                    dist = math.sqrt(
+                        (reference_pos.x - wx) ** 2 + (reference_pos.y - wy) ** 2
+                    )
                     if dist < output.min_distance:
                         output.min_distance = dist
                         output.middle.x = wx
@@ -248,7 +283,15 @@ class FrontierSearch:
 
         return output
 
-    def is_new_frontier_cell(self, cy: int, cx: int, frontier_flag: np.ndarray, costmap: np.ndarray, size_x: int, size_y: int) -> bool:
+    def is_new_frontier_cell(
+        self,
+        cy: int,
+        cx: int,
+        frontier_flag: np.ndarray,
+        costmap: np.ndarray,
+        size_x: int,
+        size_y: int,
+    ) -> bool:
         """Check if a cell qualifies as a new frontier cell.
 
         A cell is a frontier if it's unknown (not yet explored) and has at least
@@ -307,10 +350,14 @@ class FrontierSearch:
             List of (y, x) tuples for valid neighbors.
         """
         neighbors = []
-        if cx > 0: neighbors.append((cy, cx - 1))
-        if cx < size_x - 1: neighbors.append((cy, cx + 1))
-        if cy > 0: neighbors.append((cy - 1, cx))
-        if cy < size_y - 1: neighbors.append((cy + 1, cx))
+        if cx > 0:
+            neighbors.append((cy, cx - 1))
+        if cx < size_x - 1:
+            neighbors.append((cy, cx + 1))
+        if cy > 0:
+            neighbors.append((cy - 1, cx))
+        if cy < size_y - 1:
+            neighbors.append((cy + 1, cx))
         return neighbors
 
     def nhood8(self, cy: int, cx: int, size_x: int, size_y: int) -> list:
@@ -336,8 +383,12 @@ class FrontierSearch:
         """
         neighbors = self.nhood4(cy, cx, size_x, size_y)
         # Diagonals
-        if cx > 0 and cy > 0: neighbors.append((cy - 1, cx - 1))
-        if cx < size_x - 1 and cy > 0: neighbors.append((cy - 1, cx + 1))
-        if cx > 0 and cy < size_y - 1: neighbors.append((cy + 1, cx - 1))
-        if cx < size_x - 1 and cy < size_y - 1: neighbors.append((cy + 1, cx + 1))
+        if cx > 0 and cy > 0:
+            neighbors.append((cy - 1, cx - 1))
+        if cx < size_x - 1 and cy > 0:
+            neighbors.append((cy - 1, cx + 1))
+        if cx > 0 and cy < size_y - 1:
+            neighbors.append((cy + 1, cx - 1))
+        if cx < size_x - 1 and cy < size_y - 1:
+            neighbors.append((cy + 1, cx + 1))
         return neighbors
