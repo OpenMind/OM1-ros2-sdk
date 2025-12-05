@@ -287,9 +287,9 @@ def generate_launch_description():
             #     parameters=[nav2_config_file]
             # )
             Node(
-                package="explore_lite",
+                package="frontier_explorer",
                 executable="explore",
-                name="explore_lite",
+                name="frontier_explorer",
                 output="screen",
                 parameters=[m_explorer_config_file, {"use_sim_time": use_sim}],
             ),
