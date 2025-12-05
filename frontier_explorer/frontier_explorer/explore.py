@@ -1,8 +1,8 @@
 import math
 
 import rclpy
-from explore_lite_py.costmap_client import Costmap2DClient
-from explore_lite_py.frontier_search import FrontierSearch
+from frontier_explorer.costmap_client import Costmap2DClient
+from frontier_explorer.frontier_search import FrontierSearch
 from geometry_msgs.msg import Point, PoseStamped
 from nav2_msgs.action import NavigateToPose
 from rclpy.action import ActionClient

@@ -3,9 +3,9 @@ from collections import deque
 
 import numpy as np
 import rclpy
-from explore_lite_py.costmap_client import Costmap2DClient
+from frontier_explorer.costmap_client import Costmap2DClient
 from geometry_msgs.msg import Point
-from nav_msgs.msg import OccupancyGrid
+from nav_msgs.msg import MapMetaData
 
 # Constants
 NO_INFORMATION = -1
@@ -200,7 +200,7 @@ class FrontierSearch:
         reference_pos: Point,
         frontier_flag: np.ndarray,
         costmap: np.ndarray,
-        info: OccupancyGrid.info,
+        info: MapMetaData,
     ) -> Frontier:
         """
         Build a complete frontier region starting from an initial frontier cell.
@@ -221,7 +221,7 @@ class FrontierSearch:
             Boolean array of already marked frontier cells.
         costmap: numpy.ndarray
             The occupancy grid costmap data.
-        info: OccupancyGrid.info
+        info: MapMetaData
             Metadata of the costmap.
 
         Returns:

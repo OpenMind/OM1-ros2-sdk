@@ -4,7 +4,7 @@ import numpy as np
 import rclpy
 from geometry_msgs.msg import Pose
 from map_msgs.msg import OccupancyGridUpdate
-from nav_msgs.msg import OccupancyGrid
+from nav_msgs.msg import OccupancyGrid, MapMetaData
 from rclpy.node import Node
 from tf2_ros import Buffer
 
@@ -142,7 +142,7 @@ class Costmap2DClient:
         with self._lock:
             return self.costmap
 
-    def get_costmap_info(self) -> OccupancyGrid.info:
+    def get_costmap_info(self) -> MapMetaData:
         """Get the costmap metadata information.
 
         Thread-safe accessor for costmap metadata including resolution, dimensions,
@@ -150,7 +150,7 @@ class Costmap2DClient:
 
         Returns:
         -------
-        OccupancyGrid.info
+        MapMetaDatas
             Metadata of the costmap, or None if not yet available.
         """
         with self._lock:
