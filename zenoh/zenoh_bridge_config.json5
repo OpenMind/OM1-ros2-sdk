@@ -76,6 +76,7 @@
                       ".*/utlidar/grid_map",
                       ".*/utlidar/height_map",
                       ".*/utlidar/voxel_map",
+                      ".*/explore/status",
 
                       // Navigation
                       ".*/amcl_pose",
@@ -187,6 +188,7 @@
                       ".*/utlidar/grid_map",
                       ".*/utlidar/height_map",
                       ".*/utlidar/voxel_map",
+                      ".*/explore/status",
 
                       // Navigation
                       ".*/amcl_pose",

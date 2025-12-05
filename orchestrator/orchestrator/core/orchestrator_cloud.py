@@ -26,6 +26,10 @@ class OrchestratorCloud(Node):
     def __init__(self):
         super().__init__("orchestrator_cloud")
 
+        # Declare and use the 'use_sim' parameter to determine if running in simulation
+        self.declare_parameter("use_sim", False)
+        self.use_sim = self.get_parameter("use_sim").value
+
         self.cloud_connection_manager = CloudConnectionManager(self.get_logger())
         self.map_upload_manager = MapUploadManager(self.get_logger())
         self.cloud_api_service = CloudAPIService(self.get_logger())

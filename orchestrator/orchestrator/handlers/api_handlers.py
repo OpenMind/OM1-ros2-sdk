@@ -111,8 +111,10 @@ class APIHandlers:
             data = request.get_json(silent=True) or {}
             launch_file = data.get("launch_file", "slam_launch.py")
             map_yaml = data.get("map_yaml", None)
+            args = f"map_yaml_file:=${map_yaml} " if map_yaml else ""
+            args += "use_sim:=true " if self.orchestrator.use_sim else ""
 
-            if self.orchestrator.slam_manager.start(launch_file, map_yaml):
+            if self.orchestrator.slam_manager.start(launch_file, args=args):
                 self.orchestrator.location_manager.clear_all_location_files()
                 self.orchestrator.manage_base_control()
                 return jsonify({"status": "success", "message": "SLAM started"}), 200
@@ -171,8 +173,10 @@ class APIHandlers:
                 )
 
             map_yaml = self.orchestrator.map_manager.get_map_yaml_path(map_name)
+            args = f"map_yaml_file:=${map_yaml} " if map_yaml else ""
+            args += "use_sim:=true " if self.orchestrator.use_sim else ""
 
-            if self.orchestrator.nav2_manager.start(launch_file, map_yaml):
+            if self.orchestrator.nav2_manager.start(launch_file, args=args):
                 self.orchestrator.manage_base_control()
                 # Load existing locations for this map
                 self.orchestrator.location_manager.load_map_locations(map_name)

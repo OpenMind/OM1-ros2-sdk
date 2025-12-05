@@ -1,4 +1,5 @@
 import math
+import json
 
 import rclpy
 from geometry_msgs.msg import Point, PoseStamped
@@ -84,10 +85,7 @@ class Explore(Node):
             )
 
         self.exploration_status_publisher = self.create_publisher(
-            Bool, "explore/status", 10
-        )
-        self.exploration_info_publisher = self.create_publisher(
-            String, "explore/info", 10
+            String, "explore/status", 10
         )
 
         self.resume_subscription = self.create_subscription(
@@ -547,7 +545,7 @@ class Explore(Node):
 
     def publish_exploration_status(self, complete: bool, info: str):
         """
-        Publish the current exploration status to ROS topics.
+        Publish the current exploration status to ROS topic.
 
         Parameters:
         ----------
@@ -556,17 +554,17 @@ class Explore(Node):
         info: str
             Additional information about the exploration status.
         """
-        status_msg = Bool()
-        status_msg.data = complete
+        status_msg = String()
+        status_data = {
+            "complete": complete,
+            "info": info if info else ""
+        }
+        status_msg.data = json.dumps(status_data)
         self.exploration_status_publisher.publish(status_msg)
 
-        if info:
-            info_msg = String()
-            info_msg.data = info
-            self.exploration_info_publisher.publish(info_msg)
-            self.logger.info(
-                f"Exploration status: {'COMPLETE' if complete else 'ACTIVE'} - {info}"
-            )
+        self.logger.info(
+            f"Exploration status: {'COMPLETE' if complete else 'ACTIVE'} - {info}"
+        )
 
     def goal_on_blacklist(self, goal: Point):
         """
