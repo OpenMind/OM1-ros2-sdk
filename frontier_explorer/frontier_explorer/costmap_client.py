@@ -4,7 +4,7 @@ import numpy as np
 import rclpy
 from geometry_msgs.msg import Pose
 from map_msgs.msg import OccupancyGridUpdate
-from nav_msgs.msg import OccupancyGrid, MapMetaData
+from nav_msgs.msg import MapMetaData, OccupancyGrid
 from rclpy.node import Node
 from tf2_ros import Buffer
 
