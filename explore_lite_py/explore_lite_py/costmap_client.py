@@ -8,7 +8,25 @@ import numpy as np
 import threading
 
 class Costmap2DClient:
+    """Client for accessing and managing costmap data from Nav2.
+
+    Subscribes to costmap topics, handles updates, and provides thread-safe
+    access to costmap data and robot pose information.
+    """
+
     def __init__(self, node: Node, tf_buffer: Buffer):
+        """Initialize the Costmap2DClient with ROS2 node and TF buffer.
+
+        Sets up subscriptions to costmap and costmap updates topics, initializes
+        parameters, and waits for initial costmap data to be available.
+
+        Parameters:
+        ----------
+        node: Node
+            The ROS2 node used for subscriptions and logging.
+        tf_buffer: Buffer
+            The TF2 buffer for looking up transforms.
+        """
         self.node = node
         self.tf_buffer = tf_buffer
         self.costmap = None
@@ -47,12 +65,32 @@ class Costmap2DClient:
         self.node.get_logger().info("Costmap ready.")
 
     def costmap_callback(self, msg: OccupancyGrid):
+        """Handle incoming full costmap messages.
+
+        Updates the entire costmap data, metadata, and global frame information.
+        Thread-safe operation using a lock.
+
+        Parameters:
+        ----------
+        msg: OccupancyGrid
+            Full costmap message containing the entire costmap data.
+        """
         with self._lock:
             self.costmap_info = msg.info
             self.costmap = np.array(msg.data, dtype=np.int8).reshape(msg.info.height, msg.info.width)
             self.global_frame = msg.header.frame_id
 
     def costmap_updates_callback(self, msg: OccupancyGridUpdate):
+        """Handle incremental costmap update messages.
+
+        Applies partial updates to the existing costmap for efficiency.
+        Thread-safe operation using a lock.
+
+        Parameters:
+        ----------
+        msg: OccupancyGridUpdate
+            Incremental costmap update message containing updated regions.
+        """
         with self._lock:
             if self.costmap is None:
                 return
@@ -62,16 +100,16 @@ class Costmap2DClient:
             self.costmap[msg.y:msg.y+msg.height, msg.x:msg.x+msg.width] = data
 
     def get_robot_pose(self) -> Pose:
-        try:
-            # Get the transform from global frame to robot base frame
-            # We need the position of the robot in the global frame
-            # So we look up transform from global_frame to robot_base_frame?
-            # No, we want robot pose IN global frame. So we transform (0,0,0) of base_link to global_frame.
-            # Or simply lookup transform from base_link to global_frame?
-            # lookup_transform(target_frame, source_frame) -> transform source to target
-            # We want base_link expressed in global_frame.
-            # So target=global_frame, source=base_link
+        """Get the current pose of the robot in the global frame.
 
+        Uses TF2 to look up the transform from the global frame to the robot base frame.
+
+        Returns:
+        -------
+        Pose
+            The current pose of the robot, or a default Pose if unavailable.
+        """
+        try:
             if self.global_frame is None:
                 self.node.get_logger().warn("Global frame not set yet")
                 return Pose()
@@ -92,13 +130,39 @@ class Costmap2DClient:
             self.node.get_logger().warn(f"Could not get robot pose: {e}")
             return Pose()
 
-    def get_costmap(self):
+    def get_costmap(self) -> np.ndarray:
+        """Get the current costmap data.
+
+        Thread-safe accessor for the costmap numpy array.
+
+        Returns:
+        -------
+        np.ndarray
+            2D array representing the costmap, or None if not yet available.
+        """
         with self._lock:
             return self.costmap
 
-    def get_costmap_info(self):
+    def get_costmap_info(self) -> OccupancyGrid.info:
+        """Get the costmap metadata information.
+
+        Thread-safe accessor for costmap metadata including resolution, dimensions,
+        and origin.
+
+        Returns:
+        -------
+        OccupancyGrid.info
+            Metadata of the costmap, or None if not yet available.
+        """
         with self._lock:
             return self.costmap_info
 
-    def get_global_frame_id(self):
+    def get_global_frame_id(self) -> str:
+        """Get the global reference frame ID for the costmap.
+
+        Returns:
+        -------
+        str
+            The global frame ID, or None if not yet available.
+        """
         return self.global_frame

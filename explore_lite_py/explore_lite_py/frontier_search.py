@@ -1,19 +1,30 @@
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Point
+from nav_msgs.msg import OccupancyGrid
 import numpy as np
 from collections import deque
 import math
+
+from explore_lite_py.costmap_client import Costmap2DClient
 
 # Constants
 NO_INFORMATION = -1
 FREE_SPACE = 0
 LETHAL_OBSTACLE = 100
-# In OccupancyGrid, values are -1, 0..100.
-# We will use these values directly.
 
 class Frontier:
+    """
+    Represents a frontier region in the occupancy grid.
+
+    A frontier is a boundary between explored free space and unexplored territory.
+    Contains information about the frontier's size, location, cost, and constituent points.
+    """
+
     def __init__(self):
+        """
+        Initialize a Frontier with default values.
+        """
         self.size = 0
         self.min_distance = float('inf')
         self.cost = 0.0
@@ -23,14 +34,51 @@ class Frontier:
         self.points = []
 
 class FrontierSearch:
-    def __init__(self, costmap_client, potential_scale, gain_scale, min_frontier_size):
+    """
+    Searches for and identifies frontier regions in an occupancy grid costmap.
+
+    Uses breadth-first search (BFS) to find boundaries between known free space
+    and unknown areas. Computes costs for each frontier to prioritize exploration targets.
+    """
+
+    def __init__(self, costmap_client: Costmap2DClient, potential_scale: float, gain_scale: float, min_frontier_size: float):
+        """Initialize the FrontierSearch with costmap client and search parameters.
+
+        Parameters:
+        ----------
+        costmap_client: Costmap2DClient
+            Client to access costmap data and metadata.
+        potential_scale: float
+            Scaling factor for distance cost in frontier evaluation.
+        gain_scale: float
+            Scaling factor for size gain in frontier evaluation.
+        min_frontier_size: float
+            Minimum size (in meters) for a frontier to be considered valid.
+        """
         self.costmap_client = costmap_client
         self.potential_scale = potential_scale
         self.gain_scale = gain_scale
         self.min_frontier_size = min_frontier_size
         self.logger = rclpy.logging.get_logger("frontier_search")
 
-    def search_from(self, position: Point):
+    def search_from(self, position: Point) -> list:
+        """
+        Search for frontiers starting from the robot's current position.
+
+        Uses BFS to explore free space and identify frontier cells (boundaries between
+        free and unknown space). Groups adjacent frontier cells into frontier regions,
+        computes their properties, filters by minimum size, and sorts by cost.
+
+        Parameters:
+        ----------
+        position: Point
+            The robot's current position in the costmap frame.
+
+        Returns:
+        -------
+        list
+            A list of identified Frontier objects, sorted by cost (lowest cost first).
+        """
         frontier_list = []
 
         costmap = self.costmap_client.get_costmap()
@@ -58,12 +106,6 @@ class FrontierSearch:
         frontier_flag = np.zeros((size_y, size_x), dtype=bool)
 
         bfs = deque()
-
-        # Find closest clear cell to start search
-        # In C++, it searches for nearest FREE_SPACE.
-        # Here we just check if current is free, if not search neighborhood.
-        # For simplicity, let's assume robot is in free space or close to it.
-        # If robot is in lethal, we might have issues.
 
         start_idx = (my, mx)
         if costmap[my, mx] == FREE_SPACE:
@@ -111,15 +153,51 @@ class FrontierSearch:
                         if new_frontier.size * info.resolution >= self.min_frontier_size:
                             frontier_list.append(new_frontier)
 
-        # Set costs
-        for frontier in frontier_list:
-            frontier.cost = self.frontier_cost(frontier, info.resolution)
+        if frontier_list:
+            frontier_positions = np.array([[f.centroid.x, f.centroid.y] for f in frontier_list])
+            robot_pos = np.array([position.x, position.y])
+
+            distances_to_centroid = np.linalg.norm(frontier_positions - robot_pos, axis=1)
+
+            sizes = np.array([f.size for f in frontier_list])
+
+            costs = (self.potential_scale * distances_to_centroid) - (self.gain_scale * sizes * info.resolution)
+
+            for i, frontier in enumerate(frontier_list):
+                frontier.cost = costs[i]
 
         frontier_list.sort(key=lambda f: f.cost)
 
         return frontier_list
 
-    def build_new_frontier(self, initial_cy, initial_cx, reference_pos, frontier_flag, costmap, info):
+    def build_new_frontier(self, initial_cy: int, initial_cx: int, reference_pos: Point, frontier_flag: np.ndarray, costmap: np.ndarray, info: OccupancyGrid.info) -> Frontier:
+        """
+        Build a complete frontier region starting from an initial frontier cell.
+
+        Uses BFS with 8-connected neighborhood to grow the frontier region, tracking
+        all constituent points, computing centroid, and finding the closest point to
+        the reference position.
+
+        Parameters:
+        ----------
+        initial_cy: int
+            Initial cell y-coordinate of the frontier.
+        initial_cx: int
+            Initial cell x-coordinate of the frontier.
+        reference_pos: Point
+            The robot's current position for distance calculations.
+        frontier_flag: numpy.ndarray
+            Boolean array of already marked frontier cells.
+        costmap: numpy.ndarray
+            The occupancy grid costmap data.
+        info: OccupancyGrid.info
+            Metadata of the costmap.
+
+        Returns:
+        -------
+        Frontier
+            The constructed Frontier object with all properties set.
+        """
         output = Frontier()
         output.centroid.x = 0.0
         output.centroid.y = 0.0
@@ -170,7 +248,32 @@ class FrontierSearch:
 
         return output
 
-    def is_new_frontier_cell(self, cy, cx, frontier_flag, costmap, size_x, size_y):
+    def is_new_frontier_cell(self, cy: int, cx: int, frontier_flag: np.ndarray, costmap: np.ndarray, size_x: int, size_y: int) -> bool:
+        """Check if a cell qualifies as a new frontier cell.
+
+        A cell is a frontier if it's unknown (not yet explored) and has at least
+        one free space neighbor in the 4-connected neighborhood.
+
+        Parameters:
+        ----------
+        cy: int
+            Cell y-coordinate.
+        cx: int
+            Cell x-coordinate.
+        frontier_flag: numpy.ndarray
+            Boolean array of already marked frontier cells.
+        costmap: numpy.ndarray
+            The occupancy grid costmap data.
+        size_x: int
+            Width of the costmap.
+        size_y: int
+            Height of the costmap.
+
+        Returns:
+        -------
+        bool
+            True if the cell is a new frontier cell, False otherwise.
+        """
         # Check that cell is unknown and not already marked
         if costmap[cy, cx] != NO_INFORMATION or frontier_flag[cy, cx]:
             return False
@@ -182,11 +285,27 @@ class FrontierSearch:
 
         return False
 
-    def frontier_cost(self, frontier, resolution):
-        return (self.potential_scale * frontier.min_distance * resolution) - \
-               (self.gain_scale * frontier.size * resolution)
+    def nhood4(self, cy: int, cx: int, size_x: int, size_y: int) -> list:
+        """Get 4-connected neighbors (up, down, left, right) of a cell.
 
-    def nhood4(self, cy, cx, size_x, size_y):
+        Only returns neighbors that are within the costmap bounds.
+
+        Parameters:
+        ----------
+        cy: int
+            Cell y-coordinate.
+        cx: int
+            Cell x-coordinate.
+        size_x: int
+            Width of the costmap.
+        size_y: int
+            Height of the costmap.
+
+        Returns:
+        -------
+        list
+            List of (y, x) tuples for valid neighbors.
+        """
         neighbors = []
         if cx > 0: neighbors.append((cy, cx - 1))
         if cx < size_x - 1: neighbors.append((cy, cx + 1))
@@ -194,7 +313,27 @@ class FrontierSearch:
         if cy < size_y - 1: neighbors.append((cy + 1, cx))
         return neighbors
 
-    def nhood8(self, cy, cx, size_x, size_y):
+    def nhood8(self, cy: int, cx: int, size_x: int, size_y: int) -> list:
+        """Get 8-connected neighbors (including diagonals) of a cell.
+
+        Returns all orthogonal and diagonal neighbors within costmap bounds.
+
+        Parameters:
+        ----------
+        cy: int
+            Cell y-coordinate.
+        cx: int
+            Cell x-coordinate.
+        size_x: int
+            Width of the costmap.
+        size_y: int
+            Height of the costmap.
+
+        Returns:
+        -------
+        list
+            List of (y, x) tuples for valid neighbors.
+        """
         neighbors = self.nhood4(cy, cx, size_x, size_y)
         # Diagonals
         if cx > 0 and cy > 0: neighbors.append((cy - 1, cx - 1))

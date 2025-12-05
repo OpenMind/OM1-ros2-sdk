@@ -3,18 +3,23 @@ from rclpy.node import Node
 from rclpy.action import ActionClient
 from rclpy.duration import Duration
 from rclpy.time import Time
-from geometry_msgs.msg import PoseStamped, Point, TransformStamped
+from geometry_msgs.msg import PoseStamped, Point
 from std_msgs.msg import Bool, String, ColorRGBA
 from visualization_msgs.msg import MarkerArray, Marker
 from nav2_msgs.action import NavigateToPose
 from tf2_ros import Buffer, TransformListener, TransformException
 import math
-import threading
 from explore_lite_py.costmap_client import Costmap2DClient
 from explore_lite_py.frontier_search import FrontierSearch
 
 class Explore(Node):
     def __init__(self):
+        """
+        Initialize the Explore node with ROS2 parameters, clients, and timers.
+
+        Sets up the navigation action client, costmap client, frontier search,
+        publishers, subscriptions, and begins the exploration process.
+        """
         super().__init__('explore_node')
 
         self.logger = self.get_logger()
@@ -25,16 +30,18 @@ class Explore(Node):
         self.prev_distance = 0
         self.last_markers_count = 0
         self.exploration_complete = False
-        self.frontier_blacklist = []
-        # self.prev_goal = Point() # Removed
+        self.frontier_blacklist = {}
         self.last_progress = self.get_clock().now()
         self.resuming = False
         self.initial_pose = None
         self.prev_goal = None
+        self.current_goal_handle = None
 
         # Parameters
         self.declare_parameter('planner_frequency', 1.0)
         self.declare_parameter('progress_timeout', 30.0)
+        self.declare_parameter('blacklist_attempts', 3)
+        self.declare_parameter('blacklist_duration', 300.0)
         self.declare_parameter('visualize', False)
         self.declare_parameter('potential_scale', 1e-3)
         self.declare_parameter('orientation_scale', 0.0)
@@ -44,6 +51,8 @@ class Explore(Node):
 
         self.planner_frequency = self.get_parameter('planner_frequency').value
         self.progress_timeout = self.get_parameter('progress_timeout').value
+        self.blacklist_attempts = self.get_parameter('blacklist_attempts').value
+        self.blacklist_duration = self.get_parameter('blacklist_duration').value
         self.visualize = self.get_parameter('visualize').value
         self.potential_scale = self.get_parameter('potential_scale').value
         self.orientation_scale = self.get_parameter('orientation_scale').value
@@ -70,23 +79,40 @@ class Explore(Node):
 
         if self.return_to_init:
             self.logger.info("Will attempt to get initial pose for return-to-start feature")
-            # We will try to capture it in make_plan if not yet captured
 
         self.logger.info("Starting exploration...")
         self.exploring_timer = self.create_timer(1.0 / self.planner_frequency, self.make_plan)
 
         self.status_reporter_timer = self.create_timer(5.0, self.report_status)
 
-        # Initial status
         self.publish_exploration_status(False, "Exploration initialized")
 
-    def resume_callback(self, msg):
+    def resume_callback(self, msg: Bool):
+        """
+        Handle resume/stop commands from the explore/resume topic.
+
+        Parameters:
+        ----------
+        msg: Bool
+            Message indicating whether to resume (True) or stop (False) exploration.
+        """
         if msg.data:
             self.resume()
         else:
             self.stop()
 
-    def visualize_frontiers(self, frontiers):
+    def visualize_frontiers(self, frontiers: list):
+        """
+        Publish visualization markers for frontiers in RViz.
+
+        Creates point markers for frontier boundaries and sphere markers for centroids.
+        Blacklisted frontiers are shown in red, others in blue, with centroids in green.
+
+        Parameters:
+        ----------
+        frontiers: list
+            List of Frontier objects to visualize.
+        """
         blue = ColorRGBA(r=0.0, g=0.0, b=1.0, a=1.0)
         red = ColorRGBA(r=1.0, g=0.0, b=0.0, a=1.0)
         green = ColorRGBA(r=0.0, g=1.0, b=0.0, a=1.0)
@@ -151,6 +177,13 @@ class Explore(Node):
         self.marker_array_publisher.publish(markers_msg)
 
     def make_plan(self):
+        """
+        Main planning loop that searches for frontiers and sends navigation goals.
+
+        Finds available frontiers, filters out blacklisted ones, selects the best
+        frontier based on cost, and sends a navigation goal. Handles timeout detection
+        and exploration completion. Called periodically by the planner timer.
+        """
         if self.return_to_init and self.initial_pose is None:
             self.capture_initial_pose_if_needed()
 
@@ -171,10 +204,25 @@ class Explore(Node):
 
         # Find non-blacklisted frontier
         frontier = None
+        target_position = None
+
         for f in frontiers:
-            if not self.goal_on_blacklist(f.centroid):
-                frontier = f
-                break
+            if self.goal_on_blacklist(f.centroid):
+                continue
+
+            candidate = f.centroid
+
+            # If centroid is too close to the robot, use the closest point on the frontier instead
+            dist_to_centroid = math.sqrt((candidate.x - pose.position.x)**2 + (candidate.y - pose.position.y)**2)
+            if dist_to_centroid < 0.5:
+                candidate = f.middle
+                if self.goal_on_blacklist(candidate):
+                    continue
+                self.logger.info(f"Centroid is too close ({dist_to_centroid:.2f}m), using closest frontier point instead")
+
+            frontier = f
+            target_position = candidate
+            break
 
         if frontier is None:
             self.logger.warn("All frontiers traversed/tried out, stopping.")
@@ -182,8 +230,6 @@ class Explore(Node):
             self.publish_exploration_status(True, "All frontiers explored - exploration complete")
             self.stop(True)
             return
-
-        target_position = frontier.centroid
 
         if not self.exploration_complete:
             info = f"Exploring - {len(frontiers)} frontiers available"
@@ -202,16 +248,8 @@ class Explore(Node):
             self.prev_distance = frontier.min_distance
 
         if (self.get_clock().now() - self.last_progress).nanoseconds / 1e9 > self.progress_timeout and not self.resuming:
-            self.frontier_blacklist.append(target_position)
-            self.logger.debug("Adding current goal to black list")
-            # Recursively call make_plan? Or just return and let timer call it again?
-            # C++ calls makePlan().
-            # But we are in a timer callback. Calling make_plan recursively might be bad if depth is high.
-            # But here we just blacklisted one, so next call will pick another one.
-            # Let's just return, timer will trigger again soon.
-            # Actually, if we return, we wait for next timer tick.
-            # If we want immediate replan, we can call make_plan again.
-            # Let's call it.
+            self.add_to_blacklist(target_position)
+            self.logger.warn(f"Progress timeout ({self.progress_timeout}s). Adding current goal to black list.")
             self.make_plan()
             return
 
@@ -232,18 +270,47 @@ class Explore(Node):
         future = self.move_base_client.send_goal_async(goal_msg)
         future.add_done_callback(lambda f: self.goal_response_callback(f, target_position))
 
-    def goal_response_callback(self, future, target_position):
+    def goal_response_callback(self, future: object, target_position: Point):
+        """
+        Handle the response from the navigation action server.
+
+        Parameters:
+        ----------
+        future: object
+            The future object containing the goal response.
+        target_position: Point
+            The target position of the navigation goal.
+        """
         goal_handle = future.result()
         if not goal_handle.accepted:
             self.logger.info('Goal rejected :(')
             return
 
-        self.logger.info('Goal accepted :)')
+        self.logger.info('Goal accepted')
+        self.current_goal_handle = goal_handle
 
         result_future = goal_handle.get_result_async()
-        result_future.add_done_callback(lambda f: self.reached_goal(f, target_position))
+        result_future.add_done_callback(lambda f: self.reached_goal(f, target_position, goal_handle))
 
-    def reached_goal(self, future, frontier_goal):
+    def reached_goal(self, future: object, frontier_goal: Point, goal_handle):
+        """
+        Process the result of a navigation goal attempt.
+
+        Handles successful completion, aborted goals (adds to blacklist), and
+        canceled goals. Triggers the next planning cycle on success.
+
+        Parameters:
+        ----------
+        future: object
+            The future object containing the result.
+        frontier_goal: Point
+            The target position of the navigation goal.
+        goal_handle: goal_handle
+            The goal handle for the navigation action.
+        """
+        if self.current_goal_handle is goal_handle:
+            self.current_goal_handle = None
+
         result = future.result()
         status = result.status
         # status 4 is SUCCEEDED, 5 is CANCELED, 6 is ABORTED in rclpy action client result?
@@ -257,9 +324,9 @@ class Explore(Node):
         if status == GoalStatus.STATUS_SUCCEEDED:
             self.logger.debug("Goal was successful")
         elif status == GoalStatus.STATUS_ABORTED:
-            self.logger.debug("Goal was aborted")
-            self.frontier_blacklist.append(frontier_goal)
-            self.logger.debug("Adding current goal to black list")
+            self.logger.warn("Goal was aborted. Goal was aborted")
+            self.add_to_blacklist(frontier_goal)
+            self.logger.warn("Adding current goal to black list")
             return
         elif status == GoalStatus.STATUS_CANCELED:
             self.logger.debug("Goal was canceled")
@@ -268,22 +335,42 @@ class Explore(Node):
             self.logger.warn("Unknown result code from move base nav2")
 
         self.make_plan()
-
     def start(self):
+        """
+        Start the exploration process.
+
+        Note: Exploration actually starts automatically in __init__.
+        This method mainly serves as a status indicator.
+        """
         self.logger.info("Exploration started.")
 
     def stop(self, finished_exploring=False):
+        """
+        Stop the exploration process and cancel any active navigation goals.
+
+        Parameters:
+        ----------
+        finished_exploring: bool
+            Indicates if exploration has completed naturally.
+        """
         self.logger.info("Exploration stopped.")
-        # Cancel all goals?
-        # There is no async_cancel_all_goals in rclpy ActionClient directly exposed like that?
-        # We can't easily cancel all goals without tracking handles.
-        # But if we are stopping, we probably don't want to send new goals.
         self.exploring_timer.cancel()
+
+        if self.current_goal_handle:
+            self.logger.info("Cancelling current nav2 goal")
+            self.current_goal_handle.cancel_goal_async()
+            self.current_goal_handle = None
 
         if self.return_to_init and finished_exploring:
             self.return_to_initial_pose()
 
     def resume(self):
+        """
+        Resume exploration after it has been stopped.
+
+        Resets the exploration complete flag, restarts the planning timer,
+        and immediately triggers a new planning cycle.
+        """
         self.resuming = True
         self.logger.info("Exploration resuming.")
         self.exploration_complete = False
@@ -292,6 +379,12 @@ class Explore(Node):
         self.make_plan()
 
     def return_to_initial_pose(self):
+        """
+        Send a navigation goal to return to the initial pose.
+
+        Only executes if an initial pose was captured. Sends the robot back
+        to where exploration started.
+        """
         if self.initial_pose is None:
             return
 
@@ -305,6 +398,12 @@ class Explore(Node):
         self.move_base_client.send_goal_async(goal_msg)
 
     def capture_initial_pose_if_needed(self):
+        """
+        Capture the robot's current pose as the initial pose for return-to-start.
+
+        Uses TF2 to get the robot's position in the global frame. Only captures
+        if return_to_init parameter is enabled and pose hasn't been captured yet.
+        """
         if not self.return_to_init:
             return
 
@@ -332,7 +431,17 @@ class Explore(Node):
         except TransformException as ex:
             self.logger.debug(f"Still waiting for transform to capture initial pose: {ex}")
 
-    def publish_exploration_status(self, complete, info):
+    def publish_exploration_status(self, complete: bool, info: str):
+        """
+        Publish the current exploration status to ROS topics.
+
+        Parameters:
+        ----------
+        complete: bool
+            True if exploration is complete, False otherwise.
+        info: str
+            Additional information about the exploration status.
+        """
         status_msg = Bool()
         status_msg.data = complete
         self.exploration_status_publisher.publish(status_msg)
@@ -344,34 +453,90 @@ class Explore(Node):
             self.logger.info(f"Exploration status: {'COMPLETE' if complete else 'ACTIVE'} - {info}")
 
     def goal_on_blacklist(self, goal: Point):
-        tolerance = 5
-        info = self.costmap_client.get_costmap_info()
-        if info is None:
-            return False
+        """
+        Check if a frontier should be skipped based on attempts and time.
+        Give up after 3 attempts or wait 5 minutes before retry.
 
-        resolution = info.resolution
-
-        for frontier_goal in self.frontier_blacklist:
-            x_diff = abs(goal.x - frontier_goal.x)
-            y_diff = abs(goal.y - frontier_goal.y)
-
-            if x_diff < tolerance * resolution and y_diff < tolerance * resolution:
+        Parameters:
+        ----------
+        goal: Point
+            The goal point to check against the blacklist.
+        """
+        key = (round(goal.x, 1), round(goal.y, 1))
+        if key in self.frontier_blacklist:
+            data = self.frontier_blacklist[key]
+            if data['attempts'] >= self.blacklist_attempts:
+                self.get_logger().info(f"Goal ({goal.x:.2f}, {goal.y:.2f}) blacklisted due to too many attempts")
+                return True
+            time_since_last = (self.get_clock().now() - data['last_attempt']).nanoseconds / 1e9
+            if time_since_last < self.blacklist_duration:
+                self.get_logger().info(f"Goal ({goal.x:.2f}, {goal.y:.2f}) still blacklisted, last attempt {time_since_last:.1f}s ago")
                 return True
         return False
 
-    def same_point(self, p1, p2):
+    def add_to_blacklist(self, goal: Point):
+        """
+        Add or update a goal in the blacklist with attempt tracking.
+
+        Parameters:
+        ----------
+        goal: Point
+            The goal point to add to the blacklist.
+        """
+        key = (round(goal.x, 1), round(goal.y, 1))
+        if key in self.frontier_blacklist:
+            self.frontier_blacklist[key]['attempts'] += 1
+            self.frontier_blacklist[key]['last_attempt'] = self.get_clock().now()
+        else:
+            self.frontier_blacklist[key] = {
+                'attempts': 1,
+                'last_attempt': self.get_clock().now()
+            }
+        self.get_logger().info(f"Added/updated goal ({goal.x:.2f}, {goal.y:.2f}) in blacklist with {self.frontier_blacklist[key]['attempts']} attempts")
+
+    def same_point(self, p1: Point, p2: Point):
+        """Check if two points are essentially the same location.
+
+        Parameters:
+        ----------
+        p1: Point
+            First point to compare.
+        p2: Point
+            Second point to compare.
+
+        Returns:
+        -------
+        bool
+            True if points are within 1 cm of each other, False otherwise.
+        """
         dx = p1.x - p2.x
         dy = p1.y - p2.y
         dist = math.sqrt(dx*dx + dy*dy)
         return dist < 0.01
 
     def report_status(self):
+        """
+        Periodic status reporter called by timer.
+
+        Publishes exploration status messages at regular intervals to keep
+        monitoring systems updated.
+        """
         if self.exploration_complete:
             self.publish_exploration_status(True, "Exploration complete")
         else:
             self.publish_exploration_status(False, "Exploring")
 
 def main(args=None):
+    """
+    Main entry point for the explore node.
+
+    Initializes ROS2, creates the Explore node, and spins until shutdown.
+
+    Parameters:
+    ----------
+    args: list, optional
+        Command line arguments for ROS2 initialization.
+    """
     rclpy.init(args=args)
     node = Explore()
     rclpy.spin(node)
