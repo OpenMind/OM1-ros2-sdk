@@ -111,7 +111,7 @@ class APIHandlers:
             data = request.get_json(silent=True) or {}
             launch_file = data.get("launch_file", "slam_launch.py")
             map_yaml = data.get("map_yaml", None)
-            args = f"map_yaml_file:=${map_yaml} " if map_yaml else ""
+            args = f"map_yaml_file:={map_yaml} " if map_yaml else ""
             args += "use_sim:=true " if self.orchestrator.use_sim else ""
 
             if self.orchestrator.slam_manager.start(launch_file, args=args):
@@ -173,7 +173,7 @@ class APIHandlers:
                 )
 
             map_yaml = self.orchestrator.map_manager.get_map_yaml_path(map_name)
-            args = f"map_yaml_file:=${map_yaml} " if map_yaml else ""
+            args = f"map_yaml_file:={map_yaml} " if map_yaml else ""
             args += "use_sim:=true " if self.orchestrator.use_sim else ""
 
             if self.orchestrator.nav2_manager.start(launch_file, args=args):
