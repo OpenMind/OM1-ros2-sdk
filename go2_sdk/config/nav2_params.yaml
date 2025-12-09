@@ -30,7 +30,7 @@ amcl:
     save_pose_rate: 0.5
     sigma_hit: 0.2
     tf_broadcast: True
-    transform_tolerance: 0.5  # Reduced from 1.0
+    transform_tolerance: 1.0  
     update_min_a: 0.005
     update_min_d: 0.02
     z_hit: 0.85
@@ -48,11 +48,11 @@ bt_navigator:
   ros__parameters:
     use_sim_time: False
     global_frame: map
-    transform_tolerance: 0.5  # Reduced from 1.0
+    transform_tolerance: 1.0  
     robot_base_frame: base_link
     odom_topic: /odom
     bt_loop_duration: 10
-    default_server_timeout: 20
+    default_server_timeout: 30
     enable_groot_monitoring: True
     groot_zmq_publisher_port: 1666
     groot_zmq_server_port: 1667
@@ -107,88 +107,85 @@ bt_navigator:
 controller_server:
   ros__parameters:
     use_sim_time: False
-    controller_frequency: 40.0
+    controller_frequency: 30.0
     min_x_velocity_threshold: 0.001
     min_y_velocity_threshold: 0.001
     min_theta_velocity_threshold: 0.001
-    failure_tolerance: 0.5
+    failure_tolerance: 0.8
     progress_checker_plugin: "progress_checker"
     goal_checker_plugins: ["general_goal_checker"]
     controller_plugins: ["FollowPath"]
 
     progress_checker:
       plugin: "nav2_controller::SimpleProgressChecker"
-      required_movement_radius: 0.3  # Increased slightly
-      movement_time_allowance: 20.0  # Increased from 15.0
+      required_movement_radius: 0.1
+      movement_time_allowance: 45.0
 
     general_goal_checker:
       stateful: True
       plugin: "nav2_controller::SimpleGoalChecker"
-      xy_goal_tolerance: 0.25
-      yaw_goal_tolerance: 0.25
+      xy_goal_tolerance: 0.30
+      yaw_goal_tolerance: 0.35
 
-    # MPPI Controller - optimized for Unitree Go2
     FollowPath:
       plugin: "nav2_mppi_controller::MPPIController"
-      time_steps: 56  # Prediction horizon steps
-      model_dt: 0.05  # Time between steps (50ms)
-      batch_size: 2000
-      vx_std: 0.2  # Std dev for forward velocity sampling
-      vy_std: 0.0  # No lateral movement for quadruped
-      wz_std: 0.4  # Std dev for rotational velocity sampling
-      vx_max: 0.4  # Max forward velocity
-      vx_min: -0.3  # Max backward velocity
+      time_steps: 48
+      model_dt: 0.07
+      batch_size: 1500
+      vx_std: 0.15
+      vy_std: 0.0
+      wz_std: 0.35
+      vx_max: 0.25
+      vx_min: -0.2
       vy_max: 0.0
-      wz_max: 1.2  # Max rotation rate
-      iteration_count: 1  # MPPI iterations per control cycle
-      prune_distance: 1.7  # Distance ahead to prune path
-      transform_tolerance: 0.3
-      temperature: 0.3  # Lower = more exploitation vs exploration
-      gamma: 0.015  # Discount factor
-      motion_model: "DiffDrive"  # Use DiffDrive for Go2
-      visualize: False  # Set to True for debugging
-      regenerate_noises: False
+      wz_max: 0.8
+      iteration_count: 1
+      prune_distance: 1.5
+      transform_tolerance: 0.5  
+      temperature: 0.4
+      gamma: 0.015
+      motion_model: "DiffDrive"
+      visualize: False
+      regenerate_noises: True
 
-      # Cost function weights (tune these for your needs)
-      critics: ["ConstraintCritic", "ObstaclesCritic", "GoalCritic", "GoalAngleCritic", "PathAlignCritic", "PathFollowCritic", "PathAngleCritic", "PreferForwardCritic"]
+      critics: ["ConstraintCritic", "CostCritic", "GoalCritic", "GoalAngleCritic", "PathAlignCritic", "PathFollowCritic", "PathAngleCritic", "PreferForwardCritic", "ObstaclesCritic"]
 
       ConstraintCritic:
         enabled: True
         cost_power: 1
         cost_weight: 4.0
 
-      ObstaclesCritic:
-        enabled: True
-        cost_power: 1
-        cost_weight: 20.0
-        consider_footprint: False
-        collision_cost: 10000.0
-        collision_margin_distance: 0.1
-        near_goal_distance: 0.5
-
       GoalCritic:
         enabled: True
         cost_power: 1
-        cost_weight: 5.0  # High weight for reaching goal
-        threshold_to_consider: 1.4
+        cost_weight: 6.0
+        threshold_to_consider: 1.2
+
+      ObstaclesCritic:
+        enabled: True
+        cost_power: 1
+        cost_weight: 18.0
+        consider_footprint: False
+        collision_cost: 10000.0
+        collision_margin_distance: 0.12
+        near_goal_distance: 0.5
 
       GoalAngleCritic:
         enabled: True
         cost_power: 1
-        cost_weight: 15.0  # Important for final orientation
-        threshold_to_consider: 0.5
+        cost_weight: 10.0
+        threshold_to_consider: 0.6
 
       PreferForwardCritic:
         enabled: True
         cost_power: 1
-        cost_weight: 1.0  # Penalize backward motion
+        cost_weight: 3.0
         threshold_to_consider: 0.5
 
-      # Obstacle and path following
       CostCritic:
         enabled: True
         cost_power: 1
-        cost_weight: 3.81
+        cost_weight: 3.5
         critical_cost: 300.0
         consider_footprint: True
         collision_cost: 1000000.0
@@ -198,52 +195,53 @@ controller_server:
       PathAlignCritic:
         enabled: True
         cost_power: 1
-        cost_weight: 14.0
-        max_path_occupancy_ratio: 0.05
-        trajectory_point_step: 4
-        threshold_to_consider: 0.5
-        offset_from_furthest: 20
+        cost_weight: 32.0
+        max_path_occupancy_ratio: 0.07
+        trajectory_point_step: 3
+        threshold_to_consider: 0.6
+        offset_from_furthest: 15
         use_path_orientations: False
 
       PathFollowCritic:
         enabled: True
         cost_power: 1
-        cost_weight: 5.0
-        offset_from_furthest: 5
-        threshold_to_consider: 1.4
+        cost_weight: 20.0
+        offset_from_furthest: 6
+        threshold_to_consider: 1.2
 
       PathAngleCritic:
         enabled: True
         cost_power: 1
         cost_weight: 2.0
         offset_from_furthest: 4
-        threshold_to_consider: 0.5
-        max_angle_to_furthest: 1.0
+        threshold_to_consider: 0.6
+        max_angle_to_furthest: 1.2
         mode: 0
 
-      # Noise generator settings
       noise_generator_config:
         default:
-          time_steps: 56
-          batch_size: 2000
-          vx_std: 0.2
-          wz_std: 0.4
+          time_steps: 48
+          batch_size: 1500
+          vx_std: 0.15
+          wz_std: 0.35
           vx_mu: 0.0
           wz_mu: 0.0
 
 local_costmap:
   local_costmap:
     ros__parameters:
-      update_frequency: 10.0
-      publish_frequency: 5.0
+      update_frequency: 8.0
+      publish_frequency: 4.0
       global_frame: odom
       robot_base_frame: base_link
       use_sim_time: False
       rolling_window: True
-      width: 3
-      height: 3
+      width: 4
+      height: 4
       resolution: 0.05
-      footprint: "[[0.3, 0.2], [0.3, -0.2], [-0.3, -0.2], [-0.3, 0.2]]"
+      transform_tolerance: 1.0  
+      # Slightly smaller footprint to prevent self-collision in costmap
+      footprint: "[[0.35, 0.20], [0.35, -0.20], [-0.35, -0.20], [-0.35, 0.20]]"
       plugins: ["static_layer", "obstacle_layer", "stvl_layer", "inflation_layer"]
 
       static_layer:
@@ -253,92 +251,96 @@ local_costmap:
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
+        footprint_clearing_enabled: True  # KEY: Clear footprint area
+        max_obstacle_height: 2.0
         observation_sources: scan
         scan:
           topic: /scan
           max_obstacle_height: 2.0
+          min_obstacle_height: 0.0
           clearing: True
           marking: True
           data_type: "LaserScan"
-          raytrace_max_range: 3.0
+          raytrace_max_range: 3.5
           raytrace_min_range: 0.0
-          obstacle_max_range: 2.5
-          obstacle_min_range: 0.0
+          obstacle_max_range: 3.0
+          obstacle_min_range: 0.15  
 
-      # STVL for 4D LiDAR pointcloud (optimized for ground obstacles)
       stvl_layer:
         plugin: "spatio_temporal_voxel_layer/SpatioTemporalVoxelLayer"
         enabled: True
-        voxel_decay: 0.8  # Faster decay for dynamic ground obstacles
-        decay_model: 0  # 0=linear, 1=exponential, 2=persistent
-        voxel_size: 0.04  # 4cm voxels for better ground detail
-        track_unknown_space: True
+        voxel_decay: 1.5  # Faster decay
+        decay_model: 0
+        voxel_size: 0.05
+        track_unknown_space: False  
         observation_persistence: 0.0
-        max_obstacle_height: 2.5  # Full height detection with 4D LiDAR
-        min_obstacle_height: 0.15  # 15.0cm - lower threshold for ground obstacles
-        obstacle_max_range: 2.5  # Focused range for ground detection
-        obstacle_min_range: 0.25  # Minimum range to avoid self-detection
+        max_obstacle_height: 2.5
+        min_obstacle_height: 0.18  # Slightly higher to avoid ground noise
+        obstacle_max_range: 2.5
+        obstacle_min_range: 0.30  
         origin_z: 0.0
         publish_voxel_map: True
-        transform_tolerance: 0.5
+        transform_tolerance: 1.0  
         mapping_mode: False
         map_save_duration: 60.0
-        combination_method: 1  # 0=max, 1=override
+        combination_method: 1
         update_footprint_enabled: True
-
-        # 4D LiDAR as observation source
         observation_sources: lidar_4d
-
-        # 4D LiDAR pointcloud configuration (Unitree Go2)
         lidar_4d:
           data_type: PointCloud2
-          topic: /utlidar/cloud_deskewed  # Motion-compensated pointcloud
+          topic: /utlidar/cloud_deskewed
           marking: True
           clearing: True
-          min_obstacle_height: 0.15  # 15.0cm threshold for ground obstacles
-          max_obstacle_height: 2.5  # Full height coverage
-          expected_update_rate: 15.0  # Unitree 4D LiDAR at ~15Hz
+          min_obstacle_height: 0.18
+          max_obstacle_height: 2.5
+          expected_update_rate: 15.0
           observation_persistence: 0.0
           inf_is_valid: False
           filter: "voxel"
-          voxel_min_points: 1  # Lower threshold for ground obstacle sensitivity
+          voxel_min_points: 3 
           clear_after_reading: True
           enabled: True
-          model_type: 1  # 1=3d_lidar (for 4D LiDAR)
+          model_type: 1
 
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 5.0
-        inflation_radius: 0.25
+        cost_scaling_factor: 3.5  # Smoother gradient
+        inflation_radius: 0.25  
+
       always_send_full_costmap: True
 
 global_costmap:
   global_costmap:
     ros__parameters:
-      update_frequency: 5.0
-      publish_frequency: 2.0
+      update_frequency: 2.0  # Reduced
+      publish_frequency: 1.0
       global_frame: map
       robot_base_frame: base_link
       use_sim_time: False
-      footprint: "[[0.3, 0.2], [0.3, -0.2], [-0.3, -0.2], [-0.3, 0.2]]"
+      transform_tolerance: 1.0  
+      # Slightly smaller footprint
+      footprint: "[[0.35, 0.20], [0.35, -0.20], [-0.35, -0.20], [-0.35, 0.20]]"
       resolution: 0.1
-      track_unknown_space: True
+      track_unknown_space: False  
       plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
 
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
+        footprint_clearing_enabled: True  
+        max_obstacle_height: 2.0
         observation_sources: scan
         scan:
           topic: /scan
           max_obstacle_height: 2.0
+          min_obstacle_height: 0.0
           clearing: True
           marking: True
           data_type: "LaserScan"
-          raytrace_max_range: 3.0
+          raytrace_max_range: 4.0
           raytrace_min_range: 0.0
           obstacle_max_range: 3.5
-          obstacle_min_range: 0.0
+          obstacle_min_range: 0.15
 
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
@@ -346,8 +348,8 @@ global_costmap:
 
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 5.0
-        inflation_radius: 0.30
+        cost_scaling_factor: 3.5
+        inflation_radius: 0.3  
 
       always_send_full_costmap: True
 
@@ -367,19 +369,20 @@ map_saver:
 planner_server:
   ros__parameters:
     expected_planner_frequency: 5.0
-    transform_tolerance: 0.1
+    transform_tolerance: 1.0  
     use_sim_time: False
     planner_plugins: ["GridBased"]
-    # Using SmacPlanner2D for better orientation handling
     GridBased:
       plugin: "nav2_smac_planner/SmacPlanner2D"
-      tolerance: 0.3
+      tolerance: 0.5 
       downsample_costmap: False
       downsampling_factor: 1
-      allow_unknown: True
+      allow_unknown: True  # Allow planning through unknown space
       max_iterations: 1000000
       max_on_approach_iterations: 1000
       smooth_path: True
+      #Add cost_travel_multiplier to prefer free space
+      cost_travel_multiplier: 2.0
 
 smoother_server:
   ros__parameters:
@@ -401,9 +404,9 @@ behavior_server:
       plugin: "nav2_behaviors/Spin"
     backup:
       plugin: "nav2_behaviors/BackUp"
-      backup_dist: 0.5
-      backup_speed: 0.15
-      time_allowance: 10.0
+      backup_dist: 0.4
+      backup_speed: 0.12
+      time_allowance: 20.0
     drive_on_heading:
       plugin: "nav2_behaviors/DriveOnHeading"
     wait:
@@ -412,12 +415,12 @@ behavior_server:
       plugin: "nav2_behaviors/AssistedTeleop"
     global_frame: odom
     robot_base_frame: base_link
-    transform_tolerance: 0.5
+    transform_tolerance: 1.0  # Increased
     use_sim_time: False
-    simulate_ahead_time: 2.5
-    max_rotational_vel: 1.0
-    min_rotational_vel: 0.4
-    rotational_acc_lim: 3.2
+    simulate_ahead_time: 3.0
+    max_rotational_vel: 0.6
+    min_rotational_vel: 0.15
+    rotational_acc_lim: 1.8
 
 robot_state_publisher:
   ros__parameters:
@@ -440,10 +443,10 @@ velocity_smoother:
     smoothing_frequency: 20.0
     scale_velocities: False
     feedback: "OPEN_LOOP"
-    max_velocity: [0.4, 0.0, 1.2]  # Updated for MPPI limits
-    min_velocity: [-0.3, 0.0, -1.2]
-    max_accel: [2.5, 0.0, 3.2]
-    max_decel: [-2.5, 0.0, -3.2]
+    max_velocity: [0.25, 0.0, 0.8]
+    min_velocity: [-0.2, 0.0, -0.8]
+    max_accel: [1.2, 0.0, 2.0]
+    max_decel: [-1.2, 0.0, -2.0]
     odom_topic: "odom"
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
