@@ -41,6 +41,10 @@ class OrchestratorAPI(Node):
     def __init__(self):
         super().__init__("orchestrator_api")
 
+        # Declare and use the 'use_sim' parameter to determine if running in simulation
+        self.declare_parameter("use_sim", False)
+        self.use_sim = self.get_parameter("use_sim").value
+
         self.maps_directory = os.path.abspath("./maps")
         self.locations_directory = os.path.abspath("./locations")
 

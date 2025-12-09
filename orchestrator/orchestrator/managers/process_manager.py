@@ -22,7 +22,7 @@ class ProcessManager:
         self.process: Optional[subprocess.Popen] = None
         self.robot_type = robot_type
 
-    def start(self, launch_file: str, map_yaml: Optional[str] = None) -> bool:
+    def start(self, launch_file: str, args: Optional[str] = None) -> bool:
         """
         Start a ROS2 launch file as a subprocess, selecting the correct package for robot type.
 
@@ -30,8 +30,8 @@ class ProcessManager:
         ----------
         launch_file : str
             The name of the launch file to run (e.g., 'slam_launch.py' or 'nav2_launch.py').
-        map_yaml : Optional[str]
-            The path to the map YAML file, if applicable.
+        args : Optional[str]
+            extra arguments to pass to the launch file (e.g., map yaml file).
 
         Returns:
         -------
@@ -41,8 +41,8 @@ class ProcessManager:
         if self.process is None or self.process.poll() is not None:
             package = "g1_sdk" if self.robot_type == "g1" else "go2_sdk"
             cmd = ["ros2", "launch", package, launch_file]
-            if map_yaml:
-                cmd.extend(["map_yaml_file:=" + map_yaml])
+            if args:
+                cmd.extend(args.split())
             self.process = subprocess.Popen(cmd, preexec_fn=os.setsid)
             return True
         return False

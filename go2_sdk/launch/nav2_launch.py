@@ -3,6 +3,7 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
+from launch.conditions import UnlessCondition
 from launch.substitutions import EnvironmentVariable, LaunchConfiguration
 from launch_ros.actions import Node
 
@@ -54,6 +55,7 @@ def generate_launch_description():
             "GLOBAL_LOCALIZATION_PARTICLES", default_value="5000"
         ),
     )
+    use_sim = LaunchConfiguration("use_sim", default="false")
 
     return LaunchDescription(
         [
@@ -101,18 +103,25 @@ def generate_launch_description():
                 default_value=global_localization_particles,
                 description="Number of particles for global localization",
             ),
+            DeclareLaunchArgument(
+                "use_sim",
+                default_value=use_sim,
+                description="Whether to use simulation",
+            ),
             Node(
                 package="robot_state_publisher",
                 executable="robot_state_publisher",
                 name="robot_state_publisher",
                 output="screen",
                 parameters=[{"robot_description": robot_desc}],
+                condition=UnlessCondition(use_sim),
             ),
             Node(
                 package="go2_sdk",
                 executable="joint_state_publisher",
                 name="joint_state_publisher",
                 output="screen",
+                condition=UnlessCondition(use_sim),
             ),
             # Node(
             #     package='rplidar_ros',
@@ -150,23 +159,27 @@ def generate_launch_description():
                     "laser",
                 ],
                 output="screen",
+                condition=UnlessCondition(use_sim),
             ),
             Node(
                 package="go2_sdk",
                 executable="pose_to_tf",
                 output="screen",
+                condition=UnlessCondition(use_sim),
             ),
             Node(
                 package="go2_sdk",
                 executable="cmd_vel_to_go2",
                 name="cmd_vel_to_go2",
                 output="screen",
+                condition=UnlessCondition(use_sim),
             ),
             Node(
                 package="go2_sdk",
                 executable="go2_sport_action",
                 name="go2_sport_action",
                 output="screen",
+                condition=UnlessCondition(use_sim),
             ),
             Node(
                 package="go2_sdk",
@@ -181,7 +194,11 @@ def generate_launch_description():
                 output="screen",
             ),
             Node(
-                package="joy", executable="joy_node", name="joy_node", output="screen"
+                package="joy",
+                executable="joy_node",
+                name="joy_node",
+                output="screen",
+                condition=UnlessCondition(use_sim),
             ),
             # RB is the enable button
             # The left joystick controls linear movement
@@ -204,6 +221,7 @@ def generate_launch_description():
                         "scale_turbo_angular.z": 2.0,
                     }
                 ],
+                condition=UnlessCondition(use_sim),
             ),
             Node(
                 package="nav2_lifecycle_manager",
@@ -224,13 +242,14 @@ def generate_launch_description():
                             "velocity_smoother",
                         ]
                     },
+                    {"use_sim_time": use_sim},
                 ],
             ),
             Node(
                 package="nav2_controller",
                 executable="controller_server",
                 output="screen",
-                parameters=[nav2_config_file],
+                parameters=[nav2_config_file, {"use_sim_time": use_sim}],
                 remappings=[("/cmd_vel", "/cmd_vel")],
             ),
             Node(
@@ -238,42 +257,42 @@ def generate_launch_description():
                 executable="smoother_server",
                 name="smoother_server",
                 output="screen",
-                parameters=[nav2_config_file],
+                parameters=[nav2_config_file, {"use_sim_time": use_sim}],
             ),
             Node(
                 package="nav2_planner",
                 executable="planner_server",
                 name="planner_server",
                 output="screen",
-                parameters=[nav2_config_file],
+                parameters=[nav2_config_file, {"use_sim_time": use_sim}],
             ),
             Node(
                 package="nav2_behaviors",
                 executable="behavior_server",
                 name="behavior_server",
                 output="screen",
-                parameters=[nav2_config_file],
+                parameters=[nav2_config_file, {"use_sim_time": use_sim}],
             ),
             Node(
                 package="nav2_bt_navigator",
                 executable="bt_navigator",
                 name="bt_navigator",
                 output="screen",
-                parameters=[nav2_config_file],
+                parameters=[nav2_config_file, {"use_sim_time": use_sim}],
             ),
             Node(
                 package="nav2_waypoint_follower",
                 executable="waypoint_follower",
                 name="waypoint_follower",
                 output="screen",
-                parameters=[nav2_config_file],
+                parameters=[nav2_config_file, {"use_sim_time": use_sim}],
             ),
             Node(
                 package="nav2_velocity_smoother",
                 executable="velocity_smoother",
                 name="velocity_smoother",
                 output="screen",
-                parameters=[nav2_config_file],
+                parameters=[nav2_config_file, {"use_sim_time": use_sim}],
                 remappings=[
                     ("/cmd_vel", "/cmd_vel_nav"),
                     ("/cmd_vel_smoothed", "/cmd_vel"),
@@ -284,7 +303,7 @@ def generate_launch_description():
                 executable="map_server",
                 name="map_server",
                 output="screen",
-                parameters=[{"use_sim_time": False, "yaml_filename": map_yaml_file}],
+                parameters=[{"use_sim_time": use_sim, "yaml_filename": map_yaml_file}],
             ),
             Node(
                 package="nav2_lifecycle_manager",
@@ -292,7 +311,7 @@ def generate_launch_description():
                 name="lifecycle_manager_localization",
                 output="screen",
                 parameters=[
-                    {"use_sim_time": False},
+                    {"use_sim_time": use_sim},
                     {"autostart": True},
                     # {'node_names': ['map_server', 'amcl']}
                     {"node_names": ["map_server"]},
@@ -318,6 +337,7 @@ def generate_launch_description():
                         "laser_frame": "laser",
                         "laser_topic": "scan",
                         "global_localization_particles": global_localization_particles,
+                        "use_sim_time": use_sim,
                     }
                 ],
             ),
