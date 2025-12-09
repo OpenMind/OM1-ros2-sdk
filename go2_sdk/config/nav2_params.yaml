@@ -136,7 +136,7 @@ controller_server:
       vy_std: 0.0
       wz_std: 0.35
       vx_max: 0.25
-      vx_min: -0.2
+      vx_min: -0.22
       vy_max: 0.0
       wz_max: 0.8
       iteration_count: 1
@@ -443,10 +443,10 @@ velocity_smoother:
     smoothing_frequency: 20.0
     scale_velocities: False
     feedback: "OPEN_LOOP"
-    max_velocity: [0.25, 0.0, 0.8]
-    min_velocity: [-0.25, 0.0, -0.8]
-    max_accel: [1.2, 0.0, 2.0]
-    max_decel: [-1.2, 0.0, -2.0]
+    max_velocity: [0.26, 0.0, 0.8]
+    min_velocity: [-0.26, 0.0, -0.8]
+    max_accel: [1.3, 0.0, 2.0]
+    max_decel: [-1.3, 0.0, -2.0]
     odom_topic: "odom"
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
