@@ -132,15 +132,15 @@ controller_server:
       time_steps: 48
       model_dt: 0.07
       batch_size: 1500
-      vx_std: 0.15
+      vx_std: 0.15 # Velocity variance (exploration noise)
       vy_std: 0.0
-      wz_std: 0.35
-      vx_max: 0.25
-      vx_min: -0.22
+      wz_std: 0.35 # Angular velocity variance
+      vx_max: 0.25 # Absolute max forward speed (m/s)
+      vx_min: -0.22 # Max reverse speed (m/s)
       vy_max: 0.0
-      wz_max: 0.8
-      iteration_count: 1
-      prune_distance: 1.5
+      wz_max: 0.8 # Max angular velocity (rad/s)
+      iteration_count: 1 # Optimization iterations (1 is efficient)
+      prune_distance: 1.5 # Remove path points closer than this
       transform_tolerance: 0.5  
       temperature: 0.4
       gamma: 0.015
@@ -150,18 +150,18 @@ controller_server:
 
       critics: ["ConstraintCritic", "CostCritic", "GoalCritic", "GoalAngleCritic", "PathAlignCritic", "PathFollowCritic", "PathAngleCritic", "PreferForwardCritic", "ObstaclesCritic"]
 
-      ConstraintCritic:
+      ConstraintCritic: # Penalizes violating velocity/accel limits
         enabled: True
         cost_power: 1
         cost_weight: 4.0
 
-      GoalCritic:
+      GoalCritic: # Penalizes distance to goal
         enabled: True
         cost_power: 1
         cost_weight: 10.0
         threshold_to_consider: 1.2
 
-      ObstaclesCritic:
+      ObstaclesCritic: # Penalizes collisions (CRITICAL)
         enabled: True
         cost_power: 1
         cost_weight: 18.0
@@ -182,7 +182,7 @@ controller_server:
         cost_weight: 3.0
         threshold_to_consider: 0.5
 
-      CostCritic:
+      CostCritic: # Penalizes high-cost areas
         enabled: True
         cost_power: 1
         cost_weight: 3.5
@@ -241,7 +241,7 @@ local_costmap:
       resolution: 0.05
       transform_tolerance: 1.0  
       # Slightly smaller footprint to prevent self-collision in costmap
-      footprint: "[[0.35, 0.20], [0.35, -0.20], [-0.35, -0.20], [-0.35, 0.20]]"
+      footprint: "[[0.35, 0.20], [0.35, -0.20], [-0.35, -0.20], [-0.35, 0.20]]" # Robot shape [x,y] for collision checking
       plugins: ["static_layer", "obstacle_layer", "stvl_layer", "inflation_layer"]
 
       static_layer:
@@ -251,7 +251,7 @@ local_costmap:
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
-        footprint_clearing_enabled: True  # KEY: Clear footprint area
+        footprint_clearing_enabled: True  # Clear footprint area
         max_obstacle_height: 2.0
         observation_sources: scan
         scan:
@@ -304,8 +304,8 @@ local_costmap:
 
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 3.5  # Smoother gradient
-        inflation_radius: 0.25  
+        cost_scaling_factor: 3.5  # Decay rate (lower = larger danger zone)
+        inflation_radius: 0.25  # Radius to inflate costs around obstacles (m)
 
       always_send_full_costmap: True
 
@@ -348,8 +348,8 @@ global_costmap:
 
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 3.5
-        inflation_radius: 0.3  
+        cost_scaling_factor: 3.5 # Decay rate
+        inflation_radius: 0.3  # Radius to inflate costs around obstacles (m)
 
       always_send_full_costmap: True
 
@@ -382,7 +382,7 @@ planner_server:
       max_on_approach_iterations: 1000
       smooth_path: True
       #Add cost_travel_multiplier to prefer free space
-      cost_travel_multiplier: 2.0
+      cost_travel_multiplier: 2.0 # Higher = prefer low cost areas vs short path
 
 smoother_server:
   ros__parameters:
@@ -443,9 +443,9 @@ velocity_smoother:
     smoothing_frequency: 20.0
     scale_velocities: False
     feedback: "OPEN_LOOP"
-    max_velocity: [0.26, 0.0, 0.8]
+    max_velocity: [0.26, 0.0, 0.8] # Kinematic hard limits [vx, vy, wz]
     min_velocity: [-0.26, 0.0, -0.8]
-    max_accel: [1.3, 0.0, 2.0]
+    max_accel: [1.3, 0.0, 2.0] # Max acceleration [ax, ay, az]
     max_decel: [-1.3, 0.0, -2.0]
     odom_topic: "odom"
     odom_duration: 0.1
