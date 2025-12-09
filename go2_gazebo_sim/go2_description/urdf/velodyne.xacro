@@ -51,7 +51,7 @@
     <!-- Gazebo Sim Velodyne Sensor plugin -->
     <gazebo reference="laser">
         <sensor name="velodyne-VLP16" type="gpu_lidar">
-            <pose>0 0 0 0 0 3.14159</pose>
+            <pose>0 0 0 0 0 0</pose>
             <topic>scan</topic>
             <update_rate>10</update_rate>
             <gz_frame_id>laser</gz_frame_id>

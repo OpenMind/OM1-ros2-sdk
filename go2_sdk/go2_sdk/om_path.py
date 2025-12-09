@@ -48,6 +48,10 @@ class OMPath(Node):
     def __init__(self):
         super().__init__("om_path")
 
+        # Declare and use the 'use_sim' parameter to determine if running in simulation
+        self.declare_parameter("use_sim", False)
+        self.use_sim = self.get_parameter("use_sim").value
+
         self.half_width_robot = 0.20
         self.sensor_mounting_angle = 180.0
         self.relevant_distance_min = 0.20
@@ -103,12 +107,14 @@ class OMPath(Node):
             if not math.isfinite(d_m) or d_m > 5.0 or d_m < self.relevant_distance_min:
                 continue
 
-            # first, correctly orient the sensor zero to the robot zero
-            angle = angle + self.sensor_mounting_angle
-            if angle >= 360.0:
-                angle = angle - 360.0
-            elif angle < 0.0:
-                angle = 360.0 + angle
+            # Only rotate sensor data if not in simulation
+            if not self.use_sim:
+                # first, correctly orient the sensor zero to the robot zero
+                angle = angle + self.sensor_mounting_angle
+                if angle >= 360.0:
+                    angle = angle - 360.0
+                elif angle < 0.0:
+                    angle = 360.0 + angle
 
             # then, convert to radians
             a_rad = angle * math.pi / 180.0

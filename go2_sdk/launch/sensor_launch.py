@@ -211,6 +211,7 @@ def generate_launch_description():
                 output="screen",
                 respawn=True,
                 respawn_delay=2.0,
+                parameters=[{"use_sim": use_sim}],
             ),
             Node(
                 package="go2_sdk",
