@@ -3,7 +3,6 @@ import os
 import rclpy
 from geometry_msgs.msg import Twist
 from rclpy.node import Node
-from std_msgs.msg import Bool, String
 
 from om_api.msg import (
     MapStorage,

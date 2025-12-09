@@ -1,5 +1,5 @@
-import math
 import json
+import math
 
 import rclpy
 from geometry_msgs.msg import Point, PoseStamped
@@ -555,10 +555,7 @@ class Explore(Node):
             Additional information about the exploration status.
         """
         status_msg = String()
-        status_data = {
-            "complete": complete,
-            "info": info if info else ""
-        }
+        status_data = {"complete": complete, "info": info if info else ""}
         status_msg.data = json.dumps(status_data)
         self.exploration_status_publisher.publish(status_msg)
 

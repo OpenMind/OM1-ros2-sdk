@@ -2,8 +2,8 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.conditions import UnlessCondition
 from launch.actions import DeclareLaunchArgument
+from launch.conditions import UnlessCondition
 from launch.substitutions import EnvironmentVariable, LaunchConfiguration
 from launch_ros.actions import Node
 
@@ -194,7 +194,11 @@ def generate_launch_description():
                 output="screen",
             ),
             Node(
-                package="joy", executable="joy_node", name="joy_node", output="screen", condition=UnlessCondition(use_sim),
+                package="joy",
+                executable="joy_node",
+                name="joy_node",
+                output="screen",
+                condition=UnlessCondition(use_sim),
             ),
             # RB is the enable button
             # The left joystick controls linear movement
