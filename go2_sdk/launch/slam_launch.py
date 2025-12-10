@@ -4,7 +4,7 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.conditions import UnlessCondition
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
 
 
@@ -16,7 +16,8 @@ def generate_launch_description():
         robot_desc = infp.read()
 
     slam_config_file = os.path.join(pkg_dir, "config", "slam_params.yaml")
-    nav2_config_file = os.path.join(pkg_dir, "config", "nav2_params.yaml")
+    nav2_config_file_real = os.path.join(pkg_dir, "config", "nav2_params.yaml")
+    nav2_config_file_sim = os.path.join(pkg_dir, "config", "nav2_params_sim.yaml")
     m_explorer_config_file = os.path.join(
         pkg_dir, "config", "m_explorer_ros2_params.yaml"
     )
@@ -30,6 +31,11 @@ def generate_launch_description():
     scan_mode = LaunchConfiguration("scan_mode", default="Sensitivity")
     map_yaml_file = LaunchConfiguration("map_yaml_file", default="")
     use_sim = LaunchConfiguration("use_sim", default="false")
+
+    # Conditionally select nav2 config file based on use_sim
+    nav2_config_file = PythonExpression([
+        "'", nav2_config_file_sim, "' if '", use_sim, "' == 'true' else '", nav2_config_file_real, "'"
+    ])
 
     return LaunchDescription(
         [

@@ -132,13 +132,13 @@ controller_server:
       time_steps: 48
       model_dt: 0.07
       batch_size: 1500
-      vx_std: 0.2 # Velocity variance (exploration noise)
+      vx_std: 0.15 # Velocity variance (exploration noise)
       vy_std: 0.0
-      wz_std: 0.4 # Angular velocity variance
-      vx_max: 0.5 # Absolute max forward speed (m/s)
-      vx_min: -0.35 # Max reverse speed (m/s)
+      wz_std: 0.35 # Angular velocity variance
+      vx_max: 0.25 # Absolute max forward speed (m/s)
+      vx_min: -0.22 # Max reverse speed (m/s)
       vy_max: 0.0
-      wz_max: 1.2 # Max angular velocity (rad/s)
+      wz_max: 0.8 # Max angular velocity (rad/s)
       iteration_count: 1 # Optimization iterations (1 is efficient)
       prune_distance: 1.5 # Remove path points closer than this
       transform_tolerance: 0.5  
@@ -164,22 +164,22 @@ controller_server:
       ObstaclesCritic: # Penalizes collisions (CRITICAL)
         enabled: True
         cost_power: 1
-        cost_weight: 10.0  # Reduced from 18.0 to allow closer approach
+        cost_weight: 18.0
         consider_footprint: False
         collision_cost: 10000.0
-        collision_margin_distance: 0.05  # Reduced from 0.12 for tighter navigation
-        near_goal_distance: 0.4
+        collision_margin_distance: 0.12
+        near_goal_distance: 0.5
 
       GoalAngleCritic:
         enabled: True
-        cost_power: 4
+        cost_power: 1
         cost_weight: 10.0
         threshold_to_consider: 0.6
 
       PreferForwardCritic:
         enabled: True
         cost_power: 1
-        cost_weight: 16.0
+        cost_weight: 3.0
         threshold_to_consider: 0.5
 
       CostCritic: # Penalizes high-cost areas
@@ -304,8 +304,8 @@ local_costmap:
 
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 5.0  # Faster decay (less repulsion)
-        inflation_radius: 0.30  # Original value
+        cost_scaling_factor: 3.5  # Decay rate (lower = larger danger zone)
+        inflation_radius: 0.25  # Radius to inflate costs around obstacles (m)
 
       always_send_full_costmap: True
 
@@ -348,8 +348,8 @@ global_costmap:
 
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 6.0  # Faster decay (less repulsion)
-        inflation_radius: 0.32  # Original value
+        cost_scaling_factor: 3.5 # Decay rate
+        inflation_radius: 0.3  # Radius to inflate costs around obstacles (m)
 
       always_send_full_costmap: True
 
@@ -443,10 +443,10 @@ velocity_smoother:
     smoothing_frequency: 20.0
     scale_velocities: False
     feedback: "OPEN_LOOP"
-    max_velocity: [0.5, 0.0, 1.2] # Kinematic hard limits [vx, vy, wz]
-    min_velocity: [-0.35, 0.0, -1.2]
-    max_accel: [2.0, 0.0, 2.5] # Max acceleration [ax, ay, az]
-    max_decel: [-2.0, 0.0, -2.5]
+    max_velocity: [0.26, 0.0, 0.8] # Kinematic hard limits [vx, vy, wz]
+    min_velocity: [-0.26, 0.0, -0.8]
+    max_accel: [1.3, 0.0, 2.0] # Max acceleration [ax, ay, az]
+    max_decel: [-1.3, 0.0, -2.0]
     odom_topic: "odom"
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
