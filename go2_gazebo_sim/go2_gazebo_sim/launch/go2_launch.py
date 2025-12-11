@@ -7,8 +7,8 @@ from launch.actions import (
     DeclareLaunchArgument,
     ExecuteProcess,
     IncludeLaunchDescription,
-    TimerAction,
     SetEnvironmentVariable,
+    TimerAction,
 )
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -42,15 +42,16 @@ def generate_launch_description():
     current_gz_resource_path = os.environ.get("GZ_SIM_RESOURCE_PATH", "")
     if go2_description_models not in current_gz_resource_path:
         if current_gz_resource_path:
-            new_gz_resource_path = current_gz_resource_path + ":" + go2_description_models
+            new_gz_resource_path = (
+                current_gz_resource_path + ":" + go2_description_models
+            )
         else:
             new_gz_resource_path = go2_description_models
     else:
         new_gz_resource_path = current_gz_resource_path
 
     set_gz_resource_path = SetEnvironmentVariable(
-        name="GZ_SIM_RESOURCE_PATH",
-        value=new_gz_resource_path
+        name="GZ_SIM_RESOURCE_PATH", value=new_gz_resource_path
     )
 
     declare_use_sim_time = DeclareLaunchArgument(

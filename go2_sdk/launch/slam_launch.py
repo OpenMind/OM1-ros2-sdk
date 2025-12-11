@@ -2,11 +2,15 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, ExecuteProcess, OpaqueFunction, TimerAction
-from launch.conditions import IfCondition, UnlessCondition
+from launch.actions import (
+    DeclareLaunchArgument,
+    ExecuteProcess,
+    OpaqueFunction,
+    TimerAction,
+)
+from launch.conditions import UnlessCondition
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
-
 
 # Simulation-specific parameter overrides as (node_name, param_path, value) tuples
 # These are applied via ros2 param set when use_sim:=true
@@ -18,7 +22,11 @@ SIM_PARAM_OVERRIDES = [
     ("/controller_server", "FollowPath.vx_min", "-0.35"),
     ("/controller_server", "FollowPath.wz_max", "1.2"),
     ("/controller_server", "FollowPath.ObstaclesCritic.repulsion_weight", "10.0"),
-    ("/controller_server", "FollowPath.ObstaclesCritic.collision_margin_distance", "0.05"),
+    (
+        "/controller_server",
+        "FollowPath.ObstaclesCritic.collision_margin_distance",
+        "0.05",
+    ),
     ("/controller_server", "FollowPath.ObstaclesCritic.near_goal_distance", "0.4"),
     ("/controller_server", "FollowPath.GoalAngleCritic.cost_power", "4"),
     ("/controller_server", "FollowPath.PreferForwardCritic.cost_weight", "16.0"),
@@ -31,6 +39,7 @@ SIM_PARAM_OVERRIDES = [
     ("/velocity_smoother", "max_accel", "[2.0, 0.0, 2.5]"),
     ("/velocity_smoother", "max_decel", "[-2.0, 0.0, -2.5]"),
 ]
+
 
 def configure_slam_nodes(context, *args, **kwargs):
     """Configure SLAM and navigation nodes with optional simulation overrides."""
@@ -63,10 +72,14 @@ def configure_slam_nodes(context, *args, **kwargs):
             )
 
     # Wrap sim param commands in a TimerAction to wait for nodes to be ready
-    sim_param_timer = TimerAction(
-        period=10.0,  # Wait for Nav2 nodes to be fully active
-        actions=sim_param_commands,
-    ) if sim_param_commands else None
+    sim_param_timer = (
+        TimerAction(
+            period=10.0,  # Wait for Nav2 nodes to be fully active
+            actions=sim_param_commands,
+        )
+        if sim_param_commands
+        else None
+    )
 
     nodes = [
         Node(
@@ -89,14 +102,22 @@ def configure_slam_nodes(context, *args, **kwargs):
             executable="static_transform_publisher",
             name="static_transform_publisher_laser",
             arguments=[
-                "--x", "0.2",
-                "--y", "0",
-                "--z", "0.05",
-                "--roll", "0",
-                "--pitch", "0",
-                "--yaw", "3.14159",
-                "--frame-id", "base_link",
-                "--child-frame-id", "laser",
+                "--x",
+                "0.2",
+                "--y",
+                "0",
+                "--z",
+                "0.05",
+                "--roll",
+                "0",
+                "--pitch",
+                "0",
+                "--yaw",
+                "3.14159",
+                "--frame-id",
+                "base_link",
+                "--child-frame-id",
+                "laser",
             ],
             output="screen",
             condition=UnlessCondition(use_sim),
