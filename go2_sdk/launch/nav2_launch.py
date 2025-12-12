@@ -25,7 +25,7 @@ SIM_PARAM_OVERRIDES = {
         "inflation_layer.inflation_radius": 0.30,
     },
     "planner_server": {
-        # globl costmap params
+        # global costmap params
         "inflation_layer.cost_scaling_factor": 6.0,
         "inflation_layer.inflation_radius": 0.32,
     },

@@ -34,6 +34,7 @@ def generate_launch_description():
     links_config = os.path.join(go2_gazebo_sim, "config/links/links.yaml")
     default_model_path = os.path.join(go2_description, "urdf/unitree_go2_robot.xacro")
     default_world_path = os.path.join(go2_description, "worlds/home_world.sdf")
+    aruco_model_path = os.path.join(go2_description, "models/aruco_marker/model.sdf")
 
     # Add go2_description/models to GZ_SIM_RESOURCE_PATH
     go2_description_models = os.path.join(go2_description, "models")
@@ -267,9 +268,6 @@ def generate_launch_description():
         }.items(),
     )
 
-    # Spawn ArUco Marker
-    # We use the absolute path to the model.sdf to avoid model:// URI resolution issues
-    aruco_model_path = os.path.join(go2_description, "models/aruco_marker/model.sdf")
 
     gazebo_spawn_aruco = Node(
         package="ros_gz_sim",
