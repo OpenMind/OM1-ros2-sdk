@@ -19,14 +19,14 @@ SIM_PARAM_OVERRIDES = {
         "FollowPath.ObstaclesCritic.near_goal_distance": 0.4,
         "FollowPath.GoalAngleCritic.cost_power": 4,
         "FollowPath.PreferForwardCritic.cost_weight": 16.0,
+        # local costmap params
+        "inflation_layer.cost_scaling_factor": 5.0,
+        "inflation_layer.inflation_radius": 0.30,
     },
     "planner_server": {
-        # Local costmap parameters
-        "local_costmap.local_costmap.inflation_layer.cost_scaling_factor": 5.0,
-        "local_costmap.local_costmap.inflation_layer.inflation_radius": 0.30,
-        # Global costmap parameters
-        "global_costmap.global_costmap.inflation_layer.cost_scaling_factor": 6.0,
-        "global_costmap.global_costmap.inflation_layer.inflation_radius": 0.32,
+        # globl costmap params
+        "inflation_layer.cost_scaling_factor": 6.0,
+        "inflation_layer.inflation_radius": 0.32,
     },
     "velocity_smoother": {
         "max_velocity": [0.5, 0.0, 1.2],
@@ -36,23 +36,15 @@ SIM_PARAM_OVERRIDES = {
     },
 }
 
-
 def get_node_params(node_name: str, base_config: str, use_sim: bool):
     """
     Merge base config with simulation overrides if needed.
-
-    Parameters:
-    -----------
-    node_name : str
-        Name of the node.
-    base_config : str
-        Path to the base configuration file.
-    use_sim : bool
-        Whether simulation mode is enabled.
     """
     params = [base_config, {"use_sim_time": use_sim}]
+
     if use_sim and node_name in SIM_PARAM_OVERRIDES:
         params.append(SIM_PARAM_OVERRIDES[node_name])
+
     return params
 
 
