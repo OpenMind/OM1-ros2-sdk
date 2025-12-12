@@ -21,7 +21,7 @@ SIM_PARAM_OVERRIDES = [
     ("/controller_server", "FollowPath.vx_max", "0.5"),
     ("/controller_server", "FollowPath.vx_min", "-0.35"),
     ("/controller_server", "FollowPath.wz_max", "1.2"),
-    ("/controller_server", "FollowPath.ObstaclesCritic.repulsion_weight", "10.0"),
+    ("/controller_server", "FollowPath.ObstaclesCritic.cost_weight", "10.0"),
     (
         "/controller_server",
         "FollowPath.ObstaclesCritic.collision_margin_distance",
@@ -33,6 +33,9 @@ SIM_PARAM_OVERRIDES = [
     # Local costmap inflation layer
     ("/local_costmap/local_costmap", "inflation_layer.cost_scaling_factor", "5.0"),
     ("/local_costmap/local_costmap", "inflation_layer.inflation_radius", "0.30"),
+    # Global costmap inflation layer
+    ("/global_costmap/global_costmap", "inflation_layer.cost_scaling_factor", "6.0"),
+    ("/global_costmap/global_costmap", "inflation_layer.inflation_radius", "0.32"),
     # Velocity smoother
     ("/velocity_smoother", "max_velocity", "[0.5, 0.0, 1.2]"),
     ("/velocity_smoother", "min_velocity", "[-0.35, 0.0, -1.2]"),
