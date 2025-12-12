@@ -268,7 +268,6 @@ def generate_launch_description():
         }.items(),
     )
 
-
     gazebo_spawn_aruco = Node(
         package="ros_gz_sim",
         executable="create",

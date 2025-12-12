@@ -7,7 +7,6 @@ from launch.conditions import UnlessCondition
 from launch.substitutions import EnvironmentVariable, LaunchConfiguration
 from launch_ros.actions import Node
 
-
 SIM_PARAM_OVERRIDES = {
     "controller_server": {
         "FollowPath.vx_std": 0.2,
@@ -37,6 +36,7 @@ SIM_PARAM_OVERRIDES = {
     },
 }
 
+
 def get_node_params(node_name: str, base_config: str, use_sim: bool):
     """
     Merge base config with simulation overrides if needed.
@@ -47,6 +47,7 @@ def get_node_params(node_name: str, base_config: str, use_sim: bool):
         params.append(SIM_PARAM_OVERRIDES[node_name])
 
     return params
+
 
 def generate_launch_description():
     pkg_dir = get_package_share_directory("go2_sdk")
