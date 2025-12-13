@@ -1,10 +1,4 @@
 #!/usr/bin/env python3
-"""
-A ROS2 node that publishes mock LowState messages for Unitree Go2 simulation.
-This provides simulated robot state data including IMU, motor, and battery information.
-Battery simulation auto-detects movement from cmd_vel for realistic drain behavior.
-"""
-
 import rclpy
 from geometry_msgs.msg import Twist
 from rcl_interfaces.msg import SetParametersResult

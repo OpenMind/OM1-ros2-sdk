@@ -35,8 +35,6 @@ def generate_launch_description():
     default_model_path = os.path.join(go2_description, "urdf/unitree_go2_robot.xacro")
     default_world_path = os.path.join(go2_description, "worlds/home_world.sdf")
     aruco_model_path = os.path.join(go2_description, "models/aruco_marker/model.sdf")
-
-    # Add go2_description/models to GZ_SIM_RESOURCE_PATH
     go2_description_models = os.path.join(go2_description, "models")
 
     # Ensure GZ_SIM_RESOURCE_PATH includes the models directory
