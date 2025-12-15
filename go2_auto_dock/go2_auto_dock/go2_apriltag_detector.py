@@ -249,8 +249,8 @@ class AprilTagNode(Node):
                     (0, 255, 255),
                     2,
                 )
-            cv2.imshow("AprilTag Detection", frame_bgr)
-            cv2.waitKey(1)
+            # cv2.imshow("AprilTag Detection", frame_bgr)
+            # cv2.waitKey(1)
 
         if 1 in tag_dict:
             tag_info = tag_dict[1]  # Get the dictionary with detection and pose info

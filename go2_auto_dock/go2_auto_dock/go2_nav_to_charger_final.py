@@ -1,9 +1,23 @@
 #!/usr/bin/env python3
+"""
+Navigation to charger node for autonomous docking.
+
+This node navigates the robot to the charging station and then launches
+the appropriate docking nodes based on whether running in simulation or
+on the real robot.
+
+Usage:
+    ros2 run go2_auto_dock go2_nav_to_charger
+    ros2 run go2_auto_dock go2_nav_to_charger --ros-args -p use_sim:=true
+"""
 
 import math
+import os
+import signal
 import subprocess
 import threading
 import time
+from typing import List, Optional
 
 import rclpy
 from nav2_msgs.action import NavigateToPose
@@ -27,14 +41,120 @@ def normalize_angle_deg(angle_deg):
     return angle_deg
 
 
+class ProcessManager:
+    """
+    ProcessManager handles starting and stopping of ROS2 nodes as subprocesses.
+    It manages process groups to ensure clean termination of ROS2 CLI wrappers and child nodes.
+    """
+
+    def __init__(self, name: str, pkill_pattern: Optional[str] = None):
+        """
+        Initialize the ProcessManager.
+
+        Parameters:
+        name : str
+            Human-readable name for logging purposes
+        pkill_pattern : str, optional
+            Pattern to use with 'pkill -f' for forceful cleanup (e.g. node name)
+        """
+        self.process: Optional[subprocess.Popen] = None
+        self.name = name
+        self.pkill_pattern = pkill_pattern
+
+    def run(self, command: List[str]) -> bool:
+        """
+        Start a command as a subprocess.
+
+        Parameters:
+        ----------
+        command : List[str]
+            Command and arguments to execute
+
+        Returns:
+        -------
+        bool
+            True if the process was started successfully, False if a process is already running.
+        """
+        if self.process is None or self.process.poll() is not None:
+            # Use os.setsid to create a new process group for clean termination
+            self.process = subprocess.Popen(command, preexec_fn=os.setsid)
+            return True
+        return False
+
+    def stop(self) -> bool:
+        """
+        Stop the currently running subprocess.
+        Tries graceful SIGTERM first, then force kill SIGKILL if needed.
+        Also runs pkill if a pattern was provided to ensure cleanup.
+
+        Returns:
+        -------
+        bool
+            True if the process was stopped (or wasn't running), False on failure.
+        """
+        # Always try pkill if pattern exists to catch zombie windows or detached processes
+        if self.pkill_pattern:
+            try:
+                subprocess.run(
+                    ["pkill", "-9", "-f", self.pkill_pattern],
+                    check=False,
+                    capture_output=True,
+                )
+            except Exception:
+                pass  # pkill failure is non-critical
+
+        if self.process and self.process.poll() is None:
+            try:
+                # Send SIGTERM to the process group
+                os.killpg(os.getpgid(self.process.pid), signal.SIGTERM)
+                try:
+                    self.process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    # Force kill if timeout expired
+                    os.killpg(os.getpgid(self.process.pid), signal.SIGKILL)
+                    self.process.wait(timeout=1)
+
+                self.process = None
+                return True
+            except (ProcessLookupError, OSError):
+                # Process might have already died
+                self.process = None
+                return True
+        return False
+
+    def is_running(self) -> bool:
+        """Check if the process is currently running."""
+        return self.process is not None and self.process.poll() is None
+
+    def wait(self) -> int:
+        """Wait for the process to complete and return its exit code."""
+        if self.process:
+            return self.process.wait()
+        return 0
+
+
 class SimpleGoalSender(Node):
+    """
+    A ROS2 node that navigates to the charging station and launches docking nodes.
+
+    Supports both real robot and simulation modes via use_sim parameter.
+    """
+
     def __init__(self):
         super().__init__("simple_goal_sender")
+
+        # Declare use_sim parameter (also check environment variable)
+        self.declare_parameter("use_sim", False)
+        use_sim_param = self.get_parameter("use_sim").value
+
+        # Also check USE_SIM_TIME environment variable as fallback
+        use_sim_env = os.environ.get("USE_SIM_TIME", "false").lower() == "true"
+        self.use_sim = use_sim_param or use_sim_env
 
         # Create action client for NavigateToPose
         self.nav_client = ActionClient(self, NavigateToPose, "navigate_to_pose")
 
-        # Define goal position and orientation  (bearing angle)
+        # Define goal position and orientation (bearing angle)
         self.goal_position = {"x": -0.9578, "y": -1.952, "z": 0.0}
         self.goal_orientation = {"x": 0.0, "y": 0.0, "z": 0.99, "w": -0.067}
 
@@ -46,19 +166,22 @@ class SimpleGoalSender(Node):
             self.goal_orientation["w"],
         )
 
-        # Store subprocess references
-        self.camera_process = None
-        self.detector_process = None
-        self.charger_process = None
+        # Initialize process managers with pkill patterns for safety
+        self.camera_manager = ProcessManager("Camera/Relay", "topic_tools relay")
+        self.detector_manager = ProcessManager(
+            "AprilTag Detector", "go2_apriltag_detector"
+        )
+        self.charger_manager = ProcessManager("Charger Routine", "go2_sim_charger")
 
         # Flag to signal shutdown
         self.should_shutdown = False
 
-        self.get_logger().info("Simple Goal Sender initialized")
+        mode_str = "SIMULATION" if self.use_sim else "REAL ROBOT"
+        self.get_logger().info(f"Simple Goal Sender initialized (Mode: {mode_str})")
         self.get_logger().info("Waiting for navigate_to_pose action server...")
 
     def send_goal(self):
-        """Send the navigation goal to the robot"""
+        """Send the navigation goal to the robot."""
         if not self.nav_client.wait_for_server(timeout_sec=10.0):
             self.get_logger().error("navigate_to_pose action server not available!")
             return False
@@ -92,7 +215,7 @@ class SimpleGoalSender(Node):
         return True
 
     def goal_response_callback(self, future):
-        """Called when the goal is accepted or rejected"""
+        """Called when the goal is accepted or rejected."""
         goal_handle = future.result()
         if not goal_handle.accepted:
             self.get_logger().error("Goal was REJECTED by the action server!")
@@ -103,7 +226,7 @@ class SimpleGoalSender(Node):
         goal_handle.get_result_async().add_done_callback(self.get_result_callback)
 
     def feedback_callback(self, feedback_msg):
-        """Called periodically during navigation"""
+        """Called periodically during navigation."""
         current_pose = feedback_msg.feedback.current_pose.pose
 
         dx = self.goal_position["x"] - current_pose.position.x
@@ -122,10 +245,10 @@ class SimpleGoalSender(Node):
         )
 
     def monitor_charging_process(self):
-        """Monitor the charging process and signal shutdown when complete"""
-        if self.charger_process is not None:
+        """Monitor the charging process and signal shutdown when complete."""
+        if self.charger_manager.is_running():
             self.get_logger().info("Monitoring charging process...")
-            returncode = self.charger_process.wait()  # Block until process completes
+            returncode = self.charger_manager.wait()  # Block until process completes
             self.get_logger().info(
                 f"Charging process completed with return code: {returncode}"
             )
@@ -137,47 +260,74 @@ class SimpleGoalSender(Node):
             self.should_shutdown = True
 
     def cleanup_processes(self):
-        """Terminate all spawned processes gracefully"""
+        """Terminate all spawned processes gracefully."""
         self.get_logger().info("Cleaning up processes...")
 
-        for process, name in [
-            (self.detector_process, "AprilTag detector"),
-            (self.camera_process, "Camera"),
+        for manager in [
+            self.detector_manager,
+            self.camera_manager,
+            self.charger_manager,
         ]:
-            if process is not None and process.poll() is None:  # Still running
-                self.get_logger().info(f"Terminating {name}...")
-                process.terminate()
-                try:
-                    process.wait(timeout=5)
-                    self.get_logger().info(f"{name} terminated successfully")
-                except subprocess.TimeoutExpired:
-                    self.get_logger().warn(f"{name} did not terminate, killing...")
-                    process.kill()
+            if manager.is_running():
+                self.get_logger().info(f"Stopping {manager.name}...")
+                manager.stop()
+                self.get_logger().info(f"{manager.name} stopped successfully")
+
+    def start_docking_nodes_real(self):
+        """Start docking nodes for real robot."""
+        self.get_logger().info("[REAL] Starting camera publisher...")
+        self.camera_manager.run(
+            ["ros2", "run", "go2_auto_dock", "go2_camera_publisher"]
+        )
+        time.sleep(4)
+
+        self.get_logger().info("[REAL] Starting AprilTag detector...")
+        self.detector_manager.run(
+            ["ros2", "run", "go2_auto_dock", "go2_apriltag_detector"]
+        )
+        time.sleep(4)
+
+        self.get_logger().info("[REAL] Starting charging routine...")
+        self.charger_manager.run(["ros2", "run", "go2_auto_dock", "go2_tag_charger"])
+
+    def start_docking_nodes_sim(self):
+        """Start docking nodes for simulation."""
+        # In simulation, Gazebo already publishes camera
+        # Use topic_tools relay to remap Gazebo camera to expected topic
+        self.get_logger().info("[SIM] Starting camera topic relay...")
+        self.camera_manager.run(
+            [
+                "ros2",
+                "run",
+                "topic_tools",
+                "relay",
+                "/camera/realsense2_camera_node/color/image_raw",
+                "/camera/image_raw",
+            ]
+        )
+        time.sleep(2)
+
+        self.get_logger().info("[SIM] Starting AprilTag detector...")
+        self.detector_manager.run(
+            ["ros2", "run", "go2_auto_dock", "go2_apriltag_detector"]
+        )
+        time.sleep(4)
+
+        self.get_logger().info("[SIM] Starting simulation charging routine...")
+        self.charger_manager.run(["ros2", "run", "go2_auto_dock", "go2_sim_charger"])
 
     def get_result_callback(self, future):
-        """Called when navigation is complete"""
+        """Called when navigation is complete."""
         result = future.result().result
         if result:
             self.get_logger().info("SUCCESS! Robot has ARRIVED at the goal position!")
             self.get_logger().info("Navigation completed successfully!")
 
-            # Start post-navigation tasks
-            self.get_logger().info("Starting camera...")
-            self.camera_process = subprocess.Popen(
-                ["ros2", "run", "go2_auto_dock", "go2_camera_publisher"]
-            )
-            time.sleep(4)
-
-            self.get_logger().info("Starting AprilTag detector...")
-            self.detector_process = subprocess.Popen(
-                ["ros2", "run", "go2_auto_dock", "go2_apriltag_detector"]
-            )
-            time.sleep(4)
-
-            self.get_logger().info("Starting charging routine...")
-            self.charger_process = subprocess.Popen(
-                ["ros2", "run", "go2_auto_dock", "go2_tag_charger"]
-            )
+            # Start post-navigation tasks based on mode
+            if self.use_sim:
+                self.start_docking_nodes_sim()
+            else:
+                self.start_docking_nodes_real()
 
             # Start monitoring thread
             monitor_thread = threading.Thread(
@@ -192,6 +342,7 @@ class SimpleGoalSender(Node):
 
 
 def main():
+    """Main entry point for the navigation to charger node."""
     rclpy.init()
     node = SimpleGoalSender()
     try:
@@ -211,8 +362,8 @@ def main():
         node.cleanup_processes()
     finally:
         node.destroy_node()
-        rclpy.shutdown()
-        node.get_logger().info("Shutdown complete!")
+        if rclpy.ok():
+            rclpy.shutdown()
 
 
 if __name__ == "__main__":

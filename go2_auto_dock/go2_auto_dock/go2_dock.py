@@ -1,5 +1,16 @@
 #!/usr/bin/env python3
+"""
+Battery monitor node for autonomous charging.
 
+This node monitors the robot's battery level and triggers navigation to the
+charging station when battery drops below the threshold.
+
+Usage:
+    ros2 run go2_auto_dock go2_battery_monitor
+    ros2 run go2_auto_dock go2_battery_monitor --ros-args -p use_sim:=true
+"""
+
+import os
 import subprocess
 
 import rclpy
@@ -9,9 +20,26 @@ from unitree_go.msg import LowState
 
 
 class Go2AutoChargeMonitor(Node):
+    """
+    Battery monitor node that triggers automatic charging when battery is low.
+
+    Supports both real robot and simulation modes via use_sim parameter.
+    """
+
     def __init__(self):
+        """Initialize the battery monitor node."""
         super().__init__("go2_auto_charge_monitor")
-        self.get_logger().info("Go2 Auto Charge Monitor node has been started.")
+
+        # Declare use_sim parameter (also check environment variable)
+        self.declare_parameter("use_sim", False)
+        use_sim_param = self.get_parameter("use_sim").value
+
+        # Also check USE_SIM_TIME environment variable as fallback
+        use_sim_env = os.environ.get("USE_SIM_TIME", "false").lower() == "true"
+        self.use_sim = use_sim_param or use_sim_env
+
+        mode_str = "SIMULATION" if self.use_sim else "REAL ROBOT"
+        self.get_logger().info(f"Go2 Auto Charge Monitor started (Mode: {mode_str})")
 
         self.subscription = self.create_subscription(
             LowState, "/lf/lowstate", self.listener_callback, 10
@@ -27,7 +55,14 @@ class Go2AutoChargeMonitor(Node):
         self.timer = self.create_timer(10.0, self.periodic_check)
 
     def listener_callback(self, msg):
-        """Process incoming battery data"""
+        """
+        Process incoming battery data.
+
+        Parameters:
+        -----------
+        msg : LowState
+            Low state message containing battery information
+        """
         soc = msg.bms_state.soc  # State of charge (battery percentage)
         current = msg.bms_state.current  # Current in mA (positive = charging)
 
@@ -62,7 +97,7 @@ class Go2AutoChargeMonitor(Node):
             self.charging_navigation_triggered = False
 
     def periodic_check(self):
-        """Periodic status check"""
+        """Periodic status check."""
         # Only print periodic updates if navigation hasn't been triggered
         if self.last_soc is not None and not self.charging_navigation_triggered:
             status = "CHARGING" if self.is_charging else "DISCHARGING"
@@ -71,14 +106,18 @@ class Go2AutoChargeMonitor(Node):
             )
 
     def trigger_charging_navigation(self):
-        """Launch the navigation to charger script"""
+        """Launch the navigation to charger script."""
         self.get_logger().warn("=" * 60)
         self.get_logger().warn("INITIATING AUTOMATIC CHARGING SEQUENCE!")
         self.get_logger().warn("=" * 60)
 
         try:
-            # Launch the navigation script
-            subprocess.Popen(["ros2", "run", "go2_auto_dock", "go2_nav_to_charger"])
+            # Build command with use_sim parameter if needed
+            cmd = ["ros2", "run", "go2_auto_dock", "go2_nav_to_charger"]
+            if self.use_sim:
+                cmd.extend(["--ros-args", "-p", "use_sim:=true"])
+
+            subprocess.Popen(cmd)
             self.charging_navigation_triggered = True
             self.get_logger().info(
                 "Navigation to charger script launched successfully."
@@ -90,6 +129,7 @@ class Go2AutoChargeMonitor(Node):
 
 
 def main(args=None):
+    """Main entry point for the battery monitor node."""
     rclpy.init(args=args)
     monitor = Go2AutoChargeMonitor()
 
@@ -99,7 +139,8 @@ def main(args=None):
         monitor.get_logger().info("Keyboard interrupt detected, shutting down...")
     finally:
         monitor.destroy_node()
-        rclpy.shutdown()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 
 if __name__ == "__main__":
