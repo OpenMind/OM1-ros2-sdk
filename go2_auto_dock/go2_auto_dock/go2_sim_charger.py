@@ -1,18 +1,6 @@
 #!/usr/bin/env python3
-"""
-Simulation charger node for Unitree Go2.
-
-This node handles the docking and charging process in simulation.
-Unlike the real robot charger (go2_tag_charger.py), this node:
-- Does NOT send sit commands (robot can't sit in Gazebo)
-- Sets the is_charging parameter on go2_lowstate_node when ArUco detected
-- Monitors battery until full, then exits
-
-Usage:
-    ros2 run go2_auto_dock go2_sim_charger
-"""
-
 import subprocess
+import sys
 
 import rclpy
 from rclpy.node import Node
@@ -178,9 +166,7 @@ class SimChargerNode(Node):
             return
 
         # Currently charging - monitor battery
-        self.get_logger().info(
-            f"Charging... Battery: {self.latest_battery_soc:.1f}%"
-        )
+        self.get_logger().info(f"Charging... Battery: {self.latest_battery_soc:.1f}%")
 
         if self.latest_battery_soc >= 100.0:
             self.get_logger().info("=" * 50)
@@ -191,7 +177,6 @@ class SimChargerNode(Node):
 
             # Exit to trigger cleanup in parent process
             self.get_logger().info("Simulation charger exiting...")
-            import sys
             sys.exit(0)
 
 
