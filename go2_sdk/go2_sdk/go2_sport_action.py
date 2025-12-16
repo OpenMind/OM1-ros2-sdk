@@ -5,7 +5,6 @@ from rclpy.node import Node
 from sensor_msgs.msg import Joy
 
 from unitree_api.msg import Request, RequestHeader, RequestIdentity
-from unitree_go.msg import SportModeState
 
 
 class Go2SportAction(Node):
@@ -25,10 +24,6 @@ class Go2SportAction(Node):
         )
 
         self.sport_publisher = self.create_publisher(Request, "/api/sport/request", 10)
-
-        self.sport_mode_subscription = self.create_subscription(
-            SportModeState, "/sportmodestate", self.sport_mode_callback, 10
-        )
 
         self.get_logger().info("Go2 Sport Action Node initialized")
 
@@ -54,7 +49,19 @@ class Go2SportAction(Node):
             self.send_sport_command(self.SPORT_API_ID_STANDDOWN)
             self.get_logger().info("Sent Stand Down command")
 
-    def send_sport_command(self, api_id: int):
+        elif msg.buttons[0] == 1 and msg.buttons[10] == 1:
+            self.send_sport_command(
+                self.SPORT_API_ID_CLASSICWALK, json.dumps({"data": True})
+            )
+            self.get_logger().info("Sent Classic Walk mode command")
+
+        elif msg.buttons[1] == 1 and msg.buttons[10] == 1:
+            self.send_sport_command(
+                self.SPORT_API_ID_CLASSICWALK, json.dumps({"data": False})
+            )
+            self.get_logger().info("Sent Agile Walk mode command")
+
+    def send_sport_command(self, api_id: int, parameter: str = ""):
         """
         Sends a command to the Go2 sport action system.
 
@@ -68,33 +75,9 @@ class Go2SportAction(Node):
         request_msg.header.identity = RequestIdentity()
         request_msg.header.identity.api_id = api_id
 
-        request_msg.parameter = ""
+        request_msg.parameter = parameter
         self.sport_publisher.publish(request_msg)
         self.get_logger().debug(f"Sent sport command with API ID: {api_id}")
-
-    def sport_mode_callback(self, msg: SportModeState):
-        """
-        Callback function for sport mode messages.
-
-        Parameters:
-        -----------
-        msg : unitree_go.msg.SportModeState
-            The incoming sport mode state message.
-        """
-        # The robot is in agile mode, which is unstable due to the payload on its back.
-        if msg.error_code == 100:
-            self.get_logger().warn(
-                "Robot is in Agile mode, switching to classic mode recommended."
-            )
-
-            request_msg = Request()
-            request_msg.header = RequestHeader()
-            request_msg.header.identity = RequestIdentity()
-            request_msg.header.identity.api_id = self.SPORT_API_ID_CLASSICWALK
-
-            request_msg.parameter = json.dumps({"data": True})
-            self.sport_publisher.publish(request_msg)
-            self.get_logger().info("Sent command to switch to Classic Walk mode")
 
 
 def main(args=None):
