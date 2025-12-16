@@ -1,14 +1,4 @@
 #!/usr/bin/env python3
-"""
-Battery monitor node for autonomous charging.
-
-This node monitors the robot's battery level and triggers navigation to the
-charging station when battery drops below the threshold.
-
-Usage:
-    ros2 run go2_auto_dock go2_battery_monitor
-    ros2 run go2_auto_dock go2_battery_monitor --ros-args -p use_sim:=true
-"""
 
 import os
 import subprocess
@@ -46,7 +36,7 @@ class Go2AutoChargeMonitor(Node):
         )
 
         # State tracking
-        self.low_battery_threshold = 53.0  # Percentage
+        self.low_battery_threshold = 15.0  # Percentage
         self.charging_navigation_triggered = False
         self.is_charging = False
         self.last_soc = None
