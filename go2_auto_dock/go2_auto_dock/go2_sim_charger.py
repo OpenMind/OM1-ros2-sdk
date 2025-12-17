@@ -71,7 +71,7 @@ class SimChargerNode(Node):
         Check if robot can see the ArUco marker (simplified for simulation).
 
         In simulation, we just need to detect the AprilTag marker.
-        Position-based docking will be fine-tuned later.
+        Position-based docking to be fine-tuned later.
 
         Returns:
         --------

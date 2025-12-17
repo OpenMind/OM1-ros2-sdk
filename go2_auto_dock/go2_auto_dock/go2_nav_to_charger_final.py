@@ -1,15 +1,4 @@
 #!/usr/bin/env python3
-"""
-Navigation to charger node for autonomous docking.
-
-This node navigates the robot to the charging station and then launches
-the appropriate docking nodes based on whether running in simulation or
-on the real robot.
-
-Usage:
-    ros2 run go2_auto_dock go2_nav_to_charger
-    ros2 run go2_auto_dock go2_nav_to_charger --ros-args -p use_sim:=true
-"""
 
 import math
 import os
