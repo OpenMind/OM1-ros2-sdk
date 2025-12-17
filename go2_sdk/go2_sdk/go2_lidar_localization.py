@@ -13,6 +13,7 @@ from sensor_msgs.msg import LaserScan
 from std_msgs.msg import Header
 from std_srvs.srv import Empty
 from tf2_ros import Buffer, TransformBroadcaster, TransformException, TransformListener
+from scipy.ndimage import maximum_filter
 
 from om_api.msg import LocalizationPose
 
@@ -585,31 +586,21 @@ class Go2LidarLocalizationNode(Node):
         if self.map_cropped is None or self.map_cropped.size == 0:
             return
 
-        self.map_temp = np.zeros_like(self.map_cropped, dtype=np.uint8)
-        gradient_mask = self.create_gradient_mask(101)
+        # Create binary obstacle map (obstacles = 255, everything else = 0)
+        obstacle_map = (self.map_cropped == 100).astype(np.uint8) * 255
 
-        # Find all obstacle pixels (value = 100)
-        obstacles = np.where(self.map_cropped == 100)
+        self.map_temp = maximum_filter(
+            obstacle_map,
+            size=101,
+            mode='constant',
+            cval=0
+        )
 
-        for y, x in zip(obstacles[0], obstacles[1]):
-            # Calculate ROI bounds
-            left = max(0, x - 50)
-            top = max(0, y - 50)
-            right = min(self.map_cropped.shape[1] - 1, x + 50)
-            bottom = min(self.map_cropped.shape[0] - 1, y + 50)
+        self.get_logger().info(
+            f"Map processed with scipy maximum_filter (size=101)",
+            once=True
+        )
 
-            # Apply gradient mask
-            mask_left = 50 - (x - left)
-            mask_top = 50 - (y - top)
-            mask_roi = gradient_mask[
-                mask_top : mask_top + (bottom - top + 1),
-                mask_left : mask_left + (right - left + 1),
-            ]
-
-            region = self.map_temp[top : bottom + 1, left : right + 1]
-            self.map_temp[top : bottom + 1, left : right + 1] = np.maximum(
-                region, mask_roi
-            )
 
     def check_convergence(self, x: float, y: float, yaw: float) -> bool:
         """
