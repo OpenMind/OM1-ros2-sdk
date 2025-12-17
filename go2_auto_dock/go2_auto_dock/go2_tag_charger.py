@@ -55,7 +55,7 @@ class Go2TagFollower(Node):
         self.small_turn_rad = math.radians(5)  # ≈ 0.087 rad
 
         # Optional: put robot into balance-stand at startup
-        self.send_balance_stand_command()
+        # self.send_balance_stand_command() # Handled in go2_dock.py now
         self.get_logger().info(
             "Go2TagFollower initialized (1 Hz, ~5° turns, 30s timeout)"
         )
@@ -310,9 +310,11 @@ class Go2TagFollower(Node):
             )
             if self.zone_counter >= 2:  # 3
                 self.get_logger().info("Confirmed arrival in charging zone!")
-                self.send_stop_command()
                 self.send_sit_command()
                 self.arrived = True
+                self.get_logger().info("Docking complete. Exiting...")
+                # Exit the node so the parent process can clean up
+                raise SystemExit
             return
         else:
             if self.zone_counter > 0:

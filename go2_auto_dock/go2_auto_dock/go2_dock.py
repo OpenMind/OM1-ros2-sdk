@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 
+import json
 import os
 import subprocess
+import time
 
 import rclpy
 from rclpy.node import Node
 
+from unitree_api.msg import Request, RequestHeader, RequestIdentity
 from unitree_go.msg import LowState
 
 
@@ -34,10 +37,13 @@ class Go2AutoChargeMonitor(Node):
         self.subscription = self.create_subscription(
             LowState, "/lf/lowstate", self.listener_callback, 10
         )
+        self.sport_pub = self.create_publisher(Request, "/api/sport/request", 10)
 
         # State tracking
         self.low_battery_threshold = 15.0  # Percentage
+        self.full_battery_threshold = 95.0  # Percentage
         self.charging_navigation_triggered = False
+        self.fully_charged_stand_triggered = False
         self.is_charging = False
         self.last_soc = None
 
@@ -66,6 +72,18 @@ class Go2AutoChargeMonitor(Node):
             self.get_logger().info(
                 f"Battery: {soc:.1f}% | Current: {current} mA | Status: {charging_status}"
             )
+
+        # Check for full battery stand-up
+        if (
+            soc >= self.full_battery_threshold
+            and self.is_charging
+            and not self.fully_charged_stand_triggered
+        ):
+            self.get_logger().info(
+                f"Battery is full ({soc:.1f}% >= {self.full_battery_threshold}%). Standing up!"
+            )
+            self.send_balance_stand_command()
+            self.fully_charged_stand_triggered = True
 
         # Check if we need to navigate to charger
         if (
@@ -101,6 +119,10 @@ class Go2AutoChargeMonitor(Node):
         self.get_logger().warn("INITIATING AUTOMATIC CHARGING SEQUENCE!")
         self.get_logger().warn("=" * 60)
 
+        # Ensure robot is standing before navigating
+        self.send_balance_stand_command()
+        time.sleep(3.0)  # Wait for robot to stand up
+
         try:
             # Build command with use_sim parameter if needed
             cmd = ["ros2", "run", "go2_auto_dock", "go2_nav_to_charger"]
@@ -109,6 +131,7 @@ class Go2AutoChargeMonitor(Node):
 
             subprocess.Popen(cmd)
             self.charging_navigation_triggered = True
+            self.fully_charged_stand_triggered = False  # Reset for next cycle
             self.get_logger().info(
                 "Navigation to charger script launched successfully."
             )
@@ -116,6 +139,21 @@ class Go2AutoChargeMonitor(Node):
         except Exception as e:
             self.get_logger().error(f"Failed to launch charging navigation: {str(e)}")
             self.charging_navigation_triggered = False
+
+    def _publish_request(self, api_id: int, params_dict=None):
+        """Low-level helper to publish a Unitree Request with JSON 'parameter'."""
+        req = Request()
+        req.header = RequestHeader()
+        req.header.identity = RequestIdentity()
+        req.header.identity.api_id = api_id
+        req.parameter = json.dumps(params_dict) if params_dict is not None else ""
+        self.sport_pub.publish(req)
+
+    def send_balance_stand_command(self):
+        """Prepare robot for movement by standing up."""
+        ROBOT_SPORT_API_ID_BALANCESTAND = 1006
+        self._publish_request(ROBOT_SPORT_API_ID_BALANCESTAND)
+        self.get_logger().info("BALANCE_STAND command sent (ensuring robot is mobile)")
 
 
 def main(args=None):
