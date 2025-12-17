@@ -78,7 +78,7 @@ class Go2AutoChargeMonitor(Node):
 
         try:
             # Launch the navigation script
-            subprocess.Popen(["ros2", "run", "go2_auto_dock", "go2_dock"])
+            subprocess.Popen(["ros2", "run", "go2_auto_dock", "go2_nav_to_charger"])
             self.charging_navigation_triggered = True
             self.get_logger().info(
                 "Navigation to charger script launched successfully."

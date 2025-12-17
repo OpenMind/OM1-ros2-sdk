@@ -7,6 +7,47 @@ from launch.conditions import UnlessCondition
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
+SIM_PARAM_OVERRIDES = {
+    "controller_server": {
+        "FollowPath.vx_std": 0.2,
+        "FollowPath.wz_std": 0.4,
+        "FollowPath.vx_max": 0.5,
+        "FollowPath.vx_min": -0.35,
+        "FollowPath.wz_max": 1.2,
+        "FollowPath.ObstaclesCritic.cost_weight": 10.0,
+        "FollowPath.ObstaclesCritic.collision_margin_distance": 0.05,
+        "FollowPath.ObstaclesCritic.near_goal_distance": 0.4,
+        "FollowPath.GoalAngleCritic.cost_power": 4,
+        "FollowPath.PreferForwardCritic.cost_weight": 16.0,
+        # local costmap params
+        "inflation_layer.cost_scaling_factor": 5.0,
+        "inflation_layer.inflation_radius": 0.30,
+    },
+    "planner_server": {
+        # global costmap params
+        "inflation_layer.cost_scaling_factor": 6.0,
+        "inflation_layer.inflation_radius": 0.32,
+    },
+    "velocity_smoother": {
+        "max_velocity": [0.5, 0.0, 1.2],
+        "min_velocity": [-0.35, 0.0, -1.2],
+        "max_accel": [2.0, 0.0, 2.5],
+        "max_decel": [-2.0, 0.0, -2.5],
+    },
+}
+
+
+def get_node_params(node_name: str, base_config: str, use_sim: bool):
+    """
+    Merge base config with simulation overrides if needed.
+    """
+    params = [base_config, {"use_sim_time": use_sim}]
+
+    if use_sim and node_name in SIM_PARAM_OVERRIDES:
+        params.append(SIM_PARAM_OVERRIDES[node_name])
+
+    return params
+
 
 def generate_launch_description():
     pkg_dir = get_package_share_directory("go2_sdk")
@@ -219,7 +260,9 @@ def generate_launch_description():
                 package="nav2_controller",
                 executable="controller_server",
                 output="screen",
-                parameters=[nav2_config_file, {"use_sim_time": use_sim}],
+                parameters=get_node_params(
+                    "controller_server", nav2_config_file, use_sim
+                ),
                 remappings=[
                     ("/cmd_vel", "/cmd_vel"),
                 ],
@@ -236,7 +279,7 @@ def generate_launch_description():
                 executable="planner_server",
                 name="planner_server",
                 output="screen",
-                parameters=[nav2_config_file, {"use_sim_time": use_sim}],
+                parameters=get_node_params("planner_server", nav2_config_file, use_sim),
             ),
             Node(
                 package="nav2_behaviors",
@@ -264,7 +307,9 @@ def generate_launch_description():
                 executable="velocity_smoother",
                 name="velocity_smoother",
                 output="screen",
-                parameters=[nav2_config_file, {"use_sim_time": use_sim}],
+                parameters=get_node_params(
+                    "velocity_smoother", nav2_config_file, use_sim
+                ),
                 remappings=[
                     ("/cmd_vel", "/cmd_vel_nav"),
                     ("/cmd_vel_smoothed", "/cmd_vel"),
