@@ -86,6 +86,7 @@ class Go2LidarLocalizationNode(Node):
         self.last_odom_pose = None  # (x, y, yaw)
         self.last_scan_match_time = None
         self.current_velocity = 0.0
+        self.current_angular_velocity = 0.0
         self.last_velocity_check_time = None
         self.last_velocity_pose = None
 
@@ -93,6 +94,10 @@ class Go2LidarLocalizationNode(Node):
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
         self.tf_broadcaster = TransformBroadcaster(self)
+
+        # Map to Odom transform storage
+        self.map_to_odom_trans = [0.0, 0.0, 0.0]
+        self.map_to_odom_quat = [0.0, 0.0, 0.0, 1.0]
 
         self.map_sub = self.create_subscription(
             OccupancyGrid,
@@ -182,6 +187,8 @@ class Go2LidarLocalizationNode(Node):
         self.is_initialized = True
         self.is_pose_confident = False
 
+        self.update_map_to_odom_transform()
+
         # Reset consecutive failure counter
         self.consecutive_failures = 0
         self.last_failure_time = None
@@ -200,8 +207,9 @@ class Go2LidarLocalizationNode(Node):
             Incoming map message
         """
         if self.map_msg is not None:
-            if (self.map_msg.header.stamp == msg.header.stamp and
-                len(self.map_msg.data) == len(msg.data)):
+            if self.map_msg.header.stamp == msg.header.stamp and len(
+                self.map_msg.data
+            ) == len(msg.data):
                 return
 
         self.map_msg = msg
@@ -666,6 +674,11 @@ class Go2LidarLocalizationNode(Node):
 
             current_time = self.get_clock().now()
 
+            q = current_transform.transform.rotation
+            _, _, current_yaw = tf_transformations.euler_from_quaternion(
+                [q.x, q.y, q.z, q.w]
+            )
+
             if (
                 self.last_velocity_pose is not None
                 and self.last_velocity_check_time is not None
@@ -683,9 +696,18 @@ class Go2LidarLocalizationNode(Node):
                     )
                     self.current_velocity = hypot(dx, dy) / dt
 
+                    dyaw = current_yaw - self.last_velocity_pose[2]
+                    while dyaw > pi:
+                        dyaw -= 2 * pi
+                    while dyaw < -pi:
+                        dyaw += 2 * pi
+
+                    self.current_angular_velocity = abs(dyaw) / dt
+
             self.last_velocity_pose = (
                 current_transform.transform.translation.x,
                 current_transform.transform.translation.y,
+                current_yaw,
             )
             self.last_velocity_check_time = current_time
 
@@ -804,21 +826,31 @@ class Go2LidarLocalizationNode(Node):
         # Update velocity estimate
         self.update_velocity()
 
+        # Check if robot is moving
+        is_moving = self.current_velocity > 0.01 or self.current_angular_velocity > 0.01
+
         # Rate limit scan matching
         current_time = self.get_clock().now()
         if self.last_scan_match_time is not None:
             time_since_last = (
                 current_time - self.last_scan_match_time
             ).nanoseconds / 1e9
-            if time_since_last < self.scan_match_interval:
+
+            if not is_moving and self.is_pose_confident:
+                if time_since_last < 1.0:
+                    return
+            elif time_since_last < self.scan_match_interval:
                 return
         self.last_scan_match_time = current_time
 
         # Convert scan to points
-        self.scan_points = self.convert_scan_to_points(msg)
+        scan_points_list = self.convert_scan_to_points(msg)
 
-        if len(self.scan_points) == 0:
+        if len(scan_points_list) == 0:
             return
+
+        # Convert to numpy array once
+        self.scan_points = np.array(scan_points_list)
 
         if self.scan_count == 0:
             self.scan_count += 1
@@ -878,7 +910,7 @@ class Go2LidarLocalizationNode(Node):
                     -5 * self.deg_to_rad,
                 ]
 
-            current_score = self.evaluate_pose(
+            current_score = self.evaluate_pose_vectorized(
                 self.lidar_x, self.lidar_y, self.lidar_yaw, self.scan_points
             )
 
@@ -888,25 +920,10 @@ class Go2LidarLocalizationNode(Node):
             for yaw_offset in yaw_offsets:
                 test_yaw = self.lidar_yaw + yaw_offset
 
-                # Transform all points
-                transformed = []
-                for px, py in self.scan_points:
-                    rx = px * cos(test_yaw) - py * sin(test_yaw)
-                    ry = px * sin(test_yaw) + py * cos(test_yaw)
-                    transformed.append((rx + self.lidar_x, self.lidar_y - ry))
-
-                # Try all offsets
                 for dx, dy in offsets:
-                    score = 0
-                    for tx, ty in transformed:
-                        px = int(tx + dx)
-                        py = int(ty + dy)
-
-                        if (
-                            0 <= px < self.map_temp.shape[1]
-                            and 0 <= py < self.map_temp.shape[0]
-                        ):
-                            score += int(self.map_temp[py, px])
+                    score = self.evaluate_pose_vectorized(
+                        self.lidar_x + dx, self.lidar_y + dy, test_yaw, self.scan_points
+                    )
 
                     if score > max_sum:
                         max_sum = score
@@ -943,6 +960,9 @@ class Go2LidarLocalizationNode(Node):
         # Store match quality
         match_quality = max_sum / (len(self.scan_points) * 255)
         self.last_match_quality = match_quality
+
+        # Update map to odom transform
+        self.update_map_to_odom_transform()
 
         # Update confidence based on match quality
         self.is_pose_confident = match_quality >= self.min_confidence_for_prediction
@@ -1047,17 +1067,11 @@ class Go2LidarLocalizationNode(Node):
                 self.consecutive_failures = 0
                 self.last_failure_time = None
 
-    def pose_tf(self):
+    def update_map_to_odom_transform(self):
         """
-        Publish map to odom transform
+        Update map to odom transform based on current pose estimate
         """
-        if self.scan_count == 0 or self.map_cropped is None:
-            return
-
         if self.map_msg is None or self.map_msg.info.resolution <= 0:
-            return
-
-        if not self.is_initialized:
             return
 
         # Convert from cropped map pixels to full map meters
@@ -1105,8 +1119,15 @@ class Go2LidarLocalizationNode(Node):
         map_to_odom = np.dot(map_to_base, base_to_odom)
 
         # Extract translation and rotation
-        map_to_odom_trans = tf_transformations.translation_from_matrix(map_to_odom)
-        map_to_odom_quat = tf_transformations.quaternion_from_matrix(map_to_odom)
+        self.map_to_odom_trans = tf_transformations.translation_from_matrix(map_to_odom)
+        self.map_to_odom_quat = tf_transformations.quaternion_from_matrix(map_to_odom)
+
+    def pose_tf(self):
+        """
+        Publish map to odom transform
+        """
+        if not self.is_initialized:
+            return
 
         # Publish transform
         t = TransformStamped()
@@ -1114,14 +1135,14 @@ class Go2LidarLocalizationNode(Node):
         t.header.frame_id = "map"
         t.child_frame_id = self.odom_frame
 
-        t.transform.translation.x = map_to_odom_trans[0]
-        t.transform.translation.y = map_to_odom_trans[1]
+        t.transform.translation.x = self.map_to_odom_trans[0]
+        t.transform.translation.y = self.map_to_odom_trans[1]
         t.transform.translation.z = 0.0
 
-        t.transform.rotation.x = map_to_odom_quat[0]
-        t.transform.rotation.y = map_to_odom_quat[1]
-        t.transform.rotation.z = map_to_odom_quat[2]
-        t.transform.rotation.w = map_to_odom_quat[3]
+        t.transform.rotation.x = self.map_to_odom_quat[0]
+        t.transform.rotation.y = self.map_to_odom_quat[1]
+        t.transform.rotation.z = self.map_to_odom_quat[2]
+        t.transform.rotation.w = self.map_to_odom_quat[3]
 
         self.tf_broadcaster.sendTransform(t)
 
