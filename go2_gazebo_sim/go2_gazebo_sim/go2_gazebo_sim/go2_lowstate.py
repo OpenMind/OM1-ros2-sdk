@@ -98,9 +98,9 @@ class Go2LowStateNode(Node):
         for param in params:
             if param.name == "is_charging":
                 status = "STARTED" if param.value else "STOPPED"
-                self.get_logger().info(f"Charging {status}")
+                self.get_logger().debug(f"Charging {status}")
             elif param.name == "soc":
-                self.get_logger().info(f"SoC manually set to {param.value:.1f}%")
+                self.get_logger().debug(f"SoC manually set to {param.value:.1f}%")
 
         return SetParametersResult(successful=True)
 

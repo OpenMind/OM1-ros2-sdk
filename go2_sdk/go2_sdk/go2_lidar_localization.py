@@ -13,7 +13,6 @@ from sensor_msgs.msg import LaserScan
 from std_msgs.msg import Header
 from std_srvs.srv import Empty
 from tf2_ros import Buffer, TransformBroadcaster, TransformException, TransformListener
-from scipy.ndimage import maximum_filter
 
 from om_api.msg import LocalizationPose
 
@@ -27,8 +26,7 @@ class Go2LidarLocalizationNode(Node):
         self.declare_parameter("odom_frame", "odom")
         self.declare_parameter("laser_frame", "laser")
         self.declare_parameter("laser_topic", "scan")
-        self.declare_parameter("velocity_threshold", 0.3)  # m/s
-        self.declare_parameter("scan_match_interval", 0.2)  # seconds
+        self.declare_parameter("scan_match_interval", 0.1)  # seconds
         self.declare_parameter(
             "global_localization_particles", 5000
         )  # Number of random samples
@@ -47,7 +45,6 @@ class Go2LidarLocalizationNode(Node):
         self.odom_frame = self.get_parameter("odom_frame").value
         self.laser_frame = self.get_parameter("laser_frame").value
         self.laser_topic = self.get_parameter("laser_topic").value
-        self.velocity_threshold = self.get_parameter("velocity_threshold").value
         self.scan_match_interval = self.get_parameter("scan_match_interval").value
         self.n_particles = self.get_parameter("global_localization_particles").value
         self.min_confidence_for_prediction = self.get_parameter(
@@ -130,15 +127,14 @@ class Go2LidarLocalizationNode(Node):
             LocalizationPose, "/om/localization_pose", 10
         )
 
-        # Timer for publishing TF at 30Hz
-        self.tf_timer = self.create_timer(1.0 / 30.0, self.pose_tf)
+        # Timer for publishing TF at 60Hz
+        self.tf_timer = self.create_timer(1.0 / 60.0, self.pose_tf)
 
         # Pose estimated flag
         self.is_pose_estimated = False
         self.is_pose_confident = False
 
         self.get_logger().info("Lidar localization node initialized")
-        self.get_logger().info(f"Velocity threshold: {self.velocity_threshold} m/s")
         self.get_logger().info(f"Scan match interval: {self.scan_match_interval} s")
         self.get_logger().info(f"Global localization particles: {self.n_particles}")
         self.get_logger().info(
@@ -203,6 +199,11 @@ class Go2LidarLocalizationNode(Node):
         msg: OccupancyGrid
             Incoming map message
         """
+        if self.map_msg is not None:
+            if (self.map_msg.header.stamp == msg.header.stamp and
+                len(self.map_msg.data) == len(msg.data)):
+                return
+
         self.map_msg = msg
         self.crop_map()
         self.process_map()
@@ -586,21 +587,31 @@ class Go2LidarLocalizationNode(Node):
         if self.map_cropped is None or self.map_cropped.size == 0:
             return
 
-        # Create binary obstacle map (obstacles = 255, everything else = 0)
-        obstacle_map = (self.map_cropped == 100).astype(np.uint8) * 255
+        self.map_temp = np.zeros_like(self.map_cropped, dtype=np.uint8)
+        gradient_mask = self.create_gradient_mask(101)
 
-        self.map_temp = maximum_filter(
-            obstacle_map,
-            size=101,
-            mode='constant',
-            cval=0
-        )
+        # Find all obstacle pixels (value = 100)
+        obstacles = np.where(self.map_cropped == 100)
 
-        self.get_logger().info(
-            f"Map processed with scipy maximum_filter (size=101)",
-            once=True
-        )
+        for y, x in zip(obstacles[0], obstacles[1]):
+            # Calculate ROI bounds
+            left = max(0, x - 50)
+            top = max(0, y - 50)
+            right = min(self.map_cropped.shape[1] - 1, x + 50)
+            bottom = min(self.map_cropped.shape[0] - 1, y + 50)
 
+            # Apply gradient mask
+            mask_left = 50 - (x - left)
+            mask_top = 50 - (y - top)
+            mask_roi = gradient_mask[
+                mask_top : mask_top + (bottom - top + 1),
+                mask_left : mask_left + (right - left + 1),
+            ]
+
+            region = self.map_temp[top : bottom + 1, left : right + 1]
+            self.map_temp[top : bottom + 1, left : right + 1] = np.maximum(
+                region, mask_roi
+            )
 
     def check_convergence(self, x: float, y: float, yaw: float) -> bool:
         """
@@ -793,14 +804,6 @@ class Go2LidarLocalizationNode(Node):
         # Update velocity estimate
         self.update_velocity()
 
-        # Skip scan matching if moving too fast
-        if self.current_velocity > self.velocity_threshold:
-            self.get_logger().debug(
-                f"Skipping scan match - velocity too high: {self.current_velocity:.2f} m/s",
-                throttle_duration_sec=1.0,
-            )
-            return
-
         # Rate limit scan matching
         current_time = self.get_clock().now()
         if self.last_scan_match_time is not None:
@@ -830,7 +833,7 @@ class Go2LidarLocalizationNode(Node):
         """
         Perform iterative scan matching until convergence
         """
-        max_iterations = 100
+        max_iterations = 50
         iteration = 0
 
         while iteration < max_iterations:
@@ -838,7 +841,7 @@ class Go2LidarLocalizationNode(Node):
 
             offsets = [(0, 0), (2, 0), (-2, 0), (0, 2), (0, -2)]
 
-            if iteration <= 5:
+            if iteration <= 3:
                 yaw_offsets = [
                     0,
                     15 * self.deg_to_rad,
