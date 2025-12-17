@@ -49,13 +49,13 @@ class Go2SportAction(Node):
             self.send_sport_command(self.SPORT_API_ID_STANDDOWN)
             self.get_logger().info("Sent Stand Down command")
 
-        elif msg.buttons[0] == 1 and msg.buttons[10] == 1:
+        elif msg.buttons[10] == 1 and msg.buttons[11] == 1:
             self.send_sport_command(
                 self.SPORT_API_ID_CLASSICWALK, json.dumps({"data": True})
             )
             self.get_logger().info("Sent Classic Walk mode command")
 
-        elif msg.buttons[1] == 1 and msg.buttons[10] == 1:
+        elif msg.buttons[10] == 1 and msg.buttons[12] == 1:
             self.send_sport_command(
                 self.SPORT_API_ID_CLASSICWALK, json.dumps({"data": False})
             )
