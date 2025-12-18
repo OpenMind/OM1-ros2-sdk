@@ -20,15 +20,16 @@ class Intel435DepthNode(Node):
 
         self.get_logger().info("Intel435 Depth Node initialized")
 
+        # Use relative topic names for namespace compatibility
         self.depth_image_subscription = self.create_subscription(
             Image,
-            "/camera/realsense2_camera_node/depth/image_rect_gazebo_raw",
+            "camera/realsense2_camera_node/depth/image_rect_gazebo_raw",
             self.depth_callback,
             10,
         )
 
         self.depth_image_publisher = self.create_publisher(
-            Image, "/camera/realsense2_camera_node/depth/image_rect_raw", 10
+            Image, "camera/realsense2_camera_node/depth/image_rect_raw", 10
         )
 
     def depth_callback(self, msg: Image):

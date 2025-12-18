@@ -23,26 +23,27 @@ class Go2RemappingNode(Node):
         self.sitting_z_offset = 0.15  # When charging (on dock)
 
         self.is_charging = False
+        # Use relative topic names for namespace compatibility
         self._param_client = self.create_client(
-            GetParameters, "/go2_lowstate_node/get_parameters"
+            GetParameters, "go2_lowstate_node/get_parameters"
         )
 
         self.create_timer(1.0, self.check_charging_param)
 
         self.odom_subscription = self.create_subscription(
-            Odometry, "/odom", self.odom_callback, 10
+            Odometry, "odom", self.odom_callback, 10
         )
 
         self.robot_pose_publisher = self.create_publisher(
-            PoseStamped, "/utlidar/robot_pose", 10
+            PoseStamped, "utlidar/robot_pose", 10
         )
 
         self.lidar_subscription = self.create_subscription(
-            PointCloud2, "/unitree_lidar/points", self.lidar_callback, 10
+            PointCloud2, "unitree_lidar/points", self.lidar_callback, 10
         )
 
         self.lidar_publisher = self.create_publisher(
-            PointCloud2, "/utlidar/cloud_deskewed", 10
+            PointCloud2, "utlidar/cloud_deskewed", 10
         )
 
     def check_charging_param(self):

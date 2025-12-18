@@ -52,9 +52,9 @@
     <gazebo reference="laser">
         <sensor name="velodyne-VLP16" type="gpu_lidar">
             <pose>0 0 0 0 0 0</pose>
-            <topic>scan</topic>
+            <topic>${topic_prefix}scan</topic>
             <update_rate>10</update_rate>
-            <gz_frame_id>laser</gz_frame_id>
+            <gz_frame_id>${topic_prefix}laser</gz_frame_id>
             <lidar>
                 <scan>
                     <horizontal>
@@ -80,7 +80,7 @@
                     <mean>0.0</mean>
                     <stddev>0.008</stddev>
                 </noise>
-                <frame_id>laser</frame_id>
+                <frame_id>${topic_prefix}laser</frame_id>
             </lidar>
             <visualize>true</visualize>
 

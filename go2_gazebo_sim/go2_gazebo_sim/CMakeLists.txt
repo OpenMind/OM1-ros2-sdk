@@ -55,4 +55,10 @@ install(PROGRAMS
   RENAME intel435_depth_node
 )
 
+install(PROGRAMS
+  go2_gazebo_sim/joy_robot_switcher.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME joy_robot_switcher_node
+)
+
 ament_package()

@@ -1,4 +1,5 @@
-controller_manager:
+# Wildcard allows this config to work with any namespace (e.g., /robot1, /robot2)
+"/**/controller_manager":
   ros__parameters:
     use_sim_time: true
     update_rate: 250  # Hz
@@ -12,11 +13,11 @@ controller_manager:
     joint_group_effort_controller:
       type: joint_trajectory_controller/JointTrajectoryController
 
-joint_states_controller:
+"/**/joint_states_controller":
   ros__parameters:
     use_sim_time: true
 
-joint_group_effort_controller:
+"/**/joint_group_effort_controller":
   ros__parameters:
     use_sim_time: true
     joints:
