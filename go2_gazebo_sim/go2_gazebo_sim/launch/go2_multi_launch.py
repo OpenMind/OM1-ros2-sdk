@@ -20,7 +20,6 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
-    GroupAction,
     IncludeLaunchDescription,
     OpaqueFunction,
     SetEnvironmentVariable,
@@ -28,8 +27,8 @@ from launch.actions import (
 )
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import Command, LaunchConfiguration, PythonExpression
-from launch_ros.actions import Node, PushRosNamespace
+from launch.substitutions import Command, LaunchConfiguration
+from launch_ros.actions import Node
 
 
 def generate_robot_group(
@@ -141,7 +140,10 @@ def generate_robot_group(
         remappings=[
             # Remap model-specific topics to namespaced topics
             (f"/model/{robot_name}/joint_states", "joint_states"),
-            (f"/model/{robot_name}/joint_trajectory", "joint_group_effort_controller/joint_trajectory"),
+            (
+                f"/model/{robot_name}/joint_trajectory",
+                "joint_group_effort_controller/joint_trajectory",
+            ),
         ],
     )
     nodes.append(gazebo_bridge)
@@ -172,7 +174,9 @@ def generate_robot_group(
             {"publish_joint_states": True},
             {"publish_joint_control": True},
             {"publish_foot_contacts": False},
-            {"joint_controller_topic": "joint_group_effort_controller/joint_trajectory"},
+            {
+                "joint_controller_topic": "joint_group_effort_controller/joint_trajectory"
+            },
             {"urdf": robot_description_content},
             joints_config,
             links_config,
@@ -213,14 +217,22 @@ def generate_robot_group(
         name="map_to_odom_tf",
         parameters=[{"use_sim_time": use_sim_time}],
         arguments=[
-            "--x", "0",
-            "--y", "0",
-            "--z", "0",
-            "--roll", "0",
-            "--pitch", "0",
-            "--yaw", "0",
-            "--frame-id", "map",
-            "--child-frame-id", f"{robot_name}/odom",
+            "--x",
+            "0",
+            "--y",
+            "0",
+            "--z",
+            "0",
+            "--roll",
+            "0",
+            "--pitch",
+            "0",
+            "--yaw",
+            "0",
+            "--frame-id",
+            "map",
+            "--child-frame-id",
+            f"{robot_name}/odom",
         ],
     )
     nodes.append(map_to_odom_tf)
@@ -233,14 +245,22 @@ def generate_robot_group(
         name="base_footprint_to_base_link_tf",
         parameters=[{"use_sim_time": use_sim_time}],
         arguments=[
-            "--x", "0",
-            "--y", "0",
-            "--z", "0",
-            "--roll", "0",
-            "--pitch", "0",
-            "--yaw", "0",
-            "--frame-id", f"{robot_name}/base_link",
-            "--child-frame-id", f"{robot_name}/base_footprint",
+            "--x",
+            "0",
+            "--y",
+            "0",
+            "--z",
+            "0",
+            "--roll",
+            "0",
+            "--pitch",
+            "0",
+            "--yaw",
+            "0",
+            "--frame-id",
+            f"{robot_name}/base_link",
+            "--child-frame-id",
+            f"{robot_name}/base_footprint",
         ],
     )
     nodes.append(base_footprint_to_base_link_tf)
@@ -291,8 +311,10 @@ def generate_robot_group(
 
     # Controller spawners - spawn and activate ros2_control controllers
     # These need to be delayed to give Gazebo time to initialize
-    ros_control_config = os.path.join(go2_gazebo_sim, "config/ros_control/ros_control.yaml")
-    
+    ros_control_config = os.path.join(
+        go2_gazebo_sim, "config/ros_control/ros_control.yaml"
+    )
+
     controller_spawner_js = TimerAction(
         period=20.0 + (robot_id - 1) * 5.0,  # Stagger spawns for multiple robots
         actions=[
@@ -303,9 +325,12 @@ def generate_robot_group(
                 name=f"spawner_joint_states_{robot_name}",
                 output="screen",
                 arguments=[
-                    "--controller-manager-timeout", "120",
-                    "-c", f"/{ns}/controller_manager",
-                    "--param-file", ros_control_config,
+                    "--controller-manager-timeout",
+                    "120",
+                    "-c",
+                    f"/{ns}/controller_manager",
+                    "--param-file",
+                    ros_control_config,
                     "joint_states_controller",
                 ],
                 parameters=[{"use_sim_time": use_sim_time}],
@@ -324,9 +349,12 @@ def generate_robot_group(
                 name=f"spawner_effort_{robot_name}",
                 output="screen",
                 arguments=[
-                    "--controller-manager-timeout", "120",
-                    "-c", f"/{ns}/controller_manager",
-                    "--param-file", ros_control_config,
+                    "--controller-manager-timeout",
+                    "120",
+                    "-c",
+                    f"/{ns}/controller_manager",
+                    "--param-file",
+                    ros_control_config,
                     "joint_group_effort_controller",
                 ],
                 parameters=[{"use_sim_time": use_sim_time}],
@@ -552,7 +580,9 @@ def launch_setup(context, *args, **kwargs):
     """
     # Get launch configurations
     num_robots = int(LaunchConfiguration("robots").perform(context))
-    use_sim_time = LaunchConfiguration("use_sim_time").perform(context).lower() == "true"
+    use_sim_time = (
+        LaunchConfiguration("use_sim_time").perform(context).lower() == "true"
+    )
     enable_nav = LaunchConfiguration("nav").perform(context).lower() == "true"
     enable_slam = LaunchConfiguration("slam").perform(context).lower() == "true"
     robot_spacing = float(LaunchConfiguration("robot_spacing").perform(context))
@@ -654,10 +684,10 @@ def launch_setup(context, *args, **kwargs):
         parameters=[
             {"use_sim_time": use_sim_time},
             {"num_robots": num_robots},
-            {"robot1_button": 4},       # LB = robot1
-            {"robot2_button": 5},       # RB = robot2
-            {"linear_axis": 1},         # Left stick Y
-            {"angular_axis": 0},        # Left stick X  
+            {"robot1_button": 4},  # LB = robot1
+            {"robot2_button": 5},  # RB = robot2
+            {"linear_axis": 1},  # Left stick Y
+            {"angular_axis": 0},  # Left stick X
             {"linear_scale": 0.5},
             {"angular_scale": 1.0},
         ],
@@ -683,7 +713,9 @@ def generate_launch_description():
     current_gz_resource_path = os.environ.get("GZ_SIM_RESOURCE_PATH", "")
     if go2_description_models not in current_gz_resource_path:
         if current_gz_resource_path:
-            new_gz_resource_path = current_gz_resource_path + ":" + go2_description_models
+            new_gz_resource_path = (
+                current_gz_resource_path + ":" + go2_description_models
+            )
         else:
             new_gz_resource_path = go2_description_models
     else:
@@ -742,9 +774,7 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(
             os.path.join(pkg_ros_gz_sim, "launch", "gz_sim.launch.py")
         ),
-        launch_arguments={
-            "gz_args": [LaunchConfiguration("world"), " -r"]
-        }.items(),
+        launch_arguments={"gz_args": [LaunchConfiguration("world"), " -r"]}.items(),
     )
 
     # RViz (single instance for all robots)

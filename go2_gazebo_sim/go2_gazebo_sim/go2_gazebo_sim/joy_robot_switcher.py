@@ -15,7 +15,7 @@ from sensor_msgs.msg import Joy
 class JoyRobotSwitcher(Node):
     """
     A ROS2 node that allows switching joystick control between multiple robots.
-    
+
     Subscribes to /joy and republishes cmd_vel to the selected robot's namespace.
     Button presses switch between robots.
     """
@@ -25,12 +25,12 @@ class JoyRobotSwitcher(Node):
 
         # Parameters
         self.declare_parameter("num_robots", 2)
-        self.declare_parameter("robot1_button", 4)       # LB on Xbox controller = robot1
-        self.declare_parameter("robot2_button", 5)       # RB on Xbox controller = robot2
-        self.declare_parameter("linear_axis", 1)         # Left stick Y
-        self.declare_parameter("angular_axis", 0)        # Left stick X
-        self.declare_parameter("linear_scale", 0.5)      # Max linear velocity
-        self.declare_parameter("angular_scale", 1.0)     # Max angular velocity
+        self.declare_parameter("robot1_button", 4)  # LB on Xbox controller = robot1
+        self.declare_parameter("robot2_button", 5)  # RB on Xbox controller = robot2
+        self.declare_parameter("linear_axis", 1)  # Left stick Y
+        self.declare_parameter("angular_axis", 0)  # Left stick X
+        self.declare_parameter("linear_scale", 0.5)  # Max linear velocity
+        self.declare_parameter("angular_scale", 1.0)  # Max angular velocity
 
         self.num_robots = self.get_parameter("num_robots").value
         self.robot1_button = self.get_parameter("robot1_button").value
@@ -52,16 +52,20 @@ class JoyRobotSwitcher(Node):
             self.cmd_vel_publishers[i] = self.create_publisher(Twist, topic, 10)
             self.get_logger().info(f"Created publisher for {topic}")
 
-        self.get_logger().info(f"Joy Robot Switcher initialized")
+        self.get_logger().info("Joy Robot Switcher initialized")
         self.get_logger().info(f"Controlling {self.num_robots} robots")
-        self.get_logger().info(f"Hold LB (button {self.robot1_button}) to control robot1")
-        self.get_logger().info(f"Hold RB (button {self.robot2_button}) to control robot2")
+        self.get_logger().info(
+            f"Hold LB (button {self.robot1_button}) to control robot1"
+        )
+        self.get_logger().info(
+            f"Hold RB (button {self.robot2_button}) to control robot2"
+        )
 
     def joy_callback(self, msg: Joy):
         """
         Handle joystick input and route to the selected robot.
         LB held = control robot1, RB held = control robot2.
-        
+
         Parameters:
         -----------
         msg : Joy
@@ -74,10 +78,14 @@ class JoyRobotSwitcher(Node):
             twist.angular.z = msg.axes[self.angular_axis] * self.angular_scale
 
         # Check which robot button is pressed
-        robot1_active = (len(msg.buttons) > self.robot1_button and 
-                         msg.buttons[self.robot1_button] == 1)
-        robot2_active = (len(msg.buttons) > self.robot2_button and 
-                         msg.buttons[self.robot2_button] == 1)
+        robot1_active = (
+            len(msg.buttons) > self.robot1_button
+            and msg.buttons[self.robot1_button] == 1
+        )
+        robot2_active = (
+            len(msg.buttons) > self.robot2_button
+            and msg.buttons[self.robot2_button] == 1
+        )
 
         # Publish to robot1 if LB held, otherwise stop
         if robot1_active:
