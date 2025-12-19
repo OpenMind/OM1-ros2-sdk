@@ -54,8 +54,6 @@ class Go2TagFollower(Node):
         # ~5 degrees per step (used as angular velocity for ~1s → ~5°)
         self.small_turn_rad = math.radians(5)  # ≈ 0.087 rad
 
-        # Optional: put robot into balance-stand at startup
-        # self.send_balance_stand_command() # Handled in go2_dock.py now
         self.get_logger().info(
             "Go2TagFollower initialized (1 Hz, ~5° turns, 30s timeout)"
         )
@@ -261,9 +259,8 @@ class Go2TagFollower(Node):
         x_cmd = 0.0
 
         if z_forward < self.forward_target_min:  # < -0.43   move forward
-            error = (
-                self.forward_target_center - z_forward
-            )  # e.g. -0.35 - (-0.50) = 0.15        -0.35 - (-0.60) = 0.25
+            error = self.forward_target_center - z_forward
+            # e.g. -0.35 - (-0.50) = 0.15        -0.35 - (-0.60) = 0.25
             x_cmd = error  # directly use error, or clamp to max step
             x_cmd = min(x_cmd, 0.215)  # if last step keep gesture for 2 second    0.23
 

@@ -422,6 +422,19 @@ def generate_launch_description():
         parameters=[{"use_sim_time": use_sim_time}],
     )
 
+    # Camera topic relay for auto-docking (sim only)
+    camera_relay_node = Node(
+        package="topic_tools",
+        executable="relay",
+        name="camera_relay",
+        output="screen",
+        arguments=[
+            "/camera/realsense2_camera_node/color/image_raw",
+            "/camera/image_raw",
+        ],
+        condition=IfCondition(use_sim_time),
+    )
+
     # Nodes for teleoperation
     joy = Node(package="joy", executable="joy_node", name="joy_node", output="screen")
     # RB is the enable button
@@ -493,6 +506,8 @@ def generate_launch_description():
             go2_remapping_node,
             # Intel D435 depth remapping node
             intel435_depth_node,
+            # Camera relay (sim)
+            camera_relay_node,
             # Teleoperation nodes
             joy,
             joy_teleops_node,

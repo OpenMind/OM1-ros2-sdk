@@ -5,7 +5,6 @@ import os
 import signal
 import subprocess
 import threading
-import time
 from typing import List, Optional
 
 import rclpy
@@ -268,39 +267,22 @@ class SimpleGoalSender(Node):
         self.camera_manager.run(
             ["ros2", "run", "go2_auto_dock", "go2_camera_publisher"]
         )
-        time.sleep(4)
 
         self.get_logger().info("[REAL] Starting AprilTag detector...")
         self.detector_manager.run(
             ["ros2", "run", "go2_auto_dock", "go2_apriltag_detector"]
         )
-        time.sleep(4)
 
         self.get_logger().info("[REAL] Starting charging routine...")
         self.charger_manager.run(["ros2", "run", "go2_auto_dock", "go2_tag_charger"])
 
     def start_docking_nodes_sim(self):
         """Start docking nodes for simulation."""
-        # In simulation, Gazebo already publishes camera
-        # Use topic_tools relay to remap Gazebo camera to expected topic
-        self.get_logger().info("[SIM] Starting camera topic relay...")
-        self.camera_manager.run(
-            [
-                "ros2",
-                "run",
-                "topic_tools",
-                "relay",
-                "/camera/realsense2_camera_node/color/image_raw",
-                "/camera/image_raw",
-            ]
-        )
-        time.sleep(2)
 
         self.get_logger().info("[SIM] Starting AprilTag detector...")
         self.detector_manager.run(
             ["ros2", "run", "go2_auto_dock", "go2_apriltag_detector"]
         )
-        time.sleep(4)
 
         self.get_logger().info("[SIM] Starting simulation charging routine...")
         self.charger_manager.run(["ros2", "run", "go2_auto_dock", "go2_sim_charger"])

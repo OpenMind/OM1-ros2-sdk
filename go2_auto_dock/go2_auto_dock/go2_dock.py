@@ -3,9 +3,9 @@
 import json
 import os
 import subprocess
-import time
 
 import rclpy
+from geometry_msgs.msg import PoseStamped
 from rclpy.node import Node
 
 from unitree_api.msg import Request, RequestHeader, RequestIdentity
@@ -38,6 +38,12 @@ class Go2AutoChargeMonitor(Node):
             LowState, "/lf/lowstate", self.listener_callback, 10
         )
         self.sport_pub = self.create_publisher(Request, "/api/sport/request", 10)
+
+        self.pose_sub = self.create_subscription(
+            PoseStamped, "/utlidar/robot_pose", self.pose_callback, 10
+        )
+        self.current_z_height = 0.0
+        self.waiting_for_stand = False
 
         # State tracking
         self.low_battery_threshold = 15.0  # Percentage
@@ -114,15 +120,32 @@ class Go2AutoChargeMonitor(Node):
             )
 
     def trigger_charging_navigation(self):
+        """Initiate the charging sequence by standing up and waiting for height confirmation."""
+        self.get_logger().warn("INITAITING AUTOMATIC CHARGING SEQUENCE!")
+
+        # Only command stand if not already standing
+        if self.current_z_height < 0.25:
+            self.send_balance_stand_command()
+
+        self.waiting_for_stand = True
+        self.charging_navigation_triggered = True
+        self.get_logger().info("Waiting for stand confirmation...")
+
+    def pose_callback(self, msg):
+        """Track robot height and trigger navigation when standing."""
+        self.current_z_height = msg.pose.position.z
+
+        if self.waiting_for_stand:
+            # Check for standing height (threshold 0.25m)
+            if self.current_z_height > 0.25:
+                self.get_logger().info(
+                    f"Robot standing (Z={self.current_z_height:.2f}m). Launching."
+                )
+                self.waiting_for_stand = False
+                self.launch_navigation_script()
+
+    def launch_navigation_script(self):
         """Launch the navigation to charger script."""
-        self.get_logger().warn("=" * 60)
-        self.get_logger().warn("INITIATING AUTOMATIC CHARGING SEQUENCE!")
-        self.get_logger().warn("=" * 60)
-
-        # Ensure robot is standing before navigating
-        self.send_balance_stand_command()
-        time.sleep(3.0)  # Wait for robot to stand up
-
         try:
             # Build command with use_sim parameter if needed
             cmd = ["ros2", "run", "go2_auto_dock", "go2_nav_to_charger"]
@@ -130,7 +153,6 @@ class Go2AutoChargeMonitor(Node):
                 cmd.extend(["--ros-args", "-p", "use_sim:=true"])
 
             subprocess.Popen(cmd)
-            self.charging_navigation_triggered = True
             self.fully_charged_stand_triggered = False  # Reset for next cycle
             self.get_logger().info(
                 "Navigation to charger script launched successfully."
@@ -138,10 +160,17 @@ class Go2AutoChargeMonitor(Node):
 
         except Exception as e:
             self.get_logger().error(f"Failed to launch charging navigation: {str(e)}")
-            self.charging_navigation_triggered = False
+            # If launch fails, we might want to allow retry, but for now we leave triggered=True
+            # to prevent spamming. User can restart node if needed.
 
     def _publish_request(self, api_id: int, params_dict=None):
-        """Low-level helper to publish a Unitree Request with JSON 'parameter'."""
+        """
+        Low-level helper to publish a Unitree Request with JSON 'parameter'.
+
+        Args:
+            api_id (int): The API ID for the request.
+            params_dict (dict, optional): Dictionary of parameters to be serialized to JSON. Defaults to None.
+        """
         req = Request()
         req.header = RequestHeader()
         req.header.identity = RequestIdentity()
