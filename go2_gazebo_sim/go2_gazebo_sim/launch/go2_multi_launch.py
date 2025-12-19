@@ -1,17 +1,3 @@
-"""
-Multi-Robot Go2 Gazebo Simulation Launch File
-
-Launch multiple Go2 robots with namespaced topics and independent navigation.
-
-Usage:
-    ros2 launch go2_gazebo_sim go2_multi_launch.py robots:=3
-
-Each robot gets:
-    - Namespace: robot1, robot2, robot3, ...
-    - Topics: /robot1/cmd_vel, /robot1/scan, /robot1/odom, ...
-    - TF frames: robot1/base_link, robot1/odom, ...
-"""
-
 import os
 from typing import List
 
@@ -366,214 +352,6 @@ def generate_robot_group(
     return nodes
 
 
-def generate_nav2_nodes(
-    context,
-    robot_id: int,
-    use_sim_time,
-    nav2_config_file: str,
-) -> List:
-    """
-    Generate Nav2 stack nodes for a single robot.
-
-    Args:
-        robot_id: Robot number (1, 2, 3, ...)
-        use_sim_time: Use simulation time
-        nav2_config_file: Path to nav2 params file
-
-    Returns:
-        List of Nav2 nodes for this robot
-    """
-    robot_name = f"robot{robot_id}"
-    ns = robot_name
-
-    nodes = []
-
-    # Nav2 Lifecycle Manager
-    lifecycle_manager = Node(
-        package="nav2_lifecycle_manager",
-        executable="lifecycle_manager",
-        namespace=ns,
-        name="lifecycle_manager_navigation",
-        output="screen",
-        parameters=[
-            {"use_sim_time": use_sim_time},
-            {"autostart": True},
-            {
-                "node_names": [
-                    "controller_server",
-                    "smoother_server",
-                    "planner_server",
-                    "behavior_server",
-                    "bt_navigator",
-                    "waypoint_follower",
-                    "velocity_smoother",
-                ]
-            },
-        ],
-    )
-    nodes.append(lifecycle_manager)
-
-    # Controller Server
-    controller_server = Node(
-        package="nav2_controller",
-        executable="controller_server",
-        namespace=ns,
-        name="controller_server",
-        output="screen",
-        parameters=[
-            nav2_config_file,
-            {"use_sim_time": use_sim_time},
-            # Override frame names with namespace prefix
-            {"robot_base_frame": f"{robot_name}/base_link"},
-            {"odom_topic": "odom"},
-        ],
-        remappings=[
-            ("cmd_vel", "cmd_vel_nav"),
-        ],
-    )
-    nodes.append(controller_server)
-
-    # Smoother Server
-    smoother_server = Node(
-        package="nav2_smoother",
-        executable="smoother_server",
-        namespace=ns,
-        name="smoother_server",
-        output="screen",
-        parameters=[
-            nav2_config_file,
-            {"use_sim_time": use_sim_time},
-        ],
-    )
-    nodes.append(smoother_server)
-
-    # Planner Server
-    planner_server = Node(
-        package="nav2_planner",
-        executable="planner_server",
-        namespace=ns,
-        name="planner_server",
-        output="screen",
-        parameters=[
-            nav2_config_file,
-            {"use_sim_time": use_sim_time},
-            {"robot_base_frame": f"{robot_name}/base_link"},
-        ],
-    )
-    nodes.append(planner_server)
-
-    # Behavior Server
-    behavior_server = Node(
-        package="nav2_behaviors",
-        executable="behavior_server",
-        namespace=ns,
-        name="behavior_server",
-        output="screen",
-        parameters=[
-            nav2_config_file,
-            {"use_sim_time": use_sim_time},
-            {"global_frame": f"{robot_name}/odom"},
-            {"robot_base_frame": f"{robot_name}/base_link"},
-        ],
-    )
-    nodes.append(behavior_server)
-
-    # BT Navigator
-    bt_navigator = Node(
-        package="nav2_bt_navigator",
-        executable="bt_navigator",
-        namespace=ns,
-        name="bt_navigator",
-        output="screen",
-        parameters=[
-            nav2_config_file,
-            {"use_sim_time": use_sim_time},
-            {"global_frame": "map"},
-            {"robot_base_frame": f"{robot_name}/base_link"},
-            {"odom_topic": "odom"},
-        ],
-    )
-    nodes.append(bt_navigator)
-
-    # Waypoint Follower
-    waypoint_follower = Node(
-        package="nav2_waypoint_follower",
-        executable="waypoint_follower",
-        namespace=ns,
-        name="waypoint_follower",
-        output="screen",
-        parameters=[
-            nav2_config_file,
-            {"use_sim_time": use_sim_time},
-        ],
-    )
-    nodes.append(waypoint_follower)
-
-    # Velocity Smoother
-    velocity_smoother = Node(
-        package="nav2_velocity_smoother",
-        executable="velocity_smoother",
-        namespace=ns,
-        name="velocity_smoother",
-        output="screen",
-        parameters=[
-            nav2_config_file,
-            {"use_sim_time": use_sim_time},
-            {"odom_topic": "odom"},
-        ],
-        remappings=[
-            ("cmd_vel", "cmd_vel_nav"),
-            ("cmd_vel_smoothed", "cmd_vel"),
-        ],
-    )
-    nodes.append(velocity_smoother)
-
-    return nodes
-
-
-def generate_slam_nodes(
-    context,
-    robot_id: int,
-    use_sim_time,
-    slam_config_file: str,
-) -> List:
-    """
-    Generate SLAM nodes for a single robot.
-
-    Args:
-        robot_id: Robot number (1, 2, 3, ...)
-        use_sim_time: Use simulation time
-        slam_config_file: Path to SLAM params file
-
-    Returns:
-        List of SLAM nodes for this robot
-    """
-    robot_name = f"robot{robot_id}"
-    ns = robot_name
-
-    nodes = []
-
-    # SLAM Toolbox
-    slam_toolbox = Node(
-        package="slam_toolbox",
-        executable="sync_slam_toolbox_node",
-        namespace=ns,
-        name="slam_toolbox",
-        output="screen",
-        parameters=[
-            slam_config_file,
-            {"use_sim_time": use_sim_time},
-            {"base_frame": f"{robot_name}/base_link"},
-            {"odom_frame": f"{robot_name}/odom"},
-            {"map_frame": "map"},  # Shared map frame
-            {"scan_topic": "scan"},
-        ],
-    )
-    nodes.append(slam_toolbox)
-
-    return nodes
-
-
 def launch_setup(context, *args, **kwargs):
     """
     OpaqueFunction callback to dynamically generate robot nodes based on robot count.
@@ -583,8 +361,6 @@ def launch_setup(context, *args, **kwargs):
     use_sim_time = (
         LaunchConfiguration("use_sim_time").perform(context).lower() == "true"
     )
-    enable_nav = LaunchConfiguration("nav").perform(context).lower() == "true"
-    enable_slam = LaunchConfiguration("slam").perform(context).lower() == "true"
     robot_spacing = float(LaunchConfiguration("robot_spacing").perform(context))
 
     # Package paths
@@ -594,14 +370,11 @@ def launch_setup(context, *args, **kwargs):
     go2_description = launch_ros.substitutions.FindPackageShare(
         package="go2_description"
     ).find("go2_description")
-    go2_sdk = get_package_share_directory("go2_sdk")
 
     # Config files
     joints_config = os.path.join(go2_gazebo_sim, "config/joints/joints.yaml")
     links_config = os.path.join(go2_gazebo_sim, "config/links/links.yaml")
     gait_config = os.path.join(go2_gazebo_sim, "config/gait/gait.yaml")
-    nav2_config_file = os.path.join(go2_sdk, "config", "nav2_params_multi.yaml")
-    slam_config_file = os.path.join(go2_sdk, "config", "slam_params.yaml")
 
     all_nodes = []
 
@@ -627,36 +400,6 @@ def launch_setup(context, *args, **kwargs):
             gait_config=gait_config,
         )
         all_nodes.extend(robot_nodes)
-
-        # Navigation nodes (optional)
-        if enable_nav:
-            nav_nodes = generate_nav2_nodes(
-                context,
-                robot_id=i,
-                use_sim_time=use_sim_time,
-                nav2_config_file=nav2_config_file,
-            )
-            # Delay Nav2 nodes to allow robot to spawn first
-            delayed_nav = TimerAction(
-                period=15.0,
-                actions=nav_nodes,
-            )
-            all_nodes.append(delayed_nav)
-
-        # SLAM nodes (optional)
-        if enable_slam:
-            slam_nodes = generate_slam_nodes(
-                context,
-                robot_id=i,
-                use_sim_time=use_sim_time,
-                slam_config_file=slam_config_file,
-            )
-            # Delay SLAM nodes
-            delayed_slam = TimerAction(
-                period=10.0,
-                actions=slam_nodes,
-            )
-            all_nodes.append(delayed_slam)
 
     # Joystick control nodes (global, not per-robot)
     # Joy node reads from physical joystick
@@ -756,18 +499,6 @@ def generate_launch_description():
         description="Launch RViz",
     )
 
-    declare_nav = DeclareLaunchArgument(
-        "nav",
-        default_value="false",
-        description="Enable Nav2 stack for each robot",
-    )
-
-    declare_slam = DeclareLaunchArgument(
-        "slam",
-        default_value="false",
-        description="Enable SLAM for each robot",
-    )
-
     # Gazebo Sim
     pkg_ros_gz_sim = get_package_share_directory("ros_gz_sim")
     gz_sim = IncludeLaunchDescription(
@@ -800,8 +531,6 @@ def generate_launch_description():
             declare_robot_spacing,
             declare_world,
             declare_rviz,
-            declare_nav,
-            declare_slam,
             # Gazebo
             gz_sim,
             # RViz
