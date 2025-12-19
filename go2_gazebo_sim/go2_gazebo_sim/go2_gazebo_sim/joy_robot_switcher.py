@@ -1,11 +1,4 @@
 #!/usr/bin/env python3
-"""
-Joy Robot Switcher Node
-
-Allows a single joystick to control multiple robots by switching between them.
-Uses button presses to switch the active robot.
-"""
-
 import rclpy
 from geometry_msgs.msg import Twist
 from rclpy.node import Node
