@@ -67,7 +67,7 @@
                 </noise>
             </lidar>
             <visualize>false</visualize>
-            <gz_frame_id>lidar_l1_link</gz_frame_id>
+            <gz_frame_id>${topic_prefix}lidar_l1_link</gz_frame_id>
             <always_on>1</always_on>
         </sensor>
     </gazebo>
