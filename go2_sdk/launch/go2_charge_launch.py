@@ -1,14 +1,3 @@
-"""
-Launch file for the Unitree Go2 charging system.
-
-This launch file starts the battery monitor which automatically triggers
-navigation to the charging station when battery is low.
-
-Usage:
-    ros2 launch go2_sdk go2_charge.launch.py
-    ros2 launch go2_sdk go2_charge.launch.py use_sim:=true
-"""
-
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
