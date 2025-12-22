@@ -41,8 +41,8 @@ class Go2LowStateNode(Node):
         super().__init__("go2_lowstate_node")
 
         # Declare battery simulation parameters
-        self.declare_parameter("soc", 80.0)
-        self.declare_parameter("drain_rate", 0.01)
+        self.declare_parameter("soc", 100.000)
+        self.declare_parameter("drain_rate", 0.001)
         self.declare_parameter("idle_drain_rate", 0.001)
         self.declare_parameter("charge_rate", 0.05)
         self.declare_parameter("is_charging", False)

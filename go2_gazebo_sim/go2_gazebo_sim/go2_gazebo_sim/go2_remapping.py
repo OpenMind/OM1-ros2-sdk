@@ -3,6 +3,7 @@
 import rclpy
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Odometry
+from rcl_interfaces.srv import GetParameters
 from rclpy.node import Node
 from sensor_msgs.msg import PointCloud2
 
@@ -16,6 +17,17 @@ class Go2RemappingNode(Node):
         super().__init__("go2_remapping_node")
 
         self.get_logger().info("Go2 Remapping Node initialized")
+
+        # Z offsets to mock body height for sit/stand detection
+        self.standing_z_offset = 0.35  # When NOT charging (walking)
+        self.sitting_z_offset = 0.15  # When charging (on dock)
+
+        self.is_charging = False
+        self._param_client = self.create_client(
+            GetParameters, "/go2_lowstate_node/get_parameters"
+        )
+
+        self.create_timer(1.0, self.check_charging_param)
 
         self.odom_subscription = self.create_subscription(
             Odometry, "/odom", self.odom_callback, 10
@@ -33,10 +45,29 @@ class Go2RemappingNode(Node):
             PointCloud2, "/utlidar/cloud_deskewed", 10
         )
 
+    def check_charging_param(self):
+        """
+        Check is_charging parameter from go2_lowstate_node.
+        """
+        if not self._param_client.service_is_ready():
+            return
+
+        request = GetParameters.Request()
+        request.names = ["is_charging"]
+        future = self._param_client.call_async(request)
+        future.add_done_callback(
+            lambda f: (
+                setattr(self, "is_charging", f.result().values[0].bool_value)
+                if f.result().values
+                else None
+            )
+        )
+
     def odom_callback(self, msg: Odometry):
         """
         Callback function for odometry messages.
         Remaps odometry data to robot pose with frame_id set to 'odom'.
+        Sets Z offset based on charging state.
 
         Parameters:
         -----------
@@ -49,11 +80,13 @@ class Go2RemappingNode(Node):
         robot_pose.header.frame_id = "odom"
 
         robot_pose.pose.position = msg.pose.pose.position
-        robot_pose.pose.position.z += 0.3
+
+        z_offset = self.sitting_z_offset if self.is_charging else self.standing_z_offset
+        robot_pose.pose.position.z += z_offset
+
         robot_pose.pose.orientation = msg.pose.pose.orientation
 
         self.robot_pose_publisher.publish(robot_pose)
-        self.get_logger().debug("Published remapped robot pose with frame_id: odom")
 
     def lidar_callback(self, msg: PointCloud2):
         """
