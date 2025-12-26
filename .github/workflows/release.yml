@@ -34,8 +34,8 @@ jobs:
         with:
           images: openmindagi/unitree_sdk
           tags: |
-            type=semver,pattern=v{{version}},prefix=v
-            type=semver,pattern=v{{major}}.{{minor}},prefix=v
+            type=semver,pattern={{version}},prefix=v
+            type=semver,pattern={{major}}.{{minor}},prefix=v
             type=ref,event=branch
             type=sha
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
