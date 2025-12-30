@@ -851,6 +851,33 @@ class Go2LidarLocalizationNode(Node):
         except (TransformException, Exception) as e:
             self.get_logger().debug(f"Odom prediction failed: {str(e)}")
 
+    def downsample_scan_points(self, scan_points: np.ndarray, is_moving: bool) -> np.ndarray:
+        """
+        Adaptive downsampling based on robot state
+
+        Parameters
+        ----------
+        scan_points: np.ndarray
+            Full scan points array
+        is_moving: bool
+            Whether robot is currently moving
+
+        Returns
+        -------
+        np.ndarray
+            Downsampled scan points
+        """
+        if len(scan_points) == 0:
+            return scan_points
+
+        if not is_moving and self.is_pose_confident:
+            return scan_points[::4]  # Keep every 4th point (25% of points)
+
+        elif is_moving:
+            return scan_points[::2]  # Keep every 2nd point (50% of points)
+
+        return scan_points
+
     def scan_callback(self, msg: LaserScan):
         """
         Process laser scan and perform scan matching
@@ -900,8 +927,9 @@ class Go2LidarLocalizationNode(Node):
         if len(scan_points_list) == 0:
             return
 
-        # Convert to numpy array once
-        self.scan_points = np.array(scan_points_list, dtype=np.float64)
+        scan_points_full = np.array(scan_points_list, dtype=np.float64)
+
+        self.scan_points = self.downsample_scan_points(scan_points_full, is_moving)
 
         if self.scan_count == 0:
             self.scan_count += 1
