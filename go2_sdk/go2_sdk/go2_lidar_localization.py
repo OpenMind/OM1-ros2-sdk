@@ -21,7 +21,7 @@ from om_api.msg import LocalizationPose
 @jit(nopython=True, fastmath=True, cache=True)
 def evaluate_pose_numba(x, y, yaw, scan_points, map_temp):
     """
-    Numba-optimized pose evaluation
+    Evaluate a single pose using Numba optimization
 
     Parameters
     ----------
@@ -99,7 +99,7 @@ def evaluate_multiple_poses(poses, scan_points, map_temp):
 @jit(nopython=True, fastmath=True, cache=True)
 def create_gradient_mask_numba(size):
     """
-    Create a gradient mask for obstacle expansion (Numba-optimized)
+    Create a gradient mask for obstacle expansion
 
     Parameters
     ----------
@@ -248,7 +248,7 @@ class Go2LidarLocalizationNode(Node):
         # Warm up Numba JIT compilation
         self._warmup_numba()
 
-        self.get_logger().info("Lidar localization node initialized (Numba-optimized)")
+        self.get_logger().info("Lidar localization node initialized")
         self.get_logger().info(f"Scan match interval: {self.scan_match_interval} s")
         self.get_logger().info(f"Global localization particles: {self.n_particles}")
         self.get_logger().info(
@@ -393,7 +393,7 @@ class Go2LidarLocalizationNode(Node):
         self, x: float, y: float, yaw: float, scan_points
     ) -> float:
         """
-        Vectorized evaluation of pose using Numba optimization
+        Vectorized evaluation of pose
 
         Parameters
         ----------
@@ -422,7 +422,7 @@ class Go2LidarLocalizationNode(Node):
 
     def perform_global_localization(self, scan_msg: LaserScan):
         """
-        Perform global localization by sampling random poses (Numba-optimized)
+        Perform global localization by sampling random poses
 
         Parameters
         ----------
@@ -466,7 +466,6 @@ class Go2LidarLocalizationNode(Node):
 
         poses = np.array(poses, dtype=np.float64)
 
-        # Parallel evaluation using Numba
         scores = evaluate_multiple_poses(poses, scan_points, self.map_temp)
 
         # Find best
@@ -629,7 +628,7 @@ class Go2LidarLocalizationNode(Node):
 
     def create_gradient_mask(self, size: int) -> np.ndarray:
         """
-        Create a gradient mask for obstacle expansion (Numba-optimized)
+        Create a gradient mask for obstacle expansion
 
         Parameters
         ----------
