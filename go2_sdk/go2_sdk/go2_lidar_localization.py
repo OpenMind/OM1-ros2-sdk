@@ -4,17 +4,123 @@ from typing import Any
 
 import numpy as np
 import rclpy
-import tf_transformations
 from geometry_msgs.msg import Pose, PoseWithCovarianceStamped, TransformStamped
 from nav_msgs.msg import OccupancyGrid
+from numba import jit, prange
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPolicy
+from scipy.spatial.transform import Rotation
 from sensor_msgs.msg import LaserScan
 from std_msgs.msg import Header
 from std_srvs.srv import Empty
 from tf2_ros import Buffer, TransformBroadcaster, TransformException, TransformListener
 
 from om_api.msg import LocalizationPose
+
+
+@jit(nopython=True, fastmath=True, cache=True)
+def evaluate_pose_numba(x, y, yaw, scan_points, map_temp):
+    """
+    Evaluate a single pose using Numba optimization
+
+    Parameters
+    ----------
+    x: float
+        X coordinate in map frame
+    y: float
+        Y coordinate in map frame
+    yaw: float
+        Orientation in radians
+    scan_points: np.ndarray
+        Numpy array of (x, y) points in base frame
+    map_temp: np.ndarray
+        Gradient map
+
+    Returns
+    -------
+    int
+        Match score
+    """
+    if len(scan_points) == 0:
+        return 0
+
+    cos_yaw = np.cos(yaw)
+    sin_yaw = np.sin(yaw)
+
+    # Vectorized rotation and translation
+    rx = scan_points[:, 0] * cos_yaw - scan_points[:, 1] * sin_yaw + x
+    ry = scan_points[:, 0] * sin_yaw + scan_points[:, 1] * cos_yaw
+
+    map_x = rx.astype(np.int32)
+    map_y = (y - ry).astype(np.int32)
+
+    score = 0
+    height = map_temp.shape[0]
+    width = map_temp.shape[1]
+
+    for i in range(len(map_x)):
+        mx = map_x[i]
+        my = map_y[i]
+        if mx >= 0 and mx < width and my >= 0 and my < height:
+            score += map_temp[my, mx]
+
+    return int(score)
+
+
+@jit(nopython=True, parallel=True, fastmath=True, cache=True)
+def evaluate_multiple_poses(poses, scan_points, map_temp):
+    """
+    Evaluate multiple poses in parallel
+
+    Parameters
+    ----------
+    poses: np.ndarray
+        Array of (x, y, yaw) poses to evaluate
+    scan_points: np.ndarray
+        Scan points in base frame
+    map_temp: np.ndarray
+        Gradient map
+
+    Returns
+    -------
+    np.ndarray
+        Array of scores for each pose
+    """
+    n_poses = len(poses)
+    scores = np.zeros(n_poses, dtype=np.int32)
+
+    for i in prange(n_poses):
+        x, y, yaw = poses[i]
+        scores[i] = evaluate_pose_numba(x, y, yaw, scan_points, map_temp)
+
+    return scores
+
+
+@jit(nopython=True, fastmath=True, cache=True)
+def create_gradient_mask_numba(size):
+    """
+    Create a gradient mask for obstacle expansion
+
+    Parameters
+    ----------
+    size: int
+        Size of the square mask
+
+    Returns
+    -------
+    np.ndarray
+        Gradient mask
+    """
+    mask = np.zeros((size, size), dtype=np.uint8)
+    center = size // 2
+
+    for y in range(size):
+        for x in range(size):
+            distance = np.sqrt((x - center) ** 2 + (y - center) ** 2)
+            value = int(255 * max(0.0, 1.0 - distance / center))
+            mask[y, x] = value
+
+    return mask
 
 
 class Go2LidarLocalizationNode(Node):
@@ -139,6 +245,9 @@ class Go2LidarLocalizationNode(Node):
         self.is_pose_estimated = False
         self.is_pose_confident = False
 
+        # Warm up Numba JIT compilation
+        self._warmup_numba()
+
         self.get_logger().info("Lidar localization node initialized")
         self.get_logger().info(f"Scan match interval: {self.scan_match_interval} s")
         self.get_logger().info(f"Global localization particles: {self.n_particles}")
@@ -151,6 +260,19 @@ class Go2LidarLocalizationNode(Node):
         self.get_logger().info(
             f"Failure quality threshold: {self.failure_quality_threshold}"
         )
+
+    def _warmup_numba(self):
+        """Warm up Numba JIT compilation to avoid first-call delays"""
+        dummy_scan = np.array([[1.0, 1.0]], dtype=np.float64)
+        dummy_map = np.zeros((10, 10), dtype=np.uint8)
+        evaluate_pose_numba(5.0, 5.0, 0.0, dummy_scan, dummy_map)
+
+        dummy_poses = np.array([[5.0, 5.0, 0.0]], dtype=np.float64)
+        evaluate_multiple_poses(dummy_poses, dummy_scan, dummy_map)
+
+        create_gradient_mask_numba(10)
+
+        self.get_logger().info("Numba JIT compilation warmed up")
 
     def initial_pose_callback(self, msg: PoseWithCovarianceStamped):
         """
@@ -172,7 +294,7 @@ class Go2LidarLocalizationNode(Node):
         # Convert quaternion to yaw
         orientation = msg.pose.pose.orientation
         quaternion = [orientation.x, orientation.y, orientation.z, orientation.w]
-        _, _, yaw = tf_transformations.euler_from_quaternion(quaternion)
+        _, _, yaw = Rotation.from_quat(quaternion).as_euler("xyz")
 
         # Convert map coordinates to cropped map grid coordinates
         self.lidar_x = (
@@ -271,7 +393,7 @@ class Go2LidarLocalizationNode(Node):
         self, x: float, y: float, yaw: float, scan_points
     ) -> float:
         """
-        Vectorized evaluation of pose - much faster than loop-based version
+        Vectorized evaluation of pose
 
         Parameters
         ----------
@@ -291,37 +413,12 @@ class Go2LidarLocalizationNode(Node):
         """
         # Convert scan_points to numpy array if not already
         if not isinstance(scan_points, np.ndarray):
-            scan_points = np.array(scan_points)
+            scan_points = np.array(scan_points, dtype=np.float64)
 
         if len(scan_points) == 0:
             return 0
 
-        # Precompute trig values
-        cos_yaw = cos(yaw)
-        sin_yaw = sin(yaw)
-
-        # Vectorized rotation and translation
-        rx = scan_points[:, 0] * cos_yaw - scan_points[:, 1] * sin_yaw + x
-        ry = scan_points[:, 0] * sin_yaw + scan_points[:, 1] * cos_yaw
-
-        map_x = rx.astype(int)
-        map_y = (y - ry).astype(int)
-
-        # Filter valid coordinates
-        valid_mask = (
-            (map_x >= 0)
-            & (map_x < self.map_temp.shape[1])
-            & (map_y >= 0)
-            & (map_y < self.map_temp.shape[0])
-        )
-
-        # Sum scores only for valid points
-        if np.any(valid_mask):
-            score = np.sum(self.map_temp[map_y[valid_mask], map_x[valid_mask]])
-        else:
-            score = 0
-
-        return int(score)
+        return evaluate_pose_numba(x, y, yaw, scan_points, self.map_temp)
 
     def perform_global_localization(self, scan_msg: LaserScan):
         """
@@ -340,7 +437,7 @@ class Go2LidarLocalizationNode(Node):
             f"Starting global localization with {self.n_particles} particles..."
         )
 
-        # Convert scan to points (reuse existing logic)
+        # Convert scan to points
         scan_points = self.convert_scan_to_points(scan_msg)
 
         if len(scan_points) == 0:
@@ -348,10 +445,7 @@ class Go2LidarLocalizationNode(Node):
             return
 
         # Convert to numpy array for vectorized operations
-        scan_points = np.array(scan_points)
-
-        best_score = 0
-        best_pose = None
+        scan_points = np.array(scan_points, dtype=np.float64)
 
         # Sample random poses
         sample_indices = np.random.choice(
@@ -360,18 +454,26 @@ class Go2LidarLocalizationNode(Node):
             replace=False,
         )
 
+        # Create pose array: (x, y, yaw) for each position × orientation
+        n_orientations = 8
+        orientations = np.linspace(0, 2 * pi, n_orientations, endpoint=False)
+
+        poses = []
         for idx in sample_indices:
             x, y = self.free_space_points[idx]
+            for yaw in orientations:
+                poses.append((x, y, yaw))
 
-            # Try multiple orientations for each position
-            for yaw in np.linspace(0, 2 * pi, 8, endpoint=False):
-                score = self.evaluate_pose_vectorized(x, y, yaw, scan_points)
+        poses = np.array(poses, dtype=np.float64)
 
-                if score > best_score:
-                    best_score = score
-                    best_pose = (x, y, yaw)
+        scores = evaluate_multiple_poses(poses, scan_points, self.map_temp)
 
-        if best_pose is not None:
+        # Find best
+        best_idx = np.argmax(scores)
+        best_score = scores[best_idx]
+        best_pose = poses[best_idx]
+
+        if best_score > 0:
             self.lidar_x, self.lidar_y, self.lidar_yaw = best_pose
             self.is_initialized = True
             self.is_pose_confident = False
@@ -434,7 +536,7 @@ class Go2LidarLocalizationNode(Node):
         # Check if lidar is inverted
         q = transform.transform.rotation
         quaternion = [q.x, q.y, q.z, q.w]
-        roll, pitch, yaw = tf_transformations.euler_from_quaternion(quaternion)
+        roll, pitch, yaw = Rotation.from_quat(quaternion).as_euler("xyz")
 
         tolerance = 0.1
         lidar_is_inverted = (abs(abs(roll) - pi) < tolerance) and not (
@@ -466,45 +568,6 @@ class Go2LidarLocalizationNode(Node):
             angle += msg.angle_increment
 
         return scan_points
-
-    def evaluate_pose(self, x: float, y: float, yaw: float, scan_points: list) -> float:
-        """
-        Evaluate how well scan matches at given pose
-
-        Parameters
-        -----------
-        x: float
-            X coordinate in map frame
-        y: float
-            Y coordinate in map frame
-        yaw: float
-            Orientation in radians
-        scan_points: list
-            List of (x, y) points in base frame
-
-        Returns
-        -------
-        float
-            Match score
-        """
-        score = 0
-
-        for px, py in scan_points:
-            # Transform point to map frame
-            rx = px * cos(yaw) - py * sin(yaw)
-            ry = px * sin(yaw) + py * cos(yaw)
-
-            map_x = int(rx + x)
-            map_y = int(y - ry)
-
-            # Check bounds and accumulate gradient value
-            if (
-                0 <= map_x < self.map_temp.shape[1]
-                and 0 <= map_y < self.map_temp.shape[0]
-            ):
-                score += int(self.map_temp[map_y, map_x])
-
-        return score
 
     def crop_map(self):
         """
@@ -577,16 +640,7 @@ class Go2LidarLocalizationNode(Node):
         np.ndarray
             Gradient mask
         """
-        mask = np.zeros((size, size), dtype=np.uint8)
-        center = size // 2
-
-        for y in range(size):
-            for x in range(size):
-                distance = hypot(x - center, y - center)
-                value = int(255 * max(0.0, 1.0 - distance / center))
-                mask[y, x] = value
-
-        return mask
+        return create_gradient_mask_numba(size)
 
     def process_map(self):
         """
@@ -675,9 +729,7 @@ class Go2LidarLocalizationNode(Node):
             current_time = self.get_clock().now()
 
             q = current_transform.transform.rotation
-            _, _, current_yaw = tf_transformations.euler_from_quaternion(
-                [q.x, q.y, q.z, q.w]
-            )
+            _, _, current_yaw = Rotation.from_quat([q.x, q.y, q.z, q.w]).as_euler("xyz")
 
             if (
                 self.last_velocity_pose is not None
@@ -749,9 +801,7 @@ class Go2LidarLocalizationNode(Node):
                 # Get rotation delta
                 current_q = current_odom.transform.rotation
                 current_quat = [current_q.x, current_q.y, current_q.z, current_q.w]
-                _, _, current_yaw = tf_transformations.euler_from_quaternion(
-                    current_quat
-                )
+                _, _, current_yaw = Rotation.from_quat(current_quat).as_euler("xyz")
 
                 dyaw_odom = current_yaw - self.last_odom_pose[2]
 
@@ -789,7 +839,7 @@ class Go2LidarLocalizationNode(Node):
             # Store current pose for next iteration
             current_q = current_odom.transform.rotation
             current_quat = [current_q.x, current_q.y, current_q.z, current_q.w]
-            _, _, current_yaw = tf_transformations.euler_from_quaternion(current_quat)
+            _, _, current_yaw = Rotation.from_quat(current_quat).as_euler("xyz")
 
             self.last_odom_pose = (
                 current_odom.transform.translation.x,
@@ -849,8 +899,7 @@ class Go2LidarLocalizationNode(Node):
         if len(scan_points_list) == 0:
             return
 
-        # Convert to numpy array once
-        self.scan_points = np.array(scan_points_list)
+        self.scan_points = np.array(scan_points_list, dtype=np.float64)
 
         if self.scan_count == 0:
             self.scan_count += 1
@@ -1100,27 +1149,27 @@ class Go2LidarLocalizationNode(Node):
             return
 
         # Map to base transform
-        map_to_base = tf_transformations.quaternion_matrix(
-            tf_transformations.quaternion_from_euler(0, 0, yaw_in_map)
-        )
+        map_to_base = np.eye(4)
+        map_to_base[:3, :3] = Rotation.from_euler("xyz", [0, 0, yaw_in_map]).as_matrix()
         map_to_base[0, 3] = x_in_map
         map_to_base[1, 3] = y_in_map
 
         # Odom to base transform
         odom_q = odom_to_base_msg.transform.rotation
         odom_quat = [odom_q.x, odom_q.y, odom_q.z, odom_q.w]
-        odom_to_base = tf_transformations.quaternion_matrix(odom_quat)
+        odom_to_base = np.eye(4)
+        odom_to_base[:3, :3] = Rotation.from_quat(odom_quat).as_matrix()
         odom_to_base[0, 3] = odom_to_base_msg.transform.translation.x
         odom_to_base[1, 3] = odom_to_base_msg.transform.translation.y
 
         # Calculate map to odom: T_map_odom = T_map_base * T_base_odom
         # T_base_odom = inverse(T_odom_base)
-        base_to_odom = tf_transformations.inverse_matrix(odom_to_base)
+        base_to_odom = np.linalg.inv(odom_to_base)
         map_to_odom = np.dot(map_to_base, base_to_odom)
 
         # Extract translation and rotation
-        self.map_to_odom_trans = tf_transformations.translation_from_matrix(map_to_odom)
-        self.map_to_odom_quat = tf_transformations.quaternion_from_matrix(map_to_odom)
+        self.map_to_odom_trans = map_to_odom[:3, 3]
+        self.map_to_odom_quat = Rotation.from_matrix(map_to_odom[:3, :3]).as_quat()
 
     def pose_tf(self):
         """

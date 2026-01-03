@@ -35,7 +35,6 @@
   <depend>joy</depend>
   <depend>teleop_twist_joy</depend>
   <depend>realsense2_camera</depend>
-  <depend>tf_transformations</depend>
   <depend>depth_image_proc</depend>
 
   <test_depend>ament_copyright</test_depend>
