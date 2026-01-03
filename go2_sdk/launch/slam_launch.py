@@ -74,9 +74,17 @@ def generate_launch_description():
     use_sim = LaunchConfiguration("use_sim", default="false")
 
     # Conditionally select nav2 config file based on use_sim
-    nav2_config_file = PythonExpression([
-        "'", nav2_config_file_sim, "' if '", use_sim, "' == 'true' else '", nav2_config_file_real, "'"
-    ])
+    nav2_config_file = PythonExpression(
+        [
+            "'",
+            nav2_config_file_sim,
+            "' if '",
+            use_sim,
+            "' == 'true' else '",
+            nav2_config_file_real,
+            "'",
+        ]
+    )
 
     return LaunchDescription(
         [

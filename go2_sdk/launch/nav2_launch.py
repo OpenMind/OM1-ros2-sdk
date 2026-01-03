@@ -3,8 +3,12 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.conditions import IfCondition, UnlessCondition
-from launch.substitutions import EnvironmentVariable, LaunchConfiguration, PythonExpression
+from launch.conditions import UnlessCondition
+from launch.substitutions import (
+    EnvironmentVariable,
+    LaunchConfiguration,
+    PythonExpression,
+)
 from launch_ros.actions import Node
 
 SIM_PARAM_OVERRIDES = {
@@ -100,9 +104,17 @@ def generate_launch_description():
     use_sim = LaunchConfiguration("use_sim", default="false")
 
     # Conditionally select nav2 config file based on use_sim
-    nav2_config_file = PythonExpression([
-        "'", nav2_config_file_sim, "' if '", use_sim, "' == 'true' else '", nav2_config_file_real, "'"
-    ])
+    nav2_config_file = PythonExpression(
+        [
+            "'",
+            nav2_config_file_sim,
+            "' if '",
+            use_sim,
+            "' == 'true' else '",
+            nav2_config_file_real,
+            "'",
+        ]
+    )
 
     return LaunchDescription(
         [
