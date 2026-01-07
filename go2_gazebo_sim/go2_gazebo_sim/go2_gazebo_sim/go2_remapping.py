@@ -23,9 +23,8 @@ class Go2RemappingNode(Node):
         self.sitting_z_offset = 0.15  # When charging (on dock)
 
         self.is_charging = False
-        # Use relative topic names for namespace compatibility
         self._param_client = self.create_client(
-            GetParameters, "go2_lowstate_node/get_parameters"
+            GetParameters, "/go2_lowstate_node/get_parameters"
         )
 
         self.create_timer(1.0, self.check_charging_param)

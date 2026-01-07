@@ -28,9 +28,8 @@ class Go2SportNode(Node):
         self.SPORT_API_ID_BALANCESTAND = 1002
         self.SPORT_API_ID_STOPMOVE = 1003
 
-        # Use relative topic names for namespace compatibility
         self.sport_subscriber = self.create_subscription(
-            Request, "api/sport/request", self.sport_request_callback, 10
+            Request, "/api/sport/request", self.sport_request_callback, 10
         )
 
         self.cmd_vel_publisher = self.create_publisher(Twist, "cmd_vel", 10)

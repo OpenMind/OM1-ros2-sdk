@@ -50,9 +50,8 @@ class Go2LowStateNode(Node):
         self.declare_parameter("cmd_vel_timeout", 0.5)
 
         # Publishers
-        # Use relative topic names for namespace compatibility
-        self.lowstate_publisher = self.create_publisher(LowState, "lowstate", 10)
-        self.lf_lowstate_publisher = self.create_publisher(LowState, "lf/lowstate", 10)
+        self.lowstate_publisher = self.create_publisher(LowState, "/lowstate", 10)
+        self.lf_lowstate_publisher = self.create_publisher(LowState, "/lf/lowstate", 10)
 
         # Subscribers
         self.joint_state_subscriber = self.create_subscription(

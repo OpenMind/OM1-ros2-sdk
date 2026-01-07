@@ -57,8 +57,7 @@ def generate_launch_description():
         robot_desc = infp.read()
 
     slam_config_file = os.path.join(pkg_dir, "config", "slam_params.yaml")
-    nav2_config_file_real = os.path.join(pkg_dir, "config", "nav2_params.yaml")
-    nav2_config_file_sim = os.path.join(pkg_dir, "config", "nav2_params_sim.yaml")
+    nav2_config_file = os.path.join(pkg_dir, "config", "nav2_params.yaml")
     m_explorer_config_file = os.path.join(
         pkg_dir, "config", "m_explorer_ros2_params.yaml"
     )

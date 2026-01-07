@@ -60,8 +60,7 @@ def generate_launch_description():
     with open(urdf_file, "r") as infp:
         robot_desc = infp.read()
 
-    nav2_config_file_real = os.path.join(pkg_dir, "config", "nav2_params.yaml")
-    nav2_config_file_sim = os.path.join(pkg_dir, "config", "nav2_params_sim.yaml")
+    nav2_config_file = os.path.join(pkg_dir, "config", "nav2_params.yaml")
 
     channel_type = LaunchConfiguration(
         "channel_type",
