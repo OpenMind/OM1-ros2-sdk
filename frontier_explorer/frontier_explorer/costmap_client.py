@@ -150,7 +150,7 @@ class Costmap2DClient:
 
         Returns:
         -------
-        MapMetaDatas
+        MapMetaData
             Metadata of the costmap, or None if not yet available.
         """
         with self._lock:

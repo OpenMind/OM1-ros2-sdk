@@ -28,3 +28,8 @@ repos:
     hooks:
       - id: isort
         args: [--profile, black, --line-length, "88"]
+
+  - repo: https://github.com/crate-ci/typos
+    rev: v1.28.3
+    hooks:
+      - id: typos

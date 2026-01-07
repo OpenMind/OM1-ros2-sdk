@@ -96,7 +96,7 @@ class OMPath(Node):
             )
         )
         angles_final = angles
-        # angles now run from 360.0 to 0 degress
+        # angles now run from 360.0 to 0 degrees
         data = list(zip(angles_final, self.scan.ranges))
 
         complexes = []

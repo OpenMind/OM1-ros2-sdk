@@ -104,7 +104,7 @@ class AprilTagNode(Node):
 
     def estimate_pose_from_corners(self, corners, tag_size):
         """
-        Estimate pose using OpenCV's solvePnP
+        Estimate pose using OpenCV's solveOnP
         """
         # Define 3D corners of the tag (in tag coordinate system)
         tag_corners_3d = np.array(
@@ -117,8 +117,8 @@ class AprilTagNode(Node):
             dtype=np.float32,
         )
 
-        # Solve PnP
-        success, rvec, tvec = cv2.solvePnP(
+        # Solve OnP
+        success, rvec, tvec = cv2.solveOnP(
             tag_corners_3d,
             corners.astype(np.float32),
             self.camera_matrix,

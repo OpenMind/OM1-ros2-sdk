@@ -1,0 +1,13 @@
+[default]
+extend-ignore-re = []
+
+[default.extend-words]
+iy="iy"
+ser="ser"
+PnP="PnP"
+solvePnP="solvePnP"
+Thr="Thr"
+sizez="sizez"
+
+[files]
+extend-exclude = [  ]

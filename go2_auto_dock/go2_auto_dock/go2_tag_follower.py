@@ -234,7 +234,7 @@ class Go2TagFollower(Node):
                 )  # proportional adjustment change 30 degree to radian
                 yaw_cmd_radian = math.radians(yaw_cmd_degree) * (
                     -1
-                )  # becaues unitree turn left is positive
+                )  # because unitree turn left is positive
             # if  bearing_angle < self.yaw_angle_min:
             #     yaw_cmd_radian = np.deg2rad(-30)
             # elif bearing_angle  > self.yaw_angle_max:
