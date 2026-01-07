@@ -7,7 +7,6 @@ from launch.conditions import UnlessCondition
 from launch.substitutions import (
     EnvironmentVariable,
     LaunchConfiguration,
-    PythonExpression,
 )
 from launch_ros.actions import Node
 
@@ -102,18 +101,7 @@ def generate_launch_description():
     )
     use_sim = LaunchConfiguration("use_sim", default="false")
 
-    # Conditionally select nav2 config file based on use_sim
-    nav2_config_file = PythonExpression(
-        [
-            "'",
-            nav2_config_file_sim,
-            "' if '",
-            use_sim,
-            "' == 'true' else '",
-            nav2_config_file_real,
-            "'",
-        ]
-    )
+    nav2_config_file = os.path.join(pkg_dir, "config", "nav2_params.yaml")
 
     return LaunchDescription(
         [
