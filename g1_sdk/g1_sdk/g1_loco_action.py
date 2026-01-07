@@ -60,8 +60,8 @@ class G1LocoAction(Node):
         Callback function for joystick messages.
         Maps joystick buttons to G1 locomotion actions.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         msg : sensor_msgs.msg.Joy
             The incoming joystick message containing button states.
         """
@@ -103,8 +103,8 @@ class G1LocoAction(Node):
         """
         Sends an FSM state command to the G1 locomotion system.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         fsm_id : int
             The FSM state ID to set.
         """
@@ -123,8 +123,8 @@ class G1LocoAction(Node):
         """
         Sends a balance mode command to the G1 locomotion system.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         balance_mode : int
             The balance mode to set (0: normal, 1: continuous).
         """
@@ -143,8 +143,8 @@ class G1LocoAction(Node):
         """
         Sends an arm task command to the G1 locomotion system.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         task_id : int
             The arm task ID to execute.
         """
@@ -161,6 +161,9 @@ class G1LocoAction(Node):
 
 
 def main(args=None):
+    """
+    Main entry point for the G1 Loco Action Node.
+    """
     rclpy.init(args=args)
 
     try:

@@ -13,9 +13,20 @@ from visualization_msgs.msg import Marker, MarkerArray
 from om_api.msg import Paths
 
 
-def create_straight_line_path_from_angle(angle_degrees, length=1.05, num_points=10):
+def create_straight_line_path_from_angle(
+    angle_degrees: int, length=1.05, num_points=10
+):
     """
-    Create a straight line path from origin at specified angle and length
+    Create a straight line path from origin at specified angle and length.
+
+    Parameters
+    ----------
+    angle_degrees : int
+        The angle in degrees for the path direction (+X forward, +Y left).
+    length : float, optional
+        The length of the path in meters, by default 1.05.
+    num_points : int, optional
+        The number of points to generate along the path, by default 10.
     """
     angle_rad = math.radians(angle_degrees)
     end_x = length * math.cos(angle_rad)  # +X forward
@@ -83,6 +94,14 @@ class OMPath(Node):
         self.get_logger().info("OMPath node started")
 
     def scan_callback(self, msg: LaserScan):
+        """
+        Process incoming LaserScan message to determine feasible paths.
+
+        Parameters
+        ----------
+        msg : sensor_msgs.msg.LaserScan
+            The incoming LaserScan message.
+        """
         self.scan = msg
 
         angles = list(
@@ -226,8 +245,8 @@ class OMPath(Node):
         """
         Store obstacle point cloud message.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         obstacle_cloud_msg : sensor_msgs.msg.PointCloud
             The incoming obstacle point cloud message.
         """
@@ -397,6 +416,9 @@ class OMPath(Node):
 
 
 def main(args=None):
+    """
+    Main function to run the OMPath node.
+    """
     rclpy.init(args=args)
     node = OMPath()
     try:

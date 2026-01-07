@@ -5,7 +5,9 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    # Declare launch arguments
+    """
+    Generate the launch description for Go2 robot charging functionality.
+    """
     use_sim_arg = DeclareLaunchArgument(
         "use_sim",
         default_value="false",

@@ -184,8 +184,8 @@ class OrchestratorAPI(Node):
         """
         Get the current status of all processes.
 
-        Returns:
-        -----------
+        Returns
+        -------
         ProcessStatus
             The current status of SLAM, Nav2, base control, and charging dock processes.
         """
@@ -209,8 +209,8 @@ class OrchestratorAPI(Node):
         """
         Publish map storage message for cloud synchronization.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         result : dict
             Result from map saving operation.
         map_name : str

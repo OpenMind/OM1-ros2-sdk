@@ -7,6 +7,10 @@ from sensor_msgs.msg import CameraInfo, Image, PointCloud
 
 
 class D435ObstacleDector(Node):
+    """
+    A ROS2 node that detects obstacles using depth images from an Intel D435 camera.
+    """
+
     def __init__(self):
         super().__init__("d435_obstacle_dector")
         self.bridge = CvBridge()
@@ -42,8 +46,8 @@ class D435ObstacleDector(Node):
         """
         Callback function for depth camera info messages.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         msg : sensor_msgs.msg.CameraInfo
             The incoming camera info message.
         """
@@ -64,10 +68,10 @@ class D435ObstacleDector(Node):
         tilt_angle=55,
     ):
         """
-        Vectorized conversion from image coordinates to world coordinates
+        Vectorized conversion from image coordinates to world coordinates.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         depth_image : np.ndarray
             The depth image as a 2D numpy array.
         camera_ahead : float
@@ -151,8 +155,8 @@ class D435ObstacleDector(Node):
         """
         Callback function for depth image messages.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         msg : sensor_msgs.msg.Image
             The incoming depth image message.
         """
@@ -177,6 +181,14 @@ class D435ObstacleDector(Node):
 
 
 def main(args=None):
+    """
+    Main function to run the D435ObstacleDector node.
+
+    Parameters
+    ----------
+    args : list, optional
+        Command line arguments to pass to rclpy.init().
+    """
     rclpy.init(args=args)
     node = D435ObstacleDector()
 

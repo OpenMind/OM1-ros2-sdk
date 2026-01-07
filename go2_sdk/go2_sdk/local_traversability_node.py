@@ -8,12 +8,7 @@ from nav_msgs.msg import OccupancyGrid
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 from rclpy.time import Time
-from scipy.ndimage import (
-    binary_dilation,
-    label,
-    maximum_filter,
-    minimum_filter,
-)
+from scipy.ndimage import binary_dilation, label, maximum_filter, minimum_filter
 from sensor_msgs.msg import PointCloud2
 from sensor_msgs_py import point_cloud2 as pc2
 from std_msgs.msg import Header
@@ -200,8 +195,9 @@ class LocalTraversability(Node):
         source_frame: str,
     ) -> None:
         """
-        Run the full traversability computation:
+        Run the full traversability computation.
 
+        The pipeline steps are:
         1. Transform depth cloud from camera frame to `base_link`.
         2. Filter points to a region-of-interest (ROI) around the robot.
         3. Build a local height map around base_link.
@@ -429,6 +425,9 @@ class LocalTraversability(Node):
 
 
 def main():
+    """
+    Main function to run the LocalTraversability node.
+    """
     rclpy.init()
     node = LocalTraversability()
     try:

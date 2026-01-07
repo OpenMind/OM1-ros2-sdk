@@ -3,6 +3,9 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
+    """
+    Generate the launch description for USB camera using v4l2 and republishing compressed images.
+    """
     return LaunchDescription(
         [
             # Camera node (v4l2)

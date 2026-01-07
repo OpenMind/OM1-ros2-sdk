@@ -10,6 +10,11 @@ from unitree_hg.msg import LowState
 
 
 class G1JointStatePublisher(Node):
+    """
+    A ROS2 node that converts Unitree G1 low-level state messages
+    to standard JointState messages for ROS.
+    """
+
     def __init__(self):
         super().__init__("g1_joint_state_publisher")
 
@@ -63,9 +68,15 @@ class G1JointStatePublisher(Node):
         self.get_logger().info("Subscribing to /lowstate (unitree_hg/msg/LowState)")
         self.get_logger().info("Publishing to /joint_states")
 
-    def low_state_callback(self, msg):
-        """Convert Unitree low-level state to ROS JointState"""
+    def low_state_callback(self, msg: LowState):
+        """
+        Convert Unitree low-level state to ROS JointState.
 
+        Parameters
+        ----------
+        msg : LowState
+            The incoming LowState message containing motor states.
+        """
         self.msg_count += 1
 
         try:
@@ -129,6 +140,9 @@ class G1JointStatePublisher(Node):
 
 
 def main(args=None):
+    """
+    Main function to run the G1 Joint State Publisher node.
+    """
     rclpy.init(args=args)
     node = G1JointStatePublisher()
 

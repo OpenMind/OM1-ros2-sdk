@@ -13,6 +13,11 @@ from tf2_ros import TransformBroadcaster
 
 
 class AprilTagNode(Node):
+    """
+    A ROS2 node that detects AprilTags in camera images, estimates their poses,
+    and publishes the pose of tag ID 1 along with relative position data.
+    """
+
     # Known distances between tags (in meters)
     HORIZONTAL_DISTANCE = 0.12446  # ID2-ID3, ID4-ID5
     VERTICAL_DISTANCE = 0.05916  # ID2-ID4, ID3-ID5
@@ -71,6 +76,14 @@ class AprilTagNode(Node):
         self.bearing_angle_deg_high_accurate = 0.0  # High accuracy bearing angle
 
     def camera_info_callback(self, msg: CameraInfo):
+        """
+        Callback function to process incoming camera info messages.
+
+        Parameters
+        ----------
+        msg : CameraInfo
+            The incoming camera info message.
+        """
         fx = msg.k[0]
         fy = msg.k[4]
         cx = msg.k[2]
@@ -83,6 +96,14 @@ class AprilTagNode(Node):
             self.load_camera_info = True
 
     def image_callback(self, msg: Image):
+        """
+        Callback function for processing incoming camera images.
+
+        Parameters
+        ----------
+        msg : Image
+            The incoming camera image message.
+        """
         if self.camera_params is None:
             return  # wait until camera_info arrives
 
@@ -134,7 +155,7 @@ class AprilTagNode(Node):
 
                 tag_dict[det.tag_id] = det
 
-        # --- Draw all detected tags ---
+        # Draw all detected tags
         if self.show_debug_img:
             for det in tag_dict.values():
                 for i in range(4):
@@ -217,7 +238,7 @@ class AprilTagNode(Node):
             # Compute yaw error (rotation needed to align camera with tag)
             yaw_error = np.arctan2(x_right, z_forward)  # radians
 
-            # --- Publish relative vector + yaw_error ---
+            # Publish relative vector + yaw_error
             # msg_rel = Float32MultiArray()
             # msg_rel.data = [x_right, y_up, z_forward, yaw_error]
             # self.relative_pub.publish(msg_rel)
@@ -264,7 +285,7 @@ class AprilTagNode(Node):
                         f"(conf: {bearing['confidence']:.2f}, dist_err: {bearing['distance_error']:.3f}, v12: {bearing['v12']}, wall_forward_after_cross:{bearing['wall_forward_after_cross']})"
                     )
 
-        # --- IDs 2 and 3 → use pair for bearing angle ---
+        # IDs 2 and 3 → use pair for bearing angle
         """
         if 2 in tag_dict and 3 in tag_dict:
             det2, det3 = tag_dict[2], tag_dict[3]
@@ -316,7 +337,7 @@ class AprilTagNode(Node):
             # Take vector from camera to midpoint projected to XZ plane:
         """
 
-        # --- Publish relative vector + yaw_error + Hz + target flag ---
+        # Publish relative vector + yaw_error + Hz + target flag
         msg_rel = Float32MultiArray()
         msg_rel.data = [
             x_right,
@@ -331,18 +352,44 @@ class AprilTagNode(Node):
         # self.get_logger().info(f"Publishing /apriltag_relative: {msg_rel.data}")
         self.relative_pub.publish(msg_rel)
 
-    def rotation_matrix_to_quaternion(self, R):
+    def rotation_matrix_to_quaternion(self, R: np.ndarray) -> tuple:
+        """
+        Convert a rotation matrix to a quaternion.
+
+        Parameters
+        ----------
+        R : np.ndarray
+            3x3 rotation matrix.
+
+        Returns
+        -------
+        tuple
+            Quaternion (qx, qy, qz, qw).
+        """
         qw = np.sqrt(1 + np.trace(R)) / 2
         qx = (R[2, 1] - R[1, 2]) / (4 * qw)
         qy = (R[0, 2] - R[2, 0]) / (4 * qw)
         qz = (R[1, 0] - R[0, 1]) / (4 * qw)
         return (qx, qy, qz, qw)
 
-    def calculate_improved_bearing_angle(self, tag_dict):
+    def calculate_improved_bearing_angle(self, tag_dict: dict) -> tuple:
         """
-        Calculate bearing angle using multiple tag pairs for improved accuracy
-        """
+        Calculate bearing angle using multiple tag pairs for improved accuracy.
 
+        Parameters
+        ----------
+        tag_dict : dict
+            Dictionary of detected tags with their poses.
+
+        Returns
+        -------
+        final_bearing : float or None
+            Weighted average bearing angle in degrees, or None if no valid pairs.
+        method_used : str
+            Description of the method used to calculate bearing.
+        valid_bearings : list
+            List of valid bearing estimations from tag pairs.
+        """
         # Define all possible tag pairs and their known distances
         tag_pairs = [
             # Horizontal pairs
@@ -475,10 +522,16 @@ class AprilTagNode(Node):
 
         return final_bearing, method_used, valid_bearings
 
-    def check_and_update_high_accuracy_bearing(self, valid_bearings):
+    def check_and_update_high_accuracy_bearing(self, valid_bearings: list):
         """
-        Update self.bearing_angle_deg_high_accurate only when all four specific
+        Update self.bearing_angle_deg_high_accurate only when all four specific.
+
         tag pair estimations (ID2-ID3, ID4-ID5, ID2-ID5, ID4-ID3) are within 5° of their average
+
+        Parameters
+        ----------
+        valid_bearings : list
+            List of valid bearing estimations from calculate_improved_bearing_angle
         """
         # Define the required pairs
         required_pairs = [
@@ -526,6 +579,9 @@ class AprilTagNode(Node):
 
 
 def main():
+    """
+    Main entry point for the AprilTag Node.
+    """
     rclpy.init()
     node = AprilTagNode()
     rclpy.spin(node)

@@ -22,7 +22,7 @@ class Costmap2DClient:
         Sets up subscriptions to costmap and costmap updates topics, initializes
         parameters, and waits for initial costmap data to be available.
 
-        Parameters:
+        Parameters
         ----------
         node: Node
             The ROS2 node used for subscriptions and logging.
@@ -69,7 +69,7 @@ class Costmap2DClient:
         Updates the entire costmap data, metadata, and global frame information.
         Thread-safe operation using a lock.
 
-        Parameters:
+        Parameters
         ----------
         msg: OccupancyGrid
             Full costmap message containing the entire costmap data.
@@ -87,7 +87,7 @@ class Costmap2DClient:
         Applies partial updates to the existing costmap for efficiency.
         Thread-safe operation using a lock.
 
-        Parameters:
+        Parameters
         ----------
         msg: OccupancyGridUpdate
             Incremental costmap update message containing updated regions.
@@ -105,7 +105,7 @@ class Costmap2DClient:
 
         Uses TF2 to look up the transform from the global frame to the robot base frame.
 
-        Returns:
+        Returns
         -------
         Pose
             The current pose of the robot, or a default Pose if unavailable.
@@ -134,7 +134,7 @@ class Costmap2DClient:
 
         Thread-safe accessor for the costmap numpy array.
 
-        Returns:
+        Returns
         -------
         np.ndarray
             2D array representing the costmap, or None if not yet available.
@@ -148,7 +148,7 @@ class Costmap2DClient:
         Thread-safe accessor for costmap metadata including resolution, dimensions,
         and origin.
 
-        Returns:
+        Returns
         -------
         MapMetaData
             Metadata of the costmap, or None if not yet available.
@@ -159,7 +159,7 @@ class Costmap2DClient:
     def get_global_frame_id(self) -> str:
         """Get the global reference frame ID for the costmap.
 
-        Returns:
+        Returns
         -------
         str
             The global frame ID, or None if not yet available.

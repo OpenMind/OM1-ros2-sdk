@@ -16,6 +16,10 @@ from om_api.msg import Paths
 
 
 class WatchSensor(Node):
+    """
+    Node to monitor sensor topics and restart containers if needed.
+    """
+
     def __init__(self):
         super().__init__("watch_sensor")
         self.get_logger().info("WatchSensor node started")
@@ -77,7 +81,7 @@ class WatchSensor(Node):
 
     def ros2_paths_callback(self, msg: Paths):
         """
-        Callback for /om/paths topic
+        Callback for /om/paths topic.
 
         Parameters
         ----------
@@ -89,7 +93,7 @@ class WatchSensor(Node):
 
     def ros2_scan_callback(self, msg: LaserScan):
         """
-        Callback for /scan topic
+        Callback for /scan topic.
 
         Parameters
         ----------
@@ -101,7 +105,7 @@ class WatchSensor(Node):
 
     def zenoh_paths_callback(self, sample: zenoh.Sample):
         """
-        Callback for /om/paths topic via Zenoh
+        Callback for /om/paths topic via Zenoh.
 
         Parameters
         ----------
@@ -113,7 +117,7 @@ class WatchSensor(Node):
 
     def rtsp_monitor_loop(self):
         """
-        Monitor RTSP stream and update last_video_rtsp_time when images are received
+        Monitor RTSP stream and update last_video_rtsp_time when images are received.
         """
         cap = None
         while True:
@@ -151,7 +155,7 @@ class WatchSensor(Node):
 
     def audio_rtsp_monitor_loop(self):
         """
-        Monitor audio RTSP stream and update last_audio_rtsp_time when audio is accessible
+        Monitor audio RTSP stream and update last_audio_rtsp_time when audio is accessible.
         """
         while True:
             try:
@@ -191,7 +195,7 @@ class WatchSensor(Node):
 
     def restart_container(self, service_name: str) -> bool:
         """
-        Restart a container
+        Restart a container.
 
         Parameters
         ----------
@@ -221,7 +225,7 @@ class WatchSensor(Node):
 
     def watchdog_loop(self):
         """
-        Monitor topics and restart containers if needed
+        Monitor topics and restart containers if needed.
         """
         while True:
             try:
@@ -288,7 +292,7 @@ class WatchSensor(Node):
 
     def __del__(self):
         """
-        Cleanup Docker client
+        Cleanup Docker client.
         """
         try:
             if hasattr(self, "docker_client"):
@@ -298,6 +302,9 @@ class WatchSensor(Node):
 
 
 def main(args=None):
+    """
+    Main function to run the WatchSensor node.
+    """
     rclpy.init(args=args)
     node = WatchSensor()
 

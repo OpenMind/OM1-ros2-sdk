@@ -84,8 +84,8 @@ class CmdVelToG1LocoNode(Node):
         Callback function for cmd_vel messages.
         Converts Twist message to Unitree G1 locomotion velocity command.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         msg : geometry_msgs.msg.Twist
             The incoming cmd_vel message containing linear and angular velocities.
         """
@@ -129,8 +129,8 @@ class CmdVelToG1LocoNode(Node):
         """
         Send a velocity command to the G1 robot using the SET_VELOCITY API.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         vx : float
             Forward/backward velocity in m/s
         vy : float
@@ -171,8 +171,8 @@ class CmdVelToG1LocoNode(Node):
         """
         Send an FSM state command to the G1 robot.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         fsm_id : int
             The FSM state ID to transition to
         """
@@ -207,8 +207,8 @@ class CmdVelToG1LocoNode(Node):
         """
         Send a balance mode command to the G1 robot.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         balance_mode : int
             The balance mode to set
         """
@@ -228,8 +228,8 @@ class CmdVelToG1LocoNode(Node):
         """
         Send a stand height command to the G1 robot.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         height : float
             The stand height to set
         """
@@ -274,6 +274,9 @@ class CmdVelToG1LocoNode(Node):
 
 
 def main(args=None):
+    """
+    Main function to run the CmdVelToG1LocoNode.
+    """
     rclpy.init(args=args)
 
     try:

@@ -4,7 +4,9 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
-
+    """
+    Generate the launch description for the orchestrator nodes.
+    """
     use_sim = LaunchConfiguration("use_sim", default="false")
 
     return LaunchDescription(

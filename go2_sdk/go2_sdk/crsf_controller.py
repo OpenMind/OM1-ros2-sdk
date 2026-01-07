@@ -8,11 +8,30 @@ from sensor_msgs.msg import Joy
 
 
 class PacketsTypes(IntEnum):
+    """
+    Enumeration of CRSF packet types.
+    """
+
     RC_CHANNELS_PACKED = 0x16
     SYNC_BYTE = 0xC8
 
 
-def crc8_dvb_s2(crc, a) -> int:
+def crc8_dvb_s2(crc: int, a: int) -> int:
+    """
+    Calculate CRC8 DVB-S2 checksum for a single byte.
+
+    Parameters
+    ----------
+    crc : int
+        The current CRC value.
+    a : int
+        The byte to process.
+
+    Returns
+    -------
+    int
+        The updated CRC value.
+    """
     crc = crc ^ a
     for ii in range(8):
         if crc & 0x80:
@@ -22,18 +41,57 @@ def crc8_dvb_s2(crc, a) -> int:
     return crc & 0xFF
 
 
-def crc8_data(data) -> int:
+def crc8_data(data: bytearray) -> int:
+    """
+    Calculate CRC8 checksum for given data.
+
+    Parameters
+    ----------
+    data : bytearray
+        The data to calculate the checksum for.
+
+    Returns
+    -------
+    int
+        The calculated CRC8 checksum.
+    """
     crc = 0
     for a in data:
         crc = crc8_dvb_s2(crc, a)
     return crc
 
 
-def crsf_validate_frame(frame) -> bool:
+def crsf_validate_frame(frame: bytearray) -> bool:
+    """
+    Validate CRSF frame using CRC8 checksum.
+
+    Parameters
+    ----------
+    frame : bytearray
+        The raw CRSF frame data.
+
+    Returns
+    -------
+    bool
+        True if the frame is valid, False otherwise.
+    """
     return crc8_data(frame[2:-1]) == frame[-1]
 
 
-def n(val):
+def n(val: int) -> float:
+    """
+    Normalize CRSF channel value to range [0.0, 1.0].
+
+    Parameters
+    ----------
+    val : int
+        The raw CRSF channel value.
+
+    Returns
+    -------
+    float
+        The normalized value in the range [0.0, 1.0].
+    """
     res = val - 174
     res = res / 1632
     if res > 1.0:
@@ -44,6 +102,10 @@ def n(val):
 
 
 class CrsfJoyBridge(Node):
+    """
+    A ROS2 node that bridges CRSF controller input to Joy messages.
+    """
+
     def __init__(self):
         super().__init__("crsf_joy_bridge")
 
@@ -76,6 +138,9 @@ class CrsfJoyBridge(Node):
         )
 
     def start_serial(self):
+        """
+        Start the serial port reading thread.
+        """
         try:
             self.ser = serial.Serial(self.port, self.baud, timeout=1)
             self.running = True
@@ -87,6 +152,9 @@ class CrsfJoyBridge(Node):
             self.get_logger().error(f"Failed to open serial port: {e}")
 
     def serial_reader(self):
+        """
+        Thread function to read from serial port and process CRSF packets.
+        """
         input_buffer = bytearray()
 
         while self.running:
@@ -112,7 +180,17 @@ class CrsfJoyBridge(Node):
                 self.get_logger().error(f"Serial read error: {e}")
                 break
 
-    def handle_crsf_packet(self, ptype, data):
+    def handle_crsf_packet(self, ptype: int, data: bytearray):
+        """
+        Handle incoming CRSF packet based on its type.
+
+        Parameters
+        ----------
+        ptype : int
+            The type of the CRSF packet.
+        data : bytearray
+            The raw data of the CRSF packet.
+        """
         if ptype == PacketsTypes.RC_CHANNELS_PACKED:
             packet = data[2:-1]
             packet = packet[1:-1]  # remove type and crc
@@ -150,10 +228,16 @@ class CrsfJoyBridge(Node):
             self.latest_joy.buttons = [swa, swb, swc, swd, swe, swf]
 
     def publish_joy(self):
+        """
+        Publish the latest Joy message.
+        """
         self.latest_joy.header.stamp = self.get_clock().now().to_msg()
         self.joy_pub.publish(self.latest_joy)
 
     def destroy_node(self):
+        """
+        Cleanup on node destruction.
+        """
         self.running = False
         if self.serial_thread:
             self.serial_thread.join(timeout=1.0)
@@ -163,6 +247,14 @@ class CrsfJoyBridge(Node):
 
 
 def main(args=None):
+    """
+    Main function to run the CrsfJoyBridge node.
+
+    Parameters
+    ----------
+    args : list, optional
+        Command line arguments to pass to rclpy.init().
+    """
     rclpy.init(args=args)
     node = CrsfJoyBridge()
 

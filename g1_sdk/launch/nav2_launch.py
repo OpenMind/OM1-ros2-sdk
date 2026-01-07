@@ -8,6 +8,9 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
+    """
+    Generate the launch description for G1 robot navigation using Nav2.
+    """
     pkg_dir = get_package_share_directory("g1_sdk")
     nav2_config_file = os.path.join(pkg_dir, "config", "nav2_params.yaml")
     slam_launch_file = os.path.join(pkg_dir, "launch", "slam_launch.py")

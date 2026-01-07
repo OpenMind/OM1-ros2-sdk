@@ -3,6 +3,9 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
+    """
+    Generate the launch description for Go2 robot base control and teleoperation.
+    """
     return LaunchDescription(
         [
             Node(

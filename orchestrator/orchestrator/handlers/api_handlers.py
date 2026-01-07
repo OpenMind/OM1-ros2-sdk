@@ -19,8 +19,8 @@ class APIHandlers:
         """
         Initialize the API handlers.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         orchestrator : OrchestratorAPI
             Reference to the main orchestrator instance.
         """
@@ -30,8 +30,8 @@ class APIHandlers:
         """
         Register all API routes with the Flask application.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         app : Flask
             The Flask application instance.
         """

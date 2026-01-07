@@ -41,7 +41,8 @@ def generate_robot_group(
         go2_description: Package share directory for go2_description
         joints_config, links_config, gait_config: Config file paths
 
-    Returns:
+    Returns
+    -------
         List of nodes for this robot
     """
     robot_name = f"robot{robot_id}"
@@ -441,7 +442,9 @@ def launch_setup(context, *args, **kwargs):
 
 
 def generate_launch_description():
-    # Package paths
+    """
+    Generate the launch description for multi-Go2 Gazebo simulation.
+    """
     go2_gazebo_sim = launch_ros.substitutions.FindPackageShare(
         package="go2_gazebo_sim"
     ).find("go2_gazebo_sim")

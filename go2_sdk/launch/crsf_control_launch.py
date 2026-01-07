@@ -5,6 +5,9 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
+    """
+    Generate the launch description for Go2 robot CRSF controller and teleoperation.
+    """
     serial_port_arg = DeclareLaunchArgument(
         "serial_port",
         default_value=EnvironmentVariable(

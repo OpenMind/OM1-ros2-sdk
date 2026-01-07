@@ -6,6 +6,11 @@ from tf2_ros import TransformException
 
 
 class WaypointManager(Node):
+    """
+    A ROS2 node that manages waypoints by logging the robot's current location
+    and publishing it as PoseStamped messages.
+    """
+
     def __init__(self):
         super().__init__("waypoint_manager")
 
@@ -73,6 +78,14 @@ class WaypointManager(Node):
 
 
 def main(args=None):
+    """
+    Main function to run the WaypointManager node.
+
+    Parameters
+    ----------
+    args : list, optional
+        Command line arguments to pass to rclpy.init().
+    """
     rclpy.init(args=args)
 
     waypoint_manager = WaypointManager()

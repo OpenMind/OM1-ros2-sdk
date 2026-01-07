@@ -254,8 +254,8 @@ class G1APINode(Node):
         Callback function for PoseStamped messages.
         Updates the internal pose data and logs the received pose.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         msg : geometry_msgs.msg.PoseStamped
             The incoming PoseStamped message containing the robot's pose.
         """
@@ -275,8 +275,8 @@ class G1APINode(Node):
         Callback for Unitree G1 localization updates from RTAB-Map (/localization_pose).
         Updates the internal pose data and logs the received localization pose.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         msg : geometry_msgs.msg.PoseWithCovarianceStamped
             The incoming localization pose message containing the robot's pose with covariance.
         """
@@ -292,8 +292,8 @@ class G1APINode(Node):
         Callback function for Nav2 goal status updates.
         Updates the internal Nav2 status data and logs the received status.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         msg : action_msgs.msg.GoalStatusArray
             The incoming goal status message containing the status of active goals.
         """
@@ -304,8 +304,8 @@ class G1APINode(Node):
         Callback function for OccupancyGrid messages.
         Updates the internal map data and logs the received map.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         msg : nav_msgs.msg.OccupancyGrid
             The incoming OccupancyGrid message containing the map data.
         """

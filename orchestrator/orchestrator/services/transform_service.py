@@ -14,8 +14,8 @@ class TransformService:
         """
         Initialize the TransformService.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         node
             ROS2 node instance.
         logger
@@ -30,7 +30,7 @@ class TransformService:
         """
         Get the current robot pose in the map frame.
 
-        Returns:
+        Returns
         -------
         dict or None
             Dictionary with position and orientation, or None if transform fails.
@@ -70,8 +70,8 @@ class TransformService:
         """
         Get transform between two frames.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         target_frame : str
             Target frame ID.
         source_frame : str
@@ -79,8 +79,8 @@ class TransformService:
         timeout : float
             Timeout in seconds.
 
-        Returns:
-        --------
+        Returns
+        -------
         dict or None
             Transform data or None if failed.
         """

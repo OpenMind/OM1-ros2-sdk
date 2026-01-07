@@ -8,10 +8,12 @@ logging.basicConfig(level=logging.INFO)
 def create_zenoh_config(network_discovery: bool = True) -> dict:
     """
     Create a Zenoh configuration for a client connecting to a local server.
+
     Parameters
     ----------
     network_discovery : bool, optional
         Whether to enable network discovery (default is True).
+
     Returns
     -------
     dict
@@ -28,10 +30,12 @@ def create_zenoh_config(network_discovery: bool = True) -> dict:
 def open_zenoh_session() -> zenoh.Session:
     """
     Open a Zenoh session with a local connection first, then fall back to network discovery.
+
     Returns
     -------
     zenoh.Session
         The opened Zenoh session.
+
     Raises
     ------
     Exception

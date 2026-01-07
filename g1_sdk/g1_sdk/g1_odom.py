@@ -11,6 +11,11 @@ from unitree_go.msg import SportModeState
 
 
 class UnitreeOdomConverter(Node):
+    """
+    A ROS2 node that converts Unitree SportModeState messages
+    to standard Odometry messages and broadcasts TF transforms.
+    """
+
     def __init__(self):
         super().__init__("unitree_odom_converter")
 
@@ -49,8 +54,14 @@ class UnitreeOdomConverter(Node):
         )
 
     def sport_mode_callback(self, msg: SportModeState):
-        """Convert SportModeState to Odometry and TF"""
+        """
+        Convert SportModeState to Odometry and TF.
 
+        Parameters
+        ----------
+        msg : unitree_go.msg.SportModeState
+            The incoming SportModeState message containing odometry data.
+        """
         current_time = self.get_clock().now()
 
         # Create odometry message
@@ -130,17 +141,19 @@ class UnitreeOdomConverter(Node):
             # Broadcast transform
             self.tf_broadcaster.sendTransform(transform)
 
-        # Debug logging (uncomment if needed)
-        # self.get_logger().info(
-        #     f'Odom - Pos: [{odom_msg.pose.pose.position.x:.3f}, '
-        #     f'{odom_msg.pose.pose.position.y:.3f}, {odom_msg.pose.pose.position.z:.3f}], '
-        #     f'Vel: [{odom_msg.twist.twist.linear.x:.3f}, '
-        #     f'{odom_msg.twist.twist.linear.y:.3f}, {odom_msg.twist.twist.linear.z:.3f}]',
-        #     throttle_duration_sec=1.0
-        # )
+        self.get_logger().debug(
+            f"Odom - Pos: [{odom_msg.pose.pose.position.x:.3f}, "
+            f"{odom_msg.pose.pose.position.y:.3f}, {odom_msg.pose.pose.position.z:.3f}], "
+            f"Vel: [{odom_msg.twist.twist.linear.x:.3f}, "
+            f"{odom_msg.twist.twist.linear.y:.3f}, {odom_msg.twist.twist.linear.z:.3f}]",
+            throttle_duration_sec=1.0,
+        )
 
 
 def main(args=None):
+    """
+    Main entry point for the Unitree Odom Converter Node.
+    """
     rclpy.init(args=args)
 
     try:

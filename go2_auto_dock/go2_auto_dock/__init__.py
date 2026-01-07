@@ -1,3 +1,3 @@
 """
-Go2 Auto Dock Package
+Go2 Auto Dock Package.
 """

@@ -14,8 +14,8 @@ class MapManager:
         """
         Initialize the MapManager.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         maps_directory : str
             Directory where maps are stored.
         robot_type : str
@@ -36,14 +36,14 @@ class MapManager:
         For G1 robots: Uses RTAB-Map backup only.
         For other robots: Uses slam_toolbox and standard ROS2 formats.
 
-        Parameters:
+        Parameters
         ----------
         map_name : str
             The name to save the map as (without extension).
         map_directory : Optional[str]
             Directory to save the map in. If None, uses default maps directory.
 
-        Returns:
+        Returns
         -------
         Dict[str, str]
             Dictionary containing status and message.
@@ -210,8 +210,8 @@ class MapManager:
         """
         List all saved maps in the maps directory.
 
-        Returns:
-        --------
+        Returns
+        -------
         List[MapInfo]
             List of map information objects.
         """
@@ -240,13 +240,13 @@ class MapManager:
         """
         Delete a specified map directory.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         map_name : str
             Name of the map to delete.
 
-        Returns:
-        --------
+        Returns
+        -------
         Dict[str, str]
             Dictionary containing status and message.
         """
@@ -272,13 +272,13 @@ class MapManager:
         """
         Get the path to a map's YAML file.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         map_name : str
             Name of the map.
 
-        Returns:
-        --------
+        Returns
+        -------
         str
             Path to the map's YAML file.
         """

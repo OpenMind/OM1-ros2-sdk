@@ -14,8 +14,8 @@ class ChargingManager:
         """
         Initialize the ChargingManager.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         logger
             Logger instance for logging operations.
         """
@@ -32,8 +32,8 @@ class ChargingManager:
         """
         Update battery state and detect charging transitions.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         soc : float
             Battery state of charge (0-100).
         current : float
@@ -75,13 +75,13 @@ class ChargingManager:
         """
         Start autonomous docking sequence to charger.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         launch_file : str
             Launch file to use for charging sequence.
 
-        Returns:
-        --------
+        Returns
+        -------
         bool
             True if dock sequence started successfully, False otherwise.
         """
@@ -108,8 +108,8 @@ class ChargingManager:
         """
         Stop the charging dock process.
 
-        Returns:
-        --------
+        Returns
+        -------
         bool
             True if dock sequence stopped successfully, False otherwise.
         """
@@ -127,8 +127,8 @@ class ChargingManager:
         """
         Get current charging and docking status.
 
-        Returns:
-        --------
+        Returns
+        -------
         ChargingStatus
             Current charging status information.
         """
@@ -144,8 +144,8 @@ class ChargingManager:
         """
         Check if the dock process is currently running.
 
-        Returns:
-        --------
+        Returns
+        -------
         bool
             True if dock process is running, False otherwise.
         """

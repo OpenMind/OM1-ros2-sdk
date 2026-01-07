@@ -85,13 +85,13 @@ class Go2LowStateNode(Node):
         """
         Callback for handling parameter changes at runtime.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         params : list
             List of parameter changes
 
-        Returns:
-        --------
+        Returns
+        -------
         SetParametersResult
             Result indicating success or failure
         """
@@ -108,8 +108,8 @@ class Go2LowStateNode(Node):
         """
         Callback function for joint state messages from Gazebo.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         msg : JointState
             Joint state message containing positions and velocities
         """
@@ -119,8 +119,8 @@ class Go2LowStateNode(Node):
         """
         Callback function for velocity commands to detect robot movement.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         msg : Twist
             Velocity command message
         """
@@ -135,8 +135,8 @@ class Go2LowStateNode(Node):
         """
         Convert Gazebo joint states to Unitree motor order.
 
-        Returns:
-        --------
+        Returns
+        -------
         tuple
             (positions, velocities) in Unitree order, or (None, None) if no data available
         """
@@ -173,8 +173,8 @@ class Go2LowStateNode(Node):
         """
         Update battery state based on robot activity.
 
-        Returns:
-        --------
+        Returns
+        -------
         tuple
             (soc, current_ma, is_moving) - current battery state
         """
@@ -212,8 +212,8 @@ class Go2LowStateNode(Node):
         """
         Create a LowState message with current robot state.
 
-        Returns:
-        --------
+        Returns
+        -------
         LowState
             A populated LowState message with current data
         """

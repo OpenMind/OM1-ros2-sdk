@@ -3,6 +3,9 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
+    """
+    Generate the launch description for USB camera using usb_cam package.
+    """
     return LaunchDescription(
         [
             # USB Camera node

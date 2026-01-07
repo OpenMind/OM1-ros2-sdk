@@ -7,8 +7,8 @@ class PositionModel(BaseModel):
     """
     3D position coordinates.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     x : float
         X coordinate.
     y : float
@@ -26,8 +26,8 @@ class OrientationModel(BaseModel):
     """
     Quaternion orientation.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     x : float
         X component of orientation.
     y : float
@@ -48,8 +48,8 @@ class PoseModel(BaseModel):
     """
     Complete pose with position and orientation.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     position : PositionModel
         Position with x, y, z coordinates.
     orientation : OrientationModel
@@ -68,8 +68,8 @@ class LocationModel(BaseModel):
     """
     Named location with pose and metadata.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     name : str
         Name of the location.
     description : Optional[str]
@@ -90,8 +90,8 @@ class MapInfo(BaseModel):
     """
     Map information.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     map_name : str
         Name of the map.
     files : list[str]
@@ -109,8 +109,8 @@ class ProcessStatus(BaseModel):
     """
     Process status information.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     slam_status : str
         SLAM process status.
     nav2_status : str
@@ -140,8 +140,8 @@ class ChargingStatus(BaseModel):
     """
     Charging status information.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     is_charging : bool
         Whether robot is charging.
     battery_soc : float

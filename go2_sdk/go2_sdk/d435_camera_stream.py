@@ -89,7 +89,7 @@ class D435RGBStream(Node):
 
     def setup_ffmpeg_stream(self):
         """
-        Setup FFmpeg process for video streaming
+        Setup FFmpeg process for video streaming.
         """
         if not self.api_key or not self.api_key_id:
             self.get_logger().error(
@@ -285,7 +285,7 @@ class D435RGBStream(Node):
 
     def __del__(self):
         """
-        Cleanup on node destruction
+        Cleanup on node destruction.
         """
         self.stop_event.set()
         if hasattr(self, "writer_thread"):
@@ -305,6 +305,14 @@ class D435RGBStream(Node):
 
 
 def main(args=None):
+    """
+    Main function to run the D435RGBStream node.
+
+    Parameters
+    ----------
+    args : list, optional
+        Command line arguments to pass to rclpy.init().
+    """
     rclpy.init(args=args)
     node = D435RGBStream()
     try:
