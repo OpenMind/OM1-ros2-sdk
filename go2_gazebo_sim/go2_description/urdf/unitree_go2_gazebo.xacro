@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<robot>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
   <!-- Gazebo Sim plugins -->
   <gazebo>
     <plugin filename="gz-sim-pose-publisher-system" name="gz::sim::systems::PosePublisher">
@@ -27,7 +27,13 @@
   <gazebo>
     <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
       <parameters>$(find go2_gazebo_sim)/config/ros_control/ros_control.yaml</parameters>
+      <!-- When namespace is set, the plugin runs in that namespace, so robot_param_node should be relative -->
       <robot_param_node>robot_state_publisher</robot_param_node>
+      <xacro:if value="${ns != ''}">
+        <ros>
+          <namespace>${ns}</namespace>
+        </ros>
+      </xacro:if>
     </plugin>
   </gazebo>
 
@@ -35,11 +41,11 @@
   <gazebo>
   <plugin filename="libignition-gazebo-odometry-publisher-system.so"
           name="ignition::gazebo::systems::OdometryPublisher">
-      <odom_frame>odom</odom_frame>
-      <robot_base_frame>base_link</robot_base_frame>
-      <odom_topic>/odom</odom_topic>
+      <odom_frame>${topic_prefix}odom</odom_frame>
+      <robot_base_frame>${topic_prefix}base_link</robot_base_frame>
+      <odom_topic>${topic_prefix}odom</odom_topic>
       <odom_publish_frequency>50</odom_publish_frequency>
-      <tf_topic>/tf</tf_topic>
+      <tf_topic>${topic_prefix}tf</tf_topic>
     </plugin>
   </gazebo>
 
@@ -49,7 +55,7 @@
       <always_on>true</always_on>
       <update_rate>100</update_rate>
       <visualize>true</visualize>
-      <topic>imu/data</topic>
+      <topic>${topic_prefix}imu/data</topic>
       <gz_frame_id>imu_link</gz_frame_id>
       <imu>
         <angular_velocity>
@@ -118,7 +124,7 @@
       <always_on>1</always_on>
       <update_rate>10</update_rate>
       <visualize>1</visualize>
-      <topic>rgb_image</topic>
+      <topic>${topic_prefix}rgb_image</topic>
     </sensor>
   </gazebo>
 
@@ -169,7 +175,7 @@
       <always_on>1</always_on>
       <update_rate>10</update_rate>
       <visualize>1</visualize>
-      <topic>camera/realsense2_camera_node/depth/image_rect_gazebo_raw</topic>
+      <topic>${topic_prefix}camera/realsense2_camera_node/depth/image_rect_gazebo_raw</topic>
     </sensor>
     <sensor name="head_rgb_camera" type="camera">
       <pose>0 0 0 0 0 0</pose>
@@ -189,7 +195,7 @@
       <always_on>1</always_on>
       <update_rate>30</update_rate>
       <visualize>1</visualize>
-      <topic>camera/realsense2_camera_node/color/image_raw</topic>
+      <topic>${topic_prefix}camera/realsense2_camera_node/color/image_raw</topic>
     </sensor>
   </gazebo>
 

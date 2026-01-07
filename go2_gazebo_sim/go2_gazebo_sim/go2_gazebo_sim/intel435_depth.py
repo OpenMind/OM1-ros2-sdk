@@ -28,7 +28,7 @@ class Intel435DepthNode(Node):
         )
 
         self.depth_image_publisher = self.create_publisher(
-            Image, "/camera/realsense2_camera_node/depth/image_rect_raw", 10
+            Image, "camera/realsense2_camera_node/depth/image_rect_raw", 10
         )
 
     def depth_callback(self, msg: Image):

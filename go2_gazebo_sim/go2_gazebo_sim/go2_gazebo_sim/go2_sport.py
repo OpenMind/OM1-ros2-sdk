@@ -35,13 +35,13 @@ class Go2SportNode(Node):
         self.cmd_vel_publisher = self.create_publisher(Twist, "cmd_vel", 10)
 
         self.sport_response_publisher = self.create_publisher(
-            Response, "/api/sport/response", 10
+            Response, "api/sport/response", 10
         )
 
         self.get_logger().info("Sport to CmdVel Node initialized")
-        self.get_logger().info("Subscribing to: /api/sport/request")
+        self.get_logger().info("Subscribing to: api/sport/request")
         self.get_logger().info("Publishing to: cmd_vel")
-        self.get_logger().info("Publishing to: /api/sport/response")
+        self.get_logger().info("Publishing to: api/sport/response")
 
     def sport_request_callback(self, msg: Request):
         """

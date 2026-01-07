@@ -55,10 +55,10 @@ class Go2LowStateNode(Node):
 
         # Subscribers
         self.joint_state_subscriber = self.create_subscription(
-            JointState, "/joint_states", self.joint_state_callback, 10
+            JointState, "joint_states", self.joint_state_callback, 10
         )
         self.cmd_vel_subscriber = self.create_subscription(
-            Twist, "/cmd_vel", self.cmd_vel_callback, 10
+            Twist, "cmd_vel", self.cmd_vel_callback, 10
         )
 
         # Timer for publishing at 100Hz
@@ -74,8 +74,8 @@ class Go2LowStateNode(Node):
         self.add_on_set_parameters_callback(self.parameter_callback)
 
         self.get_logger().info("LowState Mock Node initialized")
-        self.get_logger().info("Publishing to: /lowstate and /lf/lowstate at 100Hz")
-        self.get_logger().info("Subscribing to: /joint_states, /cmd_vel")
+        self.get_logger().info("Publishing to: lowstate and lf/lowstate at 100Hz")
+        self.get_logger().info("Subscribing to: joint_states, cmd_vel")
         self.get_logger().info(
             f"Battery: SoC={self.get_parameter('soc').value}%, "
             f"drain_rate={self.get_parameter('drain_rate').value}%/tick"

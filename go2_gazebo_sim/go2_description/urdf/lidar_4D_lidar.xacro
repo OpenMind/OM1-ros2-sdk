@@ -38,7 +38,7 @@
 
     <gazebo reference="lidar_l1_link">
         <sensor name="lidar_l1" type="gpu_lidar">
-            <topic>unitree_lidar</topic>
+            <topic>${topic_prefix}unitree_lidar</topic>
             <update_rate>10</update_rate>
             <lidar>
                 <scan>
@@ -67,7 +67,7 @@
                 </noise>
             </lidar>
             <visualize>false</visualize>
-            <gz_frame_id>lidar_l1_link</gz_frame_id>
+            <gz_frame_id>${topic_prefix}lidar_l1_link</gz_frame_id>
             <always_on>1</always_on>
         </sensor>
     </gazebo>

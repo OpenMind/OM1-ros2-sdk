@@ -72,6 +72,8 @@ def generate_launch_description():
     map_yaml_file = LaunchConfiguration("map_yaml_file", default="")
     use_sim = LaunchConfiguration("use_sim", default="false")
 
+    nav2_config_file = os.path.join(pkg_dir, "config", "nav2_params.yaml")
+
     return LaunchDescription(
         [
             DeclareLaunchArgument(

@@ -4,6 +4,11 @@
     xmlns:xacro="http://www.ros.org/wiki/xacro">
 
     <xacro:arg name="DEBUG" default="false"/>
+    <!-- Robot namespace for multi-robot support (e.g., "robot1", "robot2") -->
+    <xacro:arg name="robot_namespace" default=""/>
+    <xacro:property name="ns" value="$(arg robot_namespace)"/>
+    <!-- Topic prefix: empty if no namespace, otherwise "namespace/" -->
+    <xacro:property name="topic_prefix" value="${ns + '/' if ns != '' else ''}"/>
 
     <xacro:include filename="$(find go2_description)/urdf/const.xacro"/>
     <xacro:include filename="$(find go2_description)/urdf/materials.xacro"/>

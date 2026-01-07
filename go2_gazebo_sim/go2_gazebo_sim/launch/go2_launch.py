@@ -453,7 +453,7 @@ def generate_launch_description():
                 "enable_button": 7,
                 "scale_linear.x": 0.5,
                 "scale_angular.z": 1.0,
-                "enable_turbo_button": 6,
+                "enable_turbo_button": 4,
                 "scale_turbo_linear.x": 1.5,
                 "scale_turbo_angular.z": 2.0,
             }
