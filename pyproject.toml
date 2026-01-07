@@ -27,7 +27,7 @@ dependencies = [
     "Jinja2==3.1.6",
     "docker==7.1.0",
     "requests==2.32.5",
-    "urllib3==2.6.0",
+    "urllib3==2.6.3",
     "idna==3.10",
     "certifi==2025.8.3",
     "chardet==5.2.0",
