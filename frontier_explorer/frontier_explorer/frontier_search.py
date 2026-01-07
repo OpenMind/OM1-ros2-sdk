@@ -52,7 +52,7 @@ class FrontierSearch:
     ):
         """Initialize the FrontierSearch with costmap client and search parameters.
 
-        Parameters:
+        Parameters
         ----------
         costmap_client: Costmap2DClient
             Client to access costmap data and metadata.
@@ -77,12 +77,12 @@ class FrontierSearch:
         free and unknown space). Groups adjacent frontier cells into frontier regions,
         computes their properties, filters by minimum size, and sorts by cost.
 
-        Parameters:
+        Parameters
         ----------
         position: Point
             The robot's current position in the costmap frame.
 
-        Returns:
+        Returns
         -------
         list
             A list of identified Frontier objects, sorted by cost (lowest cost first).
@@ -210,7 +210,7 @@ class FrontierSearch:
         all constituent points, computing centroid, and finding the closest point to
         the reference position.
 
-        Parameters:
+        Parameters
         ----------
         initial_cy: int
             Initial cell y-coordinate of the frontier.
@@ -225,7 +225,7 @@ class FrontierSearch:
         info: MapMetaData
             Metadata of the costmap.
 
-        Returns:
+        Returns
         -------
         Frontier
             The constructed Frontier object with all properties set.
@@ -298,7 +298,7 @@ class FrontierSearch:
         A cell is a frontier if it's unknown (not yet explored) and has at least
         one free space neighbor in the 4-connected neighborhood.
 
-        Parameters:
+        Parameters
         ----------
         cy: int
             Cell y-coordinate.
@@ -313,7 +313,7 @@ class FrontierSearch:
         size_y: int
             Height of the costmap.
 
-        Returns:
+        Returns
         -------
         bool
             True if the cell is a new frontier cell, False otherwise.
@@ -334,7 +334,7 @@ class FrontierSearch:
 
         Only returns neighbors that are within the costmap bounds.
 
-        Parameters:
+        Parameters
         ----------
         cy: int
             Cell y-coordinate.
@@ -345,7 +345,7 @@ class FrontierSearch:
         size_y: int
             Height of the costmap.
 
-        Returns:
+        Returns
         -------
         list
             List of (y, x) tuples for valid neighbors.
@@ -366,7 +366,7 @@ class FrontierSearch:
 
         Returns all orthogonal and diagonal neighbors within costmap bounds.
 
-        Parameters:
+        Parameters
         ----------
         cy: int
             Cell y-coordinate.
@@ -377,7 +377,7 @@ class FrontierSearch:
         size_y: int
             Height of the costmap.
 
-        Returns:
+        Returns
         -------
         list
             List of (y, x) tuples for valid neighbors.

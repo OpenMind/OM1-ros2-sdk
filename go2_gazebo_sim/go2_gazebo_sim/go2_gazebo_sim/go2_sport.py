@@ -48,8 +48,8 @@ class Go2SportNode(Node):
         Callback function for sport request messages.
         Converts Unitree sport commands to Twist messages and sends response.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         msg : unitree_api.msg.Request
             The incoming sport request message containing movement commands.
         """
@@ -98,8 +98,8 @@ class Go2SportNode(Node):
         """
         Handle move command by parsing parameters and publishing cmd_vel.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         parameter : str
             JSON string containing movement parameters (x, y, z)
         """

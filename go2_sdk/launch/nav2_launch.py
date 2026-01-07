@@ -4,10 +4,7 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.conditions import UnlessCondition
-from launch.substitutions import (
-    EnvironmentVariable,
-    LaunchConfiguration,
-)
+from launch.substitutions import EnvironmentVariable, LaunchConfiguration
 from launch_ros.actions import Node
 
 SIM_PARAM_OVERRIDES = {
@@ -40,9 +37,18 @@ SIM_PARAM_OVERRIDES = {
 }
 
 
-def get_node_params(node_name: str, base_config: str, use_sim: bool):
+def get_node_params(node_name: str, base_config: str, use_sim: bool) -> list:
     """
     Merge base config with simulation overrides if needed.
+
+    Parameters
+    ----------
+    node_name : str
+        The name of the node (e.g., 'controller_server').
+    base_config : str
+        The path to the base configuration file.
+    use_sim : LaunchConfiguration
+        Launch configuration indicating whether simulation is used.
     """
     params = [base_config, {"use_sim_time": use_sim}]
 
@@ -53,6 +59,9 @@ def get_node_params(node_name: str, base_config: str, use_sim: bool):
 
 
 def generate_launch_description():
+    """
+    Generate the launch description for SLAM and navigation on Go2 robot.
+    """
     pkg_dir = get_package_share_directory("go2_sdk")
 
     urdf_file = os.path.join(pkg_dir, "urdf", "go2.urdf")

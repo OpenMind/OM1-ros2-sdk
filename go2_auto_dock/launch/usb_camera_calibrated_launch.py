@@ -6,6 +6,9 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
+    """
+    Generate the launch description for calibrated USB camera using usb_cam package.
+    """
     camera_info_path = os.path.join(
         get_package_share_directory("go2_auto_dock"),
         "config",

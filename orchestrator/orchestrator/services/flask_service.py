@@ -14,8 +14,8 @@ class FlaskService:
         """
         Initialize the Flask service.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         host : str
             Host address to bind the server to.
         port : int
@@ -36,8 +36,8 @@ class FlaskService:
         """
         Register API routes with the Flask app.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         route_handler
             Object containing route handler methods.
         """
@@ -77,8 +77,8 @@ class FlaskService:
         """
         Get the Flask application instance.
 
-        Returns:
-        --------
+        Returns
+        -------
         Flask
             The Flask application instance.
         """

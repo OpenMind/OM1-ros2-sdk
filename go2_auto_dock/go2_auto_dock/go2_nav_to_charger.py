@@ -39,7 +39,8 @@ class ProcessManager:
         """
         Initialize the ProcessManager.
 
-        Parameters:
+        Parameters
+        ----------
         name : str
             Human-readable name for logging purposes
         pkill_pattern : str, optional
@@ -53,12 +54,12 @@ class ProcessManager:
         """
         Start a command as a subprocess.
 
-        Parameters:
+        Parameters
         ----------
         command : List[str]
             Command and arguments to execute
 
-        Returns:
+        Returns
         -------
         bool
             True if the process was started successfully, False if a process is already running.
@@ -75,7 +76,7 @@ class ProcessManager:
         Tries graceful SIGTERM first, then force kill SIGKILL if needed.
         Also runs pkill if a pattern was provided to ensure cleanup.
 
-        Returns:
+        Returns
         -------
         bool
             True if the process was stopped (or wasn't running), False on failure.
@@ -278,7 +279,6 @@ class SimpleGoalSender(Node):
 
     def start_docking_nodes_sim(self):
         """Start docking nodes for simulation."""
-
         self.get_logger().info("[SIM] Starting AprilTag detector...")
         self.detector_manager.run(
             ["ros2", "run", "go2_auto_dock", "go2_apriltag_detector"]

@@ -21,7 +21,7 @@ from om_api.msg import LocalizationPose
 @jit(nopython=True, fastmath=True, cache=True)
 def evaluate_pose_numba(x, y, yaw, scan_points, map_temp):
     """
-    Evaluate a single pose using Numba optimization
+    Evaluate a single pose using Numba optimization.
 
     Parameters
     ----------
@@ -70,7 +70,7 @@ def evaluate_pose_numba(x, y, yaw, scan_points, map_temp):
 @jit(nopython=True, parallel=True, fastmath=True, cache=True)
 def evaluate_multiple_poses(poses, scan_points, map_temp):
     """
-    Evaluate multiple poses in parallel
+    Evaluate multiple poses in parallel.
 
     Parameters
     ----------
@@ -99,7 +99,7 @@ def evaluate_multiple_poses(poses, scan_points, map_temp):
 @jit(nopython=True, fastmath=True, cache=True)
 def create_gradient_mask_numba(size):
     """
-    Create a gradient mask for obstacle expansion
+    Create a gradient mask for obstacle expansion.
 
     Parameters
     ----------
@@ -124,6 +124,10 @@ def create_gradient_mask_numba(size):
 
 
 class Go2LidarLocalizationNode(Node):
+    """
+    A ROS2 node that performs lidar-based localization for the Go2 robot.
+    """
+
     def __init__(self):
         super().__init__("go2_lidar_localization")
 
@@ -262,7 +266,9 @@ class Go2LidarLocalizationNode(Node):
         )
 
     def _warmup_numba(self):
-        """Warm up Numba JIT compilation to avoid first-call delays"""
+        """
+        Warm up Numba JIT compilation to avoid first-call delays.
+        """
         dummy_scan = np.array([[1.0, 1.0]], dtype=np.float64)
         dummy_map = np.zeros((10, 10), dtype=np.uint8)
         evaluate_pose_numba(5.0, 5.0, 0.0, dummy_scan, dummy_map)
@@ -276,7 +282,7 @@ class Go2LidarLocalizationNode(Node):
 
     def initial_pose_callback(self, msg: PoseWithCovarianceStamped):
         """
-        Handle initial pose from RViz or other sources
+        Handle initial pose from RViz or other sources.
 
         Parameters
         ----------
@@ -321,7 +327,7 @@ class Go2LidarLocalizationNode(Node):
 
     def map_callback(self, msg: OccupancyGrid):
         """
-        Process incoming map messages
+        Process incoming map messages.
 
         Parameters
         ----------
@@ -341,7 +347,7 @@ class Go2LidarLocalizationNode(Node):
 
     def extract_free_space(self):
         """
-        Extract free space points for random sampling
+        Extract free space points for random sampling.
         """
         if self.map_cropped is None:
             return
@@ -363,7 +369,7 @@ class Go2LidarLocalizationNode(Node):
 
     def global_localization_callback(self, request: Any, response: Any) -> Any:
         """
-        Service callback to trigger global localization
+        Service callback to trigger global localization.
 
         Parameters
         ----------
@@ -393,7 +399,7 @@ class Go2LidarLocalizationNode(Node):
         self, x: float, y: float, yaw: float, scan_points
     ) -> float:
         """
-        Vectorized evaluation of pose
+        Vectorized evaluation of pose.
 
         Parameters
         ----------
@@ -422,7 +428,7 @@ class Go2LidarLocalizationNode(Node):
 
     def perform_global_localization(self, scan_msg: LaserScan):
         """
-        Perform global localization by sampling random poses
+        Perform global localization by sampling random poses.
 
         Parameters
         ----------
@@ -508,7 +514,7 @@ class Go2LidarLocalizationNode(Node):
 
     def convert_scan_to_points(self, msg: LaserScan) -> list:
         """
-        Convert laser scan to points in base frame
+        Convert laser scan to points in base frame.
 
         Parameters
         ----------
@@ -571,7 +577,7 @@ class Go2LidarLocalizationNode(Node):
 
     def crop_map(self):
         """
-        Crop the map to only include occupied areas plus margin
+        Crop the map to only include occupied areas plus margin.
         """
         if self.map_msg is None:
             return
@@ -628,7 +634,7 @@ class Go2LidarLocalizationNode(Node):
 
     def create_gradient_mask(self, size: int) -> np.ndarray:
         """
-        Create a gradient mask for obstacle expansion
+        Create a gradient mask for obstacle expansion.
 
         Parameters
         ----------
@@ -644,7 +650,7 @@ class Go2LidarLocalizationNode(Node):
 
     def process_map(self):
         """
-        Process map to create gradient around obstacles
+        Process map to create gradient around obstacles.
         """
         if self.map_cropped is None or self.map_cropped.size == 0:
             return
@@ -677,7 +683,7 @@ class Go2LidarLocalizationNode(Node):
 
     def check_convergence(self, x: float, y: float, yaw: float) -> bool:
         """
-        Check if localization has converged
+        Check if localization has converged.
 
         Parameters
         ----------
@@ -716,7 +722,7 @@ class Go2LidarLocalizationNode(Node):
 
     def update_velocity(self):
         """
-        Calculate current velocity from odometry
+        Calculate current velocity from odometry.
         """
         try:
             current_transform = self.tf_buffer.lookup_transform(
@@ -769,7 +775,7 @@ class Go2LidarLocalizationNode(Node):
     def predict_pose_from_odometry(self):
         """
         Use odometry to predict where robot moved since last update
-        Only predict when previous estimation is confident
+        Only predict when previous estimation is confident.
         """
         # Avoid the pose prediction on the global localization first run
         if not self.is_pose_estimated:
@@ -852,7 +858,7 @@ class Go2LidarLocalizationNode(Node):
 
     def scan_callback(self, msg: LaserScan):
         """
-        Process laser scan and perform scan matching
+        Process laser scan and perform scan matching.
 
         Parameters
         ----------
@@ -912,7 +918,7 @@ class Go2LidarLocalizationNode(Node):
 
     def match_scan_iterative(self):
         """
-        Perform iterative scan matching until convergence
+        Perform iterative scan matching until convergence.
         """
         max_iterations = 50
         iteration = 0
@@ -1066,7 +1072,7 @@ class Go2LidarLocalizationNode(Node):
 
     def check_and_handle_consecutive_failures(self, match_quality: float):
         """
-        Check for consecutive localization failures and trigger automatic re-localization
+        Check for consecutive localization failures and trigger automatic re-localization.
 
         Parameters
         ----------
@@ -1118,7 +1124,7 @@ class Go2LidarLocalizationNode(Node):
 
     def update_map_to_odom_transform(self):
         """
-        Update map to odom transform based on current pose estimate
+        Update map to odom transform based on current pose estimate.
         """
         if self.map_msg is None or self.map_msg.info.resolution <= 0:
             return
@@ -1173,7 +1179,7 @@ class Go2LidarLocalizationNode(Node):
 
     def pose_tf(self):
         """
-        Publish map to odom transform
+        Publish map to odom transform.
         """
         if not self.is_initialized:
             return
@@ -1197,6 +1203,14 @@ class Go2LidarLocalizationNode(Node):
 
 
 def main(args=None):
+    """
+    Main function to run the Go2 Lidar Localization Node.
+
+    Parameters
+    ----------
+    args: list, optional
+        Command line arguments
+    """
     rclpy.init(args=args)
     node = Go2LidarLocalizationNode()
 

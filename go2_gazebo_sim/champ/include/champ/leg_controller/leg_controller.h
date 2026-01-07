@@ -67,7 +67,7 @@ namespace champ
             static void transformLeg(float &step_length, float &rotation, QuadrupedLeg &leg,
                               float step_x, float step_y, float theta)
             {
-                //translate leg in x and y axis, and rotate in z axix
+                //translate leg in x and y axis, and rotate in z axis
                 //this is to project the new location of the leg's tip
                 geometry::Transformation transformed_stance = leg.zero_stance();
                 transformed_stance.Translate(step_x, step_y, 0.0f);

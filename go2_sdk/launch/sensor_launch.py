@@ -11,6 +11,9 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
+    """
+    Generate the launch description for Go2 robot sensors.
+    """
     channel_type = LaunchConfiguration(
         "channel_type",
         default=EnvironmentVariable("CHANNEL_TYPE", default_value="serial"),

@@ -28,16 +28,16 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/OMAPIRequest.msg"
   "msg/OMAPIResponse.msg"
   "msg/OMAIRequest.msg"
-  "msg/OMAIReponse.msg"
+  "msg/OMAIResponse.msg"
   "msg/OMASRText.msg"
   "msg/OMAvatarFaceRequest.msg"
   "msg/OMAvatarFaceResponse.msg"
   "msg/OMConfigRequest.msg"
   "msg/OMConfigResponse.msg"
   "msg/OMModeRequest.msg"
-  "msg/OMModeReponse.msg"
+  "msg/OMModeResponse.msg"
   "msg/OMTTSRequest.msg"
-  "msg/OMTTSReponse.msg"
+  "msg/OMTTSResponse.msg"
   DEPENDENCIES std_msgs geometry_msgs
 )
 

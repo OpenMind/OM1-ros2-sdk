@@ -69,8 +69,8 @@ class Go2RemappingNode(Node):
         Remaps odometry data to robot pose with frame_id set to 'odom'.
         Sets Z offset based on charging state.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         msg : nav_msgs.msg.Odometry
             The incoming odometry message containing position and orientation.
         """
@@ -93,8 +93,8 @@ class Go2RemappingNode(Node):
         Callback function for LiDAR point cloud messages.
         Remaps LiDAR data from /unitree_lidar/points to /utlidar/cloud_deskewed.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         msg : sensor_msgs.msg.PointCloud2
             The incoming LiDAR point cloud message.
         """

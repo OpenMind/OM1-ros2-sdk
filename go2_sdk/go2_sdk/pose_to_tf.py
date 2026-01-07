@@ -5,6 +5,11 @@ from tf2_ros import TransformBroadcaster
 
 
 class PoseToTF(Node):
+    """
+    A ROS2 node that converts PoseStamped messages to TransformStamped messages
+    and broadcasts them using tf2_ros.
+    """
+
     def __init__(self):
         super().__init__("pose_to_tf")
 
@@ -20,8 +25,8 @@ class PoseToTF(Node):
         Converts PoseStamped message to a TransformStamped message
         and broadcasts it using the tf2_ros TransformBroadcaster.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         msg : geometry_msgs.msg.PoseStamped
             The incoming PoseStamped message containing the robot's pose.
         """
@@ -39,6 +44,9 @@ class PoseToTF(Node):
 
 
 def main():
+    """
+    Main function to run the PoseToTF node.
+    """
     rclpy.init()
     node = PoseToTF()
     rclpy.spin(node)

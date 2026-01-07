@@ -32,8 +32,8 @@ class Go2SportAction(Node):
         Callback function for joystick messages.
         Maps joystick buttons to Go2 sport actions.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         msg : sensor_msgs.msg.Joy
             The incoming joystick message containing button states.
         """
@@ -65,8 +65,8 @@ class Go2SportAction(Node):
         """
         Sends a command to the Go2 sport action system.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         api_id : int
             The API ID of the command to send.
         """
@@ -81,6 +81,14 @@ class Go2SportAction(Node):
 
 
 def main(args=None):
+    """
+    Main function to run the Go2SportAction node.
+
+    Parameters
+    ----------
+    args : list, optional
+        Command line arguments to pass to rclpy.init().
+    """
     rclpy.init(args=args)
 
     try:

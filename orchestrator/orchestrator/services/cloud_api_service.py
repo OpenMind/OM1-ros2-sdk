@@ -20,8 +20,8 @@ class CloudAPIService:
         """
         Initialize the cloud API service.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         logger : Logger
             Logger instance for logging messages.
         """
@@ -44,13 +44,13 @@ class CloudAPIService:
         """
         Get headers for API requests.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         custom_headers : Dict[str, str], optional
             Additional headers to include.
 
-        Returns:
-        --------
+        Returns
+        -------
         Dict[str, str]
             Headers dictionary.
         """
@@ -71,8 +71,8 @@ class CloudAPIService:
         """
         Make an HTTP request to the cloud API.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         method : str
             HTTP method (GET, POST, PUT, DELETE).
         endpoint : str
@@ -86,8 +86,8 @@ class CloudAPIService:
         timeout : int
             Request timeout in seconds.
 
-        Returns:
-        --------
+        Returns
+        -------
         Dict[str, Any]
             Response data including status, message, and response content.
         """
@@ -155,8 +155,8 @@ class CloudAPIService:
         """
         Make a GET request.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         endpoint : str
             API endpoint.
         params : Dict[str, Any], optional
@@ -164,8 +164,8 @@ class CloudAPIService:
         **kwargs
             Additional arguments for make_request.
 
-        Returns:
-        --------
+        Returns
+        -------
         Dict[str, Any]
             Response data.
         """
@@ -177,8 +177,8 @@ class CloudAPIService:
         """
         Make a POST request.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         endpoint : str
             API endpoint.
         data : Dict[str, Any], optional
@@ -186,8 +186,8 @@ class CloudAPIService:
         **kwargs
             Additional arguments for make_request.
 
-        Returns:
-        --------
+        Returns
+        -------
         Dict[str, Any]
             Response data.
         """
@@ -199,8 +199,8 @@ class CloudAPIService:
         """
         Make a PUT request.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         endpoint : str
             API endpoint.
         data : Dict[str, Any], optional
@@ -208,8 +208,8 @@ class CloudAPIService:
         **kwargs
             Additional arguments for make_request.
 
-        Returns:
-        --------
+        Returns
+        -------
         Dict[str, Any]
             Response data.
         """
@@ -219,15 +219,15 @@ class CloudAPIService:
         """
         Make a DELETE request.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         endpoint : str
             API endpoint.
         **kwargs
             Additional arguments for make_request.
 
-        Returns:
-        --------
+        Returns
+        -------
         Dict[str, Any]
             Response data.
         """

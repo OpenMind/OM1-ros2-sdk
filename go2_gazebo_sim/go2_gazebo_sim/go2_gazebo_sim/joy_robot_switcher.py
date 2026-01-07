@@ -59,8 +59,8 @@ class JoyRobotSwitcher(Node):
         Handle joystick input and route to the selected robot.
         LB held = control robot1, RB held = control robot2.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         msg : Joy
             Joystick message with button and axis data
         """

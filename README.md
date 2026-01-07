@@ -8,7 +8,7 @@ This package integrates:
 - **RPLiDAR** for laser scanning
 - **SLAM Toolbox** for mapping and localization
 - **Nav2** for autonomous navigation
-- **Gazebo Simulatore** for **Unitree Go2**
+- **Gazebo Simulate** for **Unitree Go2**
 
 ## Features
 
@@ -19,7 +19,7 @@ This package integrates:
 - **Visualization**: Pre-configured RViz setup for monitoring
 - **Auto Charging**: AprilTag-based visual docking combined with Nav2 navigation
 - **3D Slam Map**: Builds a 3D SLAM map to help the robot navigate
-- **Gazebo Simulatore**: Simulator environment for OM1
+- **Gazebo Simulate**: Simulator environment for OM1
 
 ## Prerequisites
 

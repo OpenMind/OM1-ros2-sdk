@@ -8,6 +8,9 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
+    """
+    Generate the launch description for the frontier explorer node.
+    """
     ld = LaunchDescription()
 
     config = os.path.join(

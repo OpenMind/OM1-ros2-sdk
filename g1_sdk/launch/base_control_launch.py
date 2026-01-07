@@ -6,6 +6,9 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
+    """
+    Generate the launch description for G1 robot base control and teleoperation.
+    """
     pkg_dir = get_package_share_directory("g1_sdk")
 
     # Load URDF file

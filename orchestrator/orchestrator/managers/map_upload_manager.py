@@ -20,8 +20,8 @@ class MapUploadManager:
         """
         Initialize the map upload manager.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         logger : Logger
             Logger instance for logging messages.
         """
@@ -39,8 +39,8 @@ class MapUploadManager:
         """
         Upload map files to cloud storage.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         map_name : str
             Name of the map to upload.
         files_created : list
@@ -48,8 +48,8 @@ class MapUploadManager:
         base_path : str
             Base path where map files are located.
 
-        Returns:
-        --------
+        Returns
+        -------
         Dict[str, str]
             Result dictionary with success/error status and message.
         """
@@ -86,13 +86,13 @@ class MapUploadManager:
         """
         Validate that required map files are present.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         files_created : list
             List of file extensions that were created.
 
-        Returns:
-        --------
+        Returns
+        -------
         bool
             True if required files are present, False otherwise.
         """
@@ -107,8 +107,8 @@ class MapUploadManager:
         """
         Upload the map files to the cloud API.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         map_name : str
             Name of the map.
         yaml_path : str
@@ -116,8 +116,8 @@ class MapUploadManager:
         pgm_path : str
             Path to the PGM file.
 
-        Returns:
-        --------
+        Returns
+        -------
         Dict[str, str]
             Result dictionary with success/error status and message.
         """

@@ -44,8 +44,9 @@ class Go2CameraNode(Node):
     def camera_response_callback(self, msg: Response):
         """
         Callback function to handle responses from the Go2 camera system.
-        Parameters:
-        -----------
+
+        Parameters
+        ----------
         msg : Response
             The incoming response message containing camera data.
         """
@@ -66,8 +67,8 @@ class Go2CameraNode(Node):
         """
         Process the received binary image data and display it using OpenCV imshow.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         binary_data : list
             List of signed integers representing the JPEG image data
         """
@@ -144,6 +145,9 @@ class Go2CameraNode(Node):
 
 
 def main(args=None):
+    """
+    Main entry point for the Go2 Camera Node.
+    """
     rclpy.init(args=args)
     node = Go2CameraNode()
 

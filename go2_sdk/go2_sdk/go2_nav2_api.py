@@ -250,8 +250,8 @@ class Go2APINode(Node):
         Callback function for PoseStamped messages.
         Updates the internal pose data and logs the received pose.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         msg : geometry_msgs.msg.PoseStamped
             The incoming PoseStamped message containing the robot's pose.
         """
@@ -271,8 +271,8 @@ class Go2APINode(Node):
         Callback function for AMCL pose updates.
         Updates the internal pose data and logs the received AMCL pose.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         msg : geometry_msgs.msg.PoseWithCovarianceStamped
             The incoming AMCL pose message containing the robot's pose with covariance.
         """
@@ -285,8 +285,8 @@ class Go2APINode(Node):
         Callback function for Nav2 goal status updates.
         Updates the internal Nav2 status data and logs the received status.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         msg : action_msgs.msg.GoalStatusArray
             The incoming goal status message containing the status of active goals.
         """
@@ -297,8 +297,8 @@ class Go2APINode(Node):
         Callback function for OccupancyGrid messages.
         Updates the internal map data and logs the received map.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         msg : nav_msgs.msg.OccupancyGrid
             The incoming OccupancyGrid message containing the map data.
         """

@@ -16,6 +16,11 @@ from tf2_ros import TransformBroadcaster
 
 
 class AprilTagNode(Node):
+    """
+    A ROS2 node that detects AprilTags in camera images, estimates their poses,
+    and publishes the pose of tag ID 1 along with relative position data.
+    """
+
     # Known distances between tags (in meters)
     HORIZONTAL_DISTANCE = 0.12446  # ID2-ID3, ID4-ID5
     VERTICAL_DISTANCE = 0.05916  # ID2-ID4, ID3-ID5
@@ -79,8 +84,15 @@ class AprilTagNode(Node):
         self.bearing_angle = 0.0
         self.bearing_angle_deg_high_accurate = 0.0  # High accuracy bearing angle
 
-    def load_camera_intrinsics(self, yaml_file):
-        """Load camera intrinsics from YAML file"""
+    def load_camera_intrinsics(self, yaml_file: str):
+        """
+        Load camera intrinsics from YAML file.
+
+        Parameters
+        ----------
+        yaml_file : str
+            Path to the camera info YAML file.
+        """
         if not os.path.exists(yaml_file):
             raise FileNotFoundError(f"Camera info file not found: {yaml_file}")
 
@@ -102,9 +114,23 @@ class AprilTagNode(Node):
             f"Camera parameters: fx={fx:.2f}, fy={fy:.2f}, cx={cx:.2f}, cy={cy:.2f}"
         )
 
-    def estimate_pose_from_corners(self, corners, tag_size):
+    def estimate_pose_from_corners(
+        self, corners: np.ndarray, tag_size: float
+    ) -> np.ndarray:
         """
-        Estimate pose using OpenCV's solvePnP
+        Estimate pose using OpenCV's solveOnP.
+
+        Parameters
+        ----------
+        corners : np.ndarray
+            4x2 array of detected tag corners in image (pixel) coordinates.
+        tag_size : float
+            Size of the tag (in meters).
+
+        Returns
+        -------
+        R : np.ndarray
+            3x3 rotation matrix.
         """
         # Define 3D corners of the tag (in tag coordinate system)
         tag_corners_3d = np.array(
@@ -117,8 +143,8 @@ class AprilTagNode(Node):
             dtype=np.float32,
         )
 
-        # Solve PnP
-        success, rvec, tvec = cv2.solvePnP(
+        # Solve OnP
+        success, rvec, tvec = cv2.solveOnP(
             tag_corners_3d,
             corners.astype(np.float32),
             self.camera_matrix,
@@ -134,6 +160,14 @@ class AprilTagNode(Node):
             return None, None
 
     def image_callback(self, msg: Image):
+        """
+        Callback function for incoming camera images.
+
+        Parameters
+        ----------
+        msg : sensor_msgs.msg.Image
+            The incoming image message.
+        """
         if self.camera_params is None:
             return  # wait until camera_info arrives
 
@@ -317,7 +351,7 @@ class AprilTagNode(Node):
                     f"yaw_error={np.degrees(yaw_error):.1f} deg"
                 )
 
-            # --- Broadcast TF for this tag ---
+            # Broadcast TF for this tag
             t = TransformStamped()
             t.header.stamp = self.get_clock().now().to_msg()
             t.header.frame_id = "camera"
@@ -351,7 +385,7 @@ class AprilTagNode(Node):
                         f"(conf: {bearing['confidence']:.2f}, dist_err: {bearing['distance_error']:.3f}, v12: {bearing['v12']}, wall_forward_after_cross:{bearing['wall_forward_after_cross']})"
                     )
 
-        # --- Publish relative vector + yaw_error + Hz + target flag ---
+        # Publish relative vector + yaw_error + Hz + target flag
         msg_rel = Float32MultiArray()
         msg_rel.data = [
             x_right,
@@ -365,18 +399,35 @@ class AprilTagNode(Node):
         ]
         self.relative_pub.publish(msg_rel)
 
-    def rotation_matrix_to_quaternion(self, R):
+    def rotation_matrix_to_quaternion(self, R: np.ndarray) -> tuple:
+        """
+        Convert a rotation matrix to a quaternion.
+
+        Parameters
+        ----------
+        R : np.ndarray
+            3x3 rotation matrix.
+
+        Returns
+        -------
+        tuple
+            Quaternion (qx, qy, qz, qw).
+        """
         qw = np.sqrt(1 + np.trace(R)) / 2
         qx = (R[2, 1] - R[1, 2]) / (4 * qw)
         qy = (R[0, 2] - R[2, 0]) / (4 * qw)
         qz = (R[1, 0] - R[0, 1]) / (4 * qw)
         return (qx, qy, qz, qw)
 
-    def calculate_improved_bearing_angle(self, tag_dict):
+    def calculate_improved_bearing_angle(self, tag_dict: dict):
         """
-        Calculate bearing angle using multiple tag pairs for improved accuracy
-        """
+        Calculate bearing angle using multiple tag pairs for improved accuracy.
 
+        Parameters
+        ----------
+        tag_dict : dict
+            Dictionary of detected tags with their pose information.
+        """
         # Define all possible tag pairs and their known distances
         tag_pairs = [
             # Horizontal pairs
@@ -495,10 +546,17 @@ class AprilTagNode(Node):
 
         return final_bearing, method_used, valid_bearings
 
-    def check_and_update_high_accuracy_bearing(self, valid_bearings):
+    def check_and_update_high_accuracy_bearing(self, valid_bearings: list):
         """
-        Update self.bearing_angle_deg_high_accurate only when all four specific
+        Update self.bearing_angle_deg_high_accurate only when all four specific.
+
         tag pair estimations (ID2-ID3, ID4-ID5, ID2-ID5, ID4-ID3) are within 3° of their average
+        bearing angle.
+
+        Parameters
+        ----------
+        valid_bearings : list
+            List of bearing estimations from different tag pairs
         """
         required_pairs = [
             "ID2-ID3",  # horizontal
@@ -540,6 +598,9 @@ class AprilTagNode(Node):
 
 
 def main():
+    """
+    Main entry point for the AprilTag Detector Node.
+    """
     rclpy.init()
     node = AprilTagNode()
     rclpy.spin(node)

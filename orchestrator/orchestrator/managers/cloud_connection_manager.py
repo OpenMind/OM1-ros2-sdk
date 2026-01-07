@@ -26,8 +26,8 @@ class CloudConnectionManager:
         """
         Initialize the cloud connection manager.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         logger : Logger
             Logger instance for logging messages.
         """
@@ -87,8 +87,8 @@ class CloudConnectionManager:
         """
         Set the callback function for API requests.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         callback : Callable
             Function to call when API requests are received.
         """
@@ -104,13 +104,13 @@ class CloudConnectionManager:
         """
         Send pose data to cloud via WebSocket.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         pose_data : dict
             Pose data to send.
 
-        Returns:
-        --------
+        Returns
+        -------
         bool
             True if sent successfully, False otherwise.
         """
@@ -134,13 +134,13 @@ class CloudConnectionManager:
         """
         Send map data to cloud via WebSocket.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         map_data : dict
             Map data to send.
 
-        Returns:
-        --------
+        Returns
+        -------
         bool
             True if sent successfully, False otherwise.
         """
@@ -164,13 +164,13 @@ class CloudConnectionManager:
         """
         Send API response to cloud and local clients.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         response_data : dict
             Response data to send.
 
-        Returns:
-        --------
+        Returns
+        -------
         bool
             True if sent successfully, False otherwise.
         """

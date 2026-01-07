@@ -67,39 +67,30 @@ Issues = "https://github.com/OpenMind/unitree-sdk/issues"
 
 [tool.black]
 line-length = 88
-target-version = ['py38', 'py39', 'py310', 'py311']
 include = '\.pyi?$'
-extend-exclude = '''
-/(
-  # directories
-  \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | build
-  | dist
-)/
-'''
 
 [tool.isort]
 profile = "black"
 multi_line_output = 3
 line_length = 88
-known_first_party = ["go2_sdk", "go2_auto_dock", "orchestrator"]
-known_third_party = ["rclpy", "ros2", "numpy", "opencv", "flask"]
-skip_glob = ["m-explore-ros2/*"]
 
 [tool.ruff]
 line-length = 88
 indent-width = 4
 src = ["src"]
-exclude = ["m-explore-ros2"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
 
 [tool.ruff.lint]
-select = ["E", "F"]
-ignore = ["E203", "E501"]
+select = ["E", "F", "D"]
+ignore = ["E203", "E501", "D100", "D104", "D200", "D205", "D401", "D404"]
 fixable = ["ALL"]
 unfixable = []
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"

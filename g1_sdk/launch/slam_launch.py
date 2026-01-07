@@ -9,7 +9,9 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
-
+    """
+    Generate the launch description for G1 robot SLAM using RTAB-Map with LiDAR.
+    """
     # Launch arguments
     use_sim_time = LaunchConfiguration("use_sim_time")
     qos = LaunchConfiguration("qos")

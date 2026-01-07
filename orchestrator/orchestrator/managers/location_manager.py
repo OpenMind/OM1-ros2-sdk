@@ -14,8 +14,8 @@ class LocationManager:
         """
         Initialize the LocationManager.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         maps_directory : str
             Directory where maps are stored.
         locations_directory : str
@@ -34,15 +34,15 @@ class LocationManager:
         """
         Add a single location to the existing map locations JSON file.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         map_name : str
             Name of the map to add the location to.
         location : LocationModel
             Location data to add.
 
-        Returns:
-        --------
+        Returns
+        -------
         Dict[str, str]
             Dictionary containing status and message.
         """
@@ -86,8 +86,8 @@ class LocationManager:
         """
         List all saved map locations.
 
-        Returns:
-        --------
+        Returns
+        -------
         Dict[str, LocationModel]
             Dictionary of location name to LocationModel.
         """
@@ -155,13 +155,13 @@ class LocationManager:
         """
         Load locations for a specific map and update global locations.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         map_name : str
             Name of the map to load locations for.
 
-        Returns:
-        --------
+        Returns
+        -------
         Dict[str, LocationModel]
             Dictionary of location name to LocationModel.
         """

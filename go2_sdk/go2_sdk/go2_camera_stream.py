@@ -97,7 +97,7 @@ class Go2CameraStreamNode(Node):
 
     def setup_ffmpeg_stream(self):
         """
-        Setup FFmpeg process for video streaming (video only)
+        Setup FFmpeg process for video streaming (video only).
         """
         if not self.api_key or not self.api_key_id:
             self.get_logger().error(
@@ -192,8 +192,8 @@ class Go2CameraStreamNode(Node):
         """
         Callback function to handle responses from the Go2 camera system.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         msg : Response
             The incoming response message containing camera data.
         """
@@ -217,8 +217,8 @@ class Go2CameraStreamNode(Node):
         """
         Process the received image data and queue it for streaming.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         image_data : bytes
             Raw image data from the camera
         """
@@ -321,7 +321,7 @@ class Go2CameraStreamNode(Node):
 
     def __del__(self):
         """
-        Cleanup on node destruction
+        Cleanup on node destruction.
         """
         self.stop_event.set()
         if hasattr(self, "writer_thread"):
@@ -341,6 +341,14 @@ class Go2CameraStreamNode(Node):
 
 
 def main(args=None):
+    """
+    Main function to run the Go2CameraStreamNode.
+
+    Parameters
+    ----------
+    args : list, optional
+        Command line arguments to pass to rclpy.init().
+    """
     rclpy.init(args=args)
     node = Go2CameraStreamNode()
     try:

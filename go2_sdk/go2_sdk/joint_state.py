@@ -6,6 +6,12 @@ from unitree_go.msg import LowState
 
 
 class JointStatePublisher(Node):
+    """
+    A ROS2 node that subscribes to LowState messages and publishes JointState messages.
+    This node extracts joint positions from the LowState message and publishes them
+    as a JointState message for use in visualization and other applications.
+    """
+
     def __init__(self):
         super().__init__("joint_state_publisher")
         self.subscription = self.create_subscription(
@@ -19,8 +25,8 @@ class JointStatePublisher(Node):
         This function extracts joint positions from the LowState message and publishes them
         as a JointState message.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         msg : LowState
             The incoming LowState message containing motor states.
         """
@@ -58,6 +64,14 @@ class JointStatePublisher(Node):
 
 
 def main(args=None):
+    """
+    Main function to run the JointStatePublisher node.
+
+    Parameters
+    ----------
+    args : list, optional
+        Command line arguments to pass to rclpy.init().
+    """
     rclpy.init(args=args)
 
     try:

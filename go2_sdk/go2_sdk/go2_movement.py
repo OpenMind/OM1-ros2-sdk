@@ -41,8 +41,8 @@ class CmdVelToSportNode(Node):
         Callback function for cmd_vel messages.
         Converts Twist message to Unitree sport move command.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         msg : geometry_msgs.msg.Twist
             The incoming cmd_vel message containing linear and angular velocities.
         """
@@ -113,6 +113,14 @@ class CmdVelToSportNode(Node):
 
 
 def main(args=None):
+    """
+    Main function to run the CmdVelToSportNode.
+
+    Parameters
+    ----------
+    args : list, optional
+        Command line arguments to pass to rclpy.init().
+    """
     rclpy.init(args=args)
 
     try:

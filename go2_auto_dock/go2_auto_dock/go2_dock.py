@@ -60,8 +60,8 @@ class Go2AutoChargeMonitor(Node):
         """
         Process incoming battery data.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         msg : LowState
             Low state message containing battery information
         """

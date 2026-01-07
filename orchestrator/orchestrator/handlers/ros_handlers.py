@@ -33,8 +33,8 @@ class ROSHandlers:
         """
         Initialize the ROS handlers.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         orchestrator : OrchestratorAPI
             Reference to the main orchestrator instance.
         """
@@ -44,7 +44,7 @@ class ROSHandlers:
         """
         Monitor BMS state for charging detection.
 
-        Parameters:
+        Parameters
         ----------
         msg : LowState
             The lowstate message containing BMS data.
@@ -60,9 +60,9 @@ class ROSHandlers:
         """
         Callback for AI response messages.
 
-        Parameters:
+        Parameters
         ----------
-        msg : OMAIReponse
+        msg : OMAIResponse
             The received AI response message.
         """
         if not hasattr(self.orchestrator, "api_response_pub"):
@@ -84,9 +84,9 @@ class ROSHandlers:
         """
         Callback for mode response messages.
 
-        Parameters:
+        Parameters
         ----------
-        msg : OMModeReponse
+        msg : OMModeResponse
             The received mode response message.
         """
         if not hasattr(self.orchestrator, "api_response_pub"):
@@ -108,9 +108,9 @@ class ROSHandlers:
         """
         Callback for TTS response messages.
 
-        Parameters:
+        Parameters
         ----------
-        msg : OMTTSReponse
+        msg : OMTTSResponse
             The received TTS response message.
         """
         if not hasattr(self.orchestrator, "api_response_pub"):
@@ -132,8 +132,8 @@ class ROSHandlers:
         """
         Receive API requests from ROS2 topic and handle them.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         msg : OMAPIRequest
             The incoming API request message.
         """
@@ -143,8 +143,8 @@ class ROSHandlers:
         """
         Process API request in a separate thread.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         msg : OMAPIRequest
             The incoming API request message.
         """
@@ -247,8 +247,8 @@ class ROSHandlers:
         """
         Handle AI-related requests.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         action : str
             The AI action to perform (ai_status, enable_ai, disable_ai).
         msg : OMAPIRequest
@@ -296,8 +296,8 @@ class ROSHandlers:
         """
         Handle mode-related requests.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         action : str
             The mode action to perform (get_mode, switch_mode).
         msg : OMAPIRequest
@@ -354,8 +354,8 @@ class ROSHandlers:
         """
         Handle avatar-related requests.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         action : str
             The health check action to perform on avatar.
         msg : OMAPIRequest
@@ -407,8 +407,8 @@ class ROSHandlers:
         """
         Handle TTS-related requests.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         action : str
             The TTS action to perform (tts_status, enable_tts, disable_tts).
         msg : OMAPIRequest
@@ -456,8 +456,8 @@ class ROSHandlers:
         """
         Handle config-related requests.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         msg : OMAPIRequest
             The original API request message.
         """
@@ -513,8 +513,8 @@ class ROSHandlers:
         """
         Handle remote control requests.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         msg : OMAPIRequest
             The original API request message containing movement parameters.
         """
@@ -580,8 +580,8 @@ class ROSHandlers:
         """
         Publish API response message.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         request_id : str
             The request ID to respond to.
         code : int
@@ -610,8 +610,8 @@ class ROSHandlers:
         """
         Callback for MapStorage messages to upload maps to cloud.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         map_data : om_api.msg.MapStorage
             The incoming MapStorage message containing map details.
         """
@@ -627,8 +627,8 @@ class ROSHandlers:
         """
         Callback function for PoseStamped messages to stream to cloud.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         pose : geometry_msgs.msg.PoseStamped
             The incoming PoseStamped message containing the robot's pose.
         """
@@ -659,8 +659,8 @@ class ROSHandlers:
         """
         Callback function for OccupancyGrid messages to stream to cloud.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         map_msg : nav_msgs.msg.OccupancyGrid
             The incoming OccupancyGrid message containing the map data.
         """
@@ -704,8 +704,8 @@ class ROSHandlers:
         """
         Callback function for ASR text messages to broadcast to frontend.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         msg : OMASRText
             The incoming ASR text message.
         """
@@ -739,8 +739,8 @@ class ROSHandlers:
         """
         Callback function for avatar request messages to broadcast to frontend.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         msg : OMAvatarFaceRequest
             The incoming avatar request message.
         """
@@ -777,7 +777,7 @@ class ROSHandlers:
         """
         Callback for avatar response messages.
 
-        Parameters:
+        Parameters
         ----------
         msg : OMAvatarFaceResponse
             The received avatar response message.
@@ -809,8 +809,8 @@ class ROSHandlers:
         """
         Callback for config response messages, converting to OMAPIResponse.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         msg : OMConfigResponse
             The incoming config response message.
         """
@@ -843,8 +843,8 @@ class ROSHandlers:
         """
         Callback function for OMAPIResponse messages to send to cloud.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         response : om_api.msg.OMAPIResponse
             The incoming OMAPIResponse message containing the API response details.
         """
@@ -867,8 +867,8 @@ class ROSHandlers:
         """
         Callback function for messages received from the cloud API WebSocket.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         message : str
             The incoming message from the API WebSocket.
         """

@@ -34,13 +34,14 @@ class Intel435DepthNode(Node):
     def depth_callback(self, msg: Image):
         """
         Callback function for depth image messages.
+
         Remaps depth image data from /camera/realsense2_camera_node/depth/image_rect_gazebo_raw
         to /camera/realsense2_camera_node/depth/image_rect_raw
 
         Multiplies depth values by 1000 to convert from meters to millimeters.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         msg : sensor_msgs.msg.Image
             The incoming depth image message.
         """

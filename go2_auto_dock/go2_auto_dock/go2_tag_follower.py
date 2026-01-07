@@ -11,22 +11,27 @@ from unitree_api.msg import Request, RequestHeader, RequestIdentity
 
 
 class Go2TagFollower(Node):
+    """
+    A ROS2 node that commands a Unitree Go2 robot to follow an AprilTag based
+    on relative position data.
+    """
+
     def __init__(self):
         super().__init__("go2_tag_follower")
 
-        # ===== Unitree Sport API IDs (match your reference) =====
+        # Unitree Sport API IDs (match your reference)
         self.ROBOT_SPORT_API_ID_MOVE = 1008
         self.ROBOT_SPORT_API_ID_BALANCESTAND = 1002
         self.ROBOT_SPORT_API_ID_STOPMOVE = 1003
         self.ROBOT_SPORT_API_ID_SIT = 1005  #  StandSit
 
-        # ===== I/O =====
+        # I/O
         self.subscription = self.create_subscription(
             Float32MultiArray, "/apriltag_relative", self.tag_callback, 10
         )
         self.sport_pub = self.create_publisher(Request, "/api/sport/request", 10)
 
-        # ===== Control targets =====
+        # Control targets
         self.forward_target_slow = -0.70
         self.last_move_time = 0
         self.move_delay = 1.8  # Wait 1 second between moves
@@ -40,7 +45,7 @@ class Go2TagFollower(Node):
         self.yaw_angle_min = -10.0  # left
         self.yaw_angle_max = 10.0  # right
 
-        # ===== Timing / state =====
+        # Timing / state
 
         # 1 Hz control/supervisor loop
         self.create_timer(0.8, self.timer_callback)  # 0.5 = 2 hz
@@ -75,10 +80,17 @@ class Go2TagFollower(Node):
             0.3  # to prevent getting stuck in the same sport
         )
 
-    # ------------ Unitree API helpers ------------
-
     def _publish_request(self, api_id: int, params_dict=None):
-        """Low-level helper to publish a Unitree Request with JSON 'parameter'."""
+        """
+        Low-level helper to publish a Unitree Request with JSON 'parameter'.
+
+        Parameters
+        ----------
+        api_id : int
+            The API ID for the request.
+        params_dict : dict, optional
+            The parameters to include in the request as a dictionary.
+        """
         req = Request()
         req.header = RequestHeader()
         req.header.identity = RequestIdentity()
@@ -89,7 +101,17 @@ class Go2TagFollower(Node):
     def send_move(self, x: float, y: float, yaw_rad_s: float):
         """
         Send a move command.
+
         Unitree uses parameter keys: x, y, z  (z == yaw rate).
+
+        Parameters
+        ----------
+        x : float
+            Forward/backward velocity (m/s).
+        y : float
+            Left/right velocity (m/s).
+        yaw_rad_s : float
+            Yaw angular velocity (radians/s).
         """
         params = {"x": float(x), "y": float(y), "z": float(yaw_rad_s)}
         self._publish_request(self.ROBOT_SPORT_API_ID_MOVE, params)
@@ -98,22 +120,36 @@ class Go2TagFollower(Node):
         )
 
     def send_stop_command(self):
-        """Send stop movement command."""
+        """
+        Send stop movement command.
+        """
         self._publish_request(self.ROBOT_SPORT_API_ID_STOPMOVE)
         self.get_logger().info("STOP command sent")
 
     def send_balance_stand_command(self):
-        """Prepare robot for movement."""
+        """
+        Prepare robot for movement.
+        """
         self._publish_request(self.ROBOT_SPORT_API_ID_BALANCESTAND)
         self.get_logger().info("BALANCE_STAND command sent")
 
     def send_sit_command(self):
-        """Command robot to sit down."""
+        """
+        Command robot to sit down.
+        """
         self._publish_request(self.ROBOT_SPORT_API_ID_SIT)
         self.get_logger().info("SIT command sent")
 
-    # ------------ Subscriber callback ------------  30 hz
     def tag_callback(self, msg: Float32MultiArray):
+        """
+        Callback for receiving AprilTag relative position data.
+
+        Parameters
+        ----------
+        msg : Float32MultiArray
+            The incoming message containing tag relative data.
+            Expected format: [x_right, y_up, z_forward, yaw_error, current_hz, see_target, bearing_angle_deg_high_accurate, see_angle]
+        """
         # Save latest tag and update timestamp
         self.latest_tag = (
             msg.data
@@ -123,11 +159,12 @@ class Go2TagFollower(Node):
             self.last_seen_time = time()
             self.continuous_back_count = 0
 
-    # ------------ Timer / control loop ------------
     def timer_callback(self):
+        """
+        Main control loop called at fixed frequency.
+        """
         now = time()
 
-        # --- Check for tag loss ---
         time_since_seen = now - self.last_seen_time
 
         if self.arrived:
@@ -173,7 +210,6 @@ class Go2TagFollower(Node):
                     self.search_turn_side = 0  # state machine
             return
 
-        # --- Extract latest measurements ---
         (
             x_right,
             _,
@@ -195,7 +231,6 @@ class Go2TagFollower(Node):
             f"Target: x_right={x_right:.2f}, z_forward={z_forward:.2f}, bearing_degree={bearing_angle:.2f}"
         )
 
-        # --- Forward/backward control ---
         x_cmd = 0.0
 
         if z_forward < self.forward_target_min:  # < -0.43
@@ -217,14 +252,14 @@ class Go2TagFollower(Node):
         elif z_forward > self.forward_target_max:
             x_cmd = -0.2
 
-        # --- Lateral control ---
+        # Lateral control
         y_cmd = 0.0
         if x_right < self.right_target_min:
             y_cmd = -0.2
         elif x_right > self.right_target_max:
             y_cmd = 0.2
 
-        # --- Yaw control ---
+        # Yaw control
         yaw_cmd_radian = 0.0
         if int(see_angle) == 1:  # see target
             if abs(bearing_angle) > 10.0:
@@ -234,13 +269,13 @@ class Go2TagFollower(Node):
                 )  # proportional adjustment change 30 degree to radian
                 yaw_cmd_radian = math.radians(yaw_cmd_degree) * (
                     -1
-                )  # becaues unitree turn left is positive
+                )  # because unitree turn left is positive
             # if  bearing_angle < self.yaw_angle_min:
             #     yaw_cmd_radian = np.deg2rad(-30)
             # elif bearing_angle  > self.yaw_angle_max:
             #     yaw_cmd_radian = np.deg2rad(30)
 
-        # --- Check if inside charging zone ---
+        # Check if inside charging zone
         in_forward = self.forward_target_min <= z_forward <= self.forward_target_max
         in_right = self.right_target_min <= x_right <= self.right_target_max
 
@@ -260,11 +295,14 @@ class Go2TagFollower(Node):
                 self.get_logger().debug("Left zone → reset counter")
             self.zone_counter = 0
 
-        # --- Send movement command ---
+        # Send movement command
         self.send_move(x_cmd, y_cmd, yaw_cmd_radian)
 
 
 def main(args=None):
+    """
+    Main function to run the Go2TagFollower node.
+    """
     rclpy.init(args=args)
     node = Go2TagFollower()
     rclpy.spin(node)

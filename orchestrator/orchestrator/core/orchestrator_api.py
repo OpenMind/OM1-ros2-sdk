@@ -6,18 +6,18 @@ from rclpy.node import Node
 
 from om_api.msg import (
     MapStorage,
-    OMAIReponse,
     OMAIRequest,
+    OMAIResponse,
     OMAPIRequest,
     OMAPIResponse,
     OMAvatarFaceRequest,
     OMAvatarFaceResponse,
     OMConfigRequest,
     OMConfigResponse,
-    OMModeReponse,
     OMModeRequest,
-    OMTTSReponse,
+    OMModeResponse,
     OMTTSRequest,
+    OMTTSResponse,
 )
 from unitree_go.msg import LowState
 
@@ -111,10 +111,10 @@ class OrchestratorAPI(Node):
             OMAPIRequest, "/om/api/request", self.ros_handlers.api_request_callback, 10
         )
         self.ai_request_sub = self.create_subscription(
-            OMAIReponse, "/om/ai/response", self.ros_handlers.ai_response_callback, 10
+            OMAIResponse, "/om/ai/response", self.ros_handlers.ai_response_callback, 10
         )
         self.mode_request_sub = self.create_subscription(
-            OMModeReponse,
+            OMModeResponse,
             "/om/mode/response",
             self.ros_handlers.mode_response_callback,
             10,
@@ -126,7 +126,7 @@ class OrchestratorAPI(Node):
             10,
         )
         self.tts_request_sub = self.create_subscription(
-            OMTTSReponse,
+            OMTTSResponse,
             "/om/tts/response",
             self.ros_handlers.tts_response_callback,
             10,
@@ -184,8 +184,8 @@ class OrchestratorAPI(Node):
         """
         Get the current status of all processes.
 
-        Returns:
-        -----------
+        Returns
+        -------
         ProcessStatus
             The current status of SLAM, Nav2, base control, and charging dock processes.
         """
@@ -209,8 +209,8 @@ class OrchestratorAPI(Node):
         """
         Publish map storage message for cloud synchronization.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         result : dict
             Result from map saving operation.
         map_name : str

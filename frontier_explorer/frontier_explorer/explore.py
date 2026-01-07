@@ -17,6 +17,10 @@ from frontier_explorer.frontier_search import FrontierSearch
 
 
 class Explore(Node):
+    """
+    A ROS2 node that performs autonomous exploration using frontier-based methods.
+    """
+
     def __init__(self):
         """
         Initialize the Explore node with ROS2 parameters, clients, and timers.
@@ -114,7 +118,7 @@ class Explore(Node):
         """
         Handle resume/stop commands from the explore/resume topic.
 
-        Parameters:
+        Parameters
         ----------
         msg: Bool
             Message indicating whether to resume (True) or stop (False) exploration.
@@ -131,7 +135,7 @@ class Explore(Node):
         Creates point markers for frontier boundaries and sphere markers for centroids.
         Blacklisted frontiers are shown in red, others in blue, with centroids in green.
 
-        Parameters:
+        Parameters
         ----------
         frontiers: list
             List of Frontier objects to visualize.
@@ -210,12 +214,12 @@ class Explore(Node):
         Progress is defined as the robot moving at a velocity above the threshold,
         regardless of whether it's getting closer to the goal (handles obstacle avoidance).
 
-        Parameters:
+        Parameters
         ----------
         current_pose: Point
             The robot's current position.
 
-        Returns:
+        Returns
         -------
         bool
             True if robot is making progress (moving), False if stuck.
@@ -378,7 +382,7 @@ class Explore(Node):
         """
         Handle the response from the navigation action server.
 
-        Parameters:
+        Parameters
         ----------
         future: object
             The future object containing the goal response.
@@ -405,7 +409,7 @@ class Explore(Node):
         Handles successful completion, aborted goals (adds to blacklist), and
         canceled goals. Triggers the next planning cycle on success.
 
-        Parameters:
+        Parameters
         ----------
         future: object
             The future object containing the result.
@@ -456,7 +460,7 @@ class Explore(Node):
         """
         Stop the exploration process and cancel any active navigation goals.
 
-        Parameters:
+        Parameters
         ----------
         finished_exploring: bool
             Indicates if exploration has completed naturally.
@@ -547,7 +551,7 @@ class Explore(Node):
         """
         Publish the current exploration status to ROS topic.
 
-        Parameters:
+        Parameters
         ----------
         complete: bool
             True if exploration is complete, False otherwise.
@@ -568,7 +572,7 @@ class Explore(Node):
         Check if a frontier should be skipped based on attempts and time.
         Give up after 3 attempts or wait 5 minutes before retry.
 
-        Parameters:
+        Parameters
         ----------
         goal: Point
             The goal point to check against the blacklist.
@@ -605,7 +609,7 @@ class Explore(Node):
         """
         Add or update a goal in the blacklist with attempt tracking.
 
-        Parameters:
+        Parameters
         ----------
         goal: Point
             The goal point to add to the blacklist.
@@ -626,14 +630,14 @@ class Explore(Node):
     def same_point(self, p1: Point, p2: Point):
         """Check if two points are essentially the same location.
 
-        Parameters:
+        Parameters
         ----------
         p1: Point
             First point to compare.
         p2: Point
             Second point to compare.
 
-        Returns:
+        Returns
         -------
         bool
             True if points are within 1 cm of each other, False otherwise.
@@ -662,7 +666,7 @@ def main(args=None):
 
     Initializes ROS2, creates the Explore node, and spins until shutdown.
 
-    Parameters:
+    Parameters
     ----------
     args: list, optional
         Command line arguments for ROS2 initialization.

@@ -48,8 +48,8 @@ class SimChargerNode(Node):
         """
         Process AprilTag detection data.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         msg : Float32MultiArray
             AprilTag relative position data
         """
@@ -59,8 +59,8 @@ class SimChargerNode(Node):
         """
         Process battery state updates.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         msg : LowState
             Low state message containing battery information
         """
@@ -73,8 +73,8 @@ class SimChargerNode(Node):
         In simulation, we just need to detect the AprilTag marker.
         Position-based docking to be fine-tuned later.
 
-        Returns:
-        --------
+        Returns
+        -------
         bool
             True if ArUco marker is detected
         """
