@@ -2,7 +2,7 @@ FROM ros:humble-ros-base-jammy AS base
 
 SHELL ["/bin/bash", "-c"]
 
-RUN apt-get update && apt-get upgrade -y
+RUN apt-get update
 
 RUN apt-get install -y \
     software-properties-common \
