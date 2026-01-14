@@ -408,10 +408,8 @@ class LocalTraversability(Node):
         local_relief = local_max - local_min
         step_hazard = np.zeros_like(height_map, dtype=bool)
 
-        # Only classify a step if we have enough support in the local window.
-        supported = known_mask & (known_count >= 5)
-        step_hazard[supported] = (
-            local_relief[supported] > self.local_relief_step_thresh_m
+        step_hazard[known_mask] = (
+            local_relief[known_mask] > self.local_relief_step_thresh_m
         )
 
         # Combine hazards from all sources
