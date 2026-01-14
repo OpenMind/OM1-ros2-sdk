@@ -8,13 +8,7 @@ from nav_msgs.msg import OccupancyGrid
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 from rclpy.time import Time
-from scipy.ndimage import (
-    binary_dilation,
-    convolve,
-    label,
-    maximum_filter,
-    minimum_filter,
-)
+from scipy.ndimage import binary_dilation, label, maximum_filter, minimum_filter
 from sensor_msgs.msg import PointCloud2
 from sensor_msgs_py import point_cloud2 as pc2
 from std_msgs.msg import Header
@@ -349,14 +343,6 @@ class LocalTraversability(Node):
 
         height_map = height_flat.reshape(grid_height, grid_width)
         known_mask = ~np.isnan(height_map)
-
-        # Count known cells in a 3x3 neighborhood; avoid treating unknown edges as "steps".
-        known_count = convolve(
-            known_mask.astype(np.uint8),
-            np.ones((3, 3), dtype=np.uint8),
-            mode="constant",
-            cval=0,
-        )
 
         # Gradients / slope on the height map
         dz_dx = np.full_like(height_map, np.nan, dtype=np.float32)
