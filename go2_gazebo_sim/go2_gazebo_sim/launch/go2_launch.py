@@ -430,7 +430,10 @@ def generate_launch_description():
         executable="point_cloud_xyz_node",
         name="point_cloud_xyz_sim",
         remappings=[
-            ("image_rect", "/camera/realsense2_camera_node/depth/image_rect_gazebo_raw"),
+            (
+                "image_rect",
+                "/camera/realsense2_camera_node/depth/image_rect_gazebo_raw",
+            ),
             ("camera_info", "/camera/realsense2_camera_node/depth/camera_info"),
             ("points", "/camera/depth/points"),
         ],
@@ -525,7 +528,7 @@ def generate_launch_description():
             go2_remapping_node,
             # Intel D435 depth remapping node
             intel435_depth_node,
-            #pointcloud2 remapping node
+            # pointcloud2 remapping node
             point_cloud_xyz_sim,
             # Camera relay (sim)
             camera_relay_node,

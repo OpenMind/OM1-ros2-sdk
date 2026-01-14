@@ -8,7 +8,13 @@ from nav_msgs.msg import OccupancyGrid
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 from rclpy.time import Time
-from scipy.ndimage import binary_dilation, label, maximum_filter, minimum_filter, convolve
+from scipy.ndimage import (
+    binary_dilation,
+    convolve,
+    label,
+    maximum_filter,
+    minimum_filter,
+)
 from sensor_msgs.msg import PointCloud2
 from sensor_msgs_py import point_cloud2 as pc2
 from std_msgs.msg import Header
@@ -112,8 +118,8 @@ class LocalTraversability(Node):
         self.hazard_thinning_stride = 1  # 1 => keep every cell, >1 => sub-sample
         self.hazard_points_topic_pc2 = "/traversability/hazard_points2"
 
-        # Simulation toggles 
-        # depth_image_proc generates xyz in optical camera axes, but the cloud keeps the input frame_id (e.g. "camera_link") from gazebo/bridge, 
+        # Simulation toggles
+        # depth_image_proc generates xyz in optical camera axes, but the cloud keeps the input frame_id (e.g. "camera_link") from gazebo/bridge,
         # so we assume optical axes here and rotate to link axes before TF.
 
         self.declare_parameter("assume_optical_frame", False)
@@ -221,8 +227,8 @@ class LocalTraversability(Node):
 
         # D435/depth_image_proc in your sim looks like millimeters (z ~ 50..700)
         z_med = float(np.median(points[:, 2]))
-        if z_med > 20.0:          # >20 is impossible for D435 in meters, so it's mm
-            points *= 0.001       # mm -> m
+        if z_med > 20.0:  # >20 is impossible for D435 in meters, so it's mm
+            points *= 0.001  # mm -> m
 
         self._run_pipeline(points, source_frame)
 
@@ -337,11 +343,12 @@ class LocalTraversability(Node):
 
         valid_cells = count_z > 0
         height_flat = np.full(grid_height * grid_width, np.nan, dtype=np.float32)
-        height_flat[valid_cells] = sum_z[valid_cells] / count_z[valid_cells].astype(np.float32)
+        height_flat[valid_cells] = sum_z[valid_cells] / count_z[valid_cells].astype(
+            np.float32
+        )
 
         height_map = height_flat.reshape(grid_height, grid_width)
         known_mask = ~np.isnan(height_map)
-
 
         # Count known cells in a 3x3 neighborhood; avoid treating unknown edges as "steps".
         known_count = convolve(
@@ -403,7 +410,9 @@ class LocalTraversability(Node):
 
         # Only classify a step if we have enough support in the local window.
         supported = known_mask & (known_count >= 5)
-        step_hazard[supported] = local_relief[supported] > self.local_relief_step_thresh_m
+        step_hazard[supported] = (
+            local_relief[supported] > self.local_relief_step_thresh_m
+        )
 
         # Combine hazards from all sources
         hazard = step_hazard | hazard_slope_down | hazard_slope_mag

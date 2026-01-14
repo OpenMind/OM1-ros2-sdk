@@ -151,7 +151,10 @@ def generate_launch_description():
                 executable="point_cloud_xyz_node",
                 name="point_cloud_xyz",
                 remappings=[
-                    ("image_rect", "/camera/realsense2_camera_node/depth/image_rect_raw"),
+                    (
+                        "image_rect",
+                        "/camera/realsense2_camera_node/depth/image_rect_raw",
+                    ),
                     ("camera_info", "/camera/realsense2_camera_node/depth/camera_info"),
                     ("points", "/camera/depth/points"),
                 ],
@@ -165,7 +168,10 @@ def generate_launch_description():
                 executable="point_cloud_xyz_node",
                 name="point_cloud_xyz_sim",
                 remappings=[
-                    ("image_rect", "/camera/realsense2_camera_node/depth/image_rect_gazebo_raw"),
+                    (
+                        "image_rect",
+                        "/camera/realsense2_camera_node/depth/image_rect_gazebo_raw",
+                    ),
                     ("camera_info", "/camera/realsense2_camera_node/depth/camera_info"),
                     ("points", "/camera/depth/points"),
                 ],
