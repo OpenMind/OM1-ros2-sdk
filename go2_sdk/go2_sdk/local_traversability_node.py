@@ -12,7 +12,6 @@ from scipy.ndimage import binary_dilation, label, maximum_filter, minimum_filter
 from sensor_msgs.msg import PointCloud2
 from sensor_msgs_py import point_cloud2 as pc2
 from std_msgs.msg import Header
-import itertools
 
 
 def tf_to_matrix(tf: geometry_msgs.msg.TransformStamped) -> np.ndarray:
