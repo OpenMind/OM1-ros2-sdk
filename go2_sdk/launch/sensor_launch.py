@@ -151,16 +151,28 @@ def generate_launch_description():
                 executable="point_cloud_xyz_node",
                 name="point_cloud_xyz",
                 remappings=[
-                    (
-                        "image_rect",
-                        "/camera/realsense2_camera_node/depth/image_rect_raw",
-                    ),
+                    ("image_rect", "/camera/realsense2_camera_node/depth/image_rect_raw"),
                     ("camera_info", "/camera/realsense2_camera_node/depth/camera_info"),
                     ("points", "/camera/depth/points"),
                 ],
                 output="screen",
                 respawn=True,
                 respawn_delay=2.0,
+                condition=UnlessCondition(use_sim),
+            ),
+            Node(
+                package="depth_image_proc",
+                executable="point_cloud_xyz_node",
+                name="point_cloud_xyz_sim",
+                remappings=[
+                    ("image_rect", "/camera/realsense2_camera_node/depth/image_rect_gazebo_raw"),
+                    ("camera_info", "/camera/realsense2_camera_node/depth/camera_info"),
+                    ("points", "/camera/depth/points"),
+                ],
+                output="screen",
+                respawn=True,
+                respawn_delay=2.0,
+                condition=IfCondition(use_sim),
             ),
             Node(
                 package="tf2_ros",
@@ -214,7 +226,7 @@ def generate_launch_description():
                 output="screen",
                 respawn=True,
                 respawn_delay=2.0,
-                parameters=[{"use_sim": use_sim}],
+                parameters=[{"use_sim": use_sim, "use_sim_time": use_sim}],
             ),
             Node(
                 package="go2_sdk",
@@ -223,6 +235,7 @@ def generate_launch_description():
                 output="screen",
                 respawn=True,
                 respawn_delay=2.0,
+                parameters=[{"use_sim_time": use_sim, "assume_optical_frame": use_sim}],
             ),
             Node(
                 package="go2_sdk",
