@@ -92,9 +92,9 @@ class LocalTraversability(Node):
         self.max_height_m = 2.0  # ignore points above this height
 
         # Slope thresholds (for continuous sloped surfaces)
-        self.max_allowed_slope_deg = 15.0  # any slope > 10° is hazardous
+        self.max_allowed_slope_deg = 12.0  # any slope > 12° is hazardous
         self.max_forward_downhill_deg = (
-            15.0  # >= 8° downhill in forward direction is hazardous
+            10.0  # >= 10° downhill in forward direction is hazardous
         )
         self.slope_baseline_cells = 3  # use 3 cells (~15 cm) as baseline spacing
 

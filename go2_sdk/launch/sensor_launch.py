@@ -164,23 +164,6 @@ def generate_launch_description():
                 condition=UnlessCondition(use_sim),
             ),
             Node(
-                package="depth_image_proc",
-                executable="point_cloud_xyz_node",
-                name="point_cloud_xyz_sim",
-                remappings=[
-                    (
-                        "image_rect",
-                        "/camera/realsense2_camera_node/depth/image_rect_gazebo_raw",
-                    ),
-                    ("camera_info", "/camera/realsense2_camera_node/depth/camera_info"),
-                    ("points", "/camera/depth/points"),
-                ],
-                output="screen",
-                respawn=True,
-                respawn_delay=2.0,
-                condition=IfCondition(use_sim),
-            ),
-            Node(
                 package="tf2_ros",
                 executable="static_transform_publisher",
                 name="static_transform_publisher_camera",
