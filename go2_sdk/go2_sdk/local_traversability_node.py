@@ -92,9 +92,9 @@ class LocalTraversability(Node):
         self.max_height_m = 2.0  # ignore points above this height
 
         # Slope thresholds (for continuous sloped surfaces)
-        self.max_allowed_slope_deg = 10.0  # any slope > 10° is hazardous
+        self.max_allowed_slope_deg = 12.0  # any slope > 12° is hazardous
         self.max_forward_downhill_deg = (
-            8.0  # >= 8° downhill in forward direction is hazardous
+            10.0  # >= 10° downhill in forward direction is hazardous
         )
         self.slope_baseline_cells = 3  # use 3 cells (~15 cm) as baseline spacing
 
@@ -111,6 +111,30 @@ class LocalTraversability(Node):
         # Hazard output configuration
         self.hazard_thinning_stride = 1  # 1 => keep every cell, >1 => sub-sample
         self.hazard_points_topic_pc2 = "/traversability/hazard_points2"
+
+        # Simulation toggles
+        # depth_image_proc generates xyz in optical camera axes, but the cloud keeps the input frame_id (e.g. "camera_link") from gazebo/bridge,
+        # so we assume optical axes here and rotate to link axes before TF.
+
+        self.declare_parameter("assume_optical_frame", False)
+        self.assume_optical_frame = (
+            self.get_parameter("assume_optical_frame").get_parameter_value().bool_value
+        )
+
+        # Allow overriding the input topic without changing the code
+        self.declare_parameter("depth_cloud_topic", self.depth_cloud_topic)
+        self.depth_cloud_topic = (
+            self.get_parameter("depth_cloud_topic").get_parameter_value().string_value
+        )
+
+        # Optical -> link axis mapping (REP-103 optical frame to link frame)
+        # optical: x right, y down, z forward
+        # link:    x forward, y left, z up
+        # x_link = z_opt, y_link = -x_opt, z_link = -y_opt
+        self.R_opt_to_link = np.array(
+            [[0.0, 0.0, 1.0], [-1.0, 0.0, 0.0], [0.0, -1.0, 0.0]],
+            dtype=np.float32,
+        )
 
         # TF buffer / listener
         self.tf_buffer = tf2_ros.Buffer()
@@ -184,8 +208,21 @@ class LocalTraversability(Node):
             return
 
         points = np.asarray(points, dtype=np.float32).reshape(-1, 3)
+
+        points = points[np.isfinite(points).all(axis=1)]
         if points.size == 0:
             return
+
+        # Drop invalid/zero-depth rays (common in sim and can create fake "steps")
+        if self.assume_optical_frame or ("optical" in source_frame):
+            points = points[points[:, 2] > 0.05]
+            if points.size == 0:
+                return
+
+        # D435/depth_image_proc in your sim looks like millimeters (z ~ 50..700)
+        z_med = float(np.median(points[:, 2]))
+        if z_med > 20.0:  # >20 is impossible for D435 in meters, so it's mm
+            points *= 0.001  # mm -> m
 
         self._run_pipeline(points, source_frame)
 
@@ -211,6 +248,11 @@ class LocalTraversability(Node):
         source_frame : str
             Name of the TF frame for the input cloud.
         """
+        # If the incoming cloud uses optical axis convention but is published in a non-optical frame_id,
+        # rotate it into a standard camera link convention *before* applying TF.
+        if self.assume_optical_frame and ("optical" not in source_frame):
+            points_in_source_frame = (self.R_opt_to_link @ points_in_source_frame.T).T
+
         # Transform camera -> base_link (self.map_frame)
         try:
             transform_cloud_to_robot = self.tf_buffer.lookup_transform(
@@ -247,6 +289,7 @@ class LocalTraversability(Node):
             & (z_robot >= self.min_height_m)
             & (z_robot <= self.max_height_m)
         )
+
         if not np.any(roi_mask):
             # Publish an empty hazard cloud to clear stale data downstream
             self._publish_hazard_cloud2(
@@ -283,9 +326,9 @@ class LocalTraversability(Node):
         row = row[in_bounds]
         z_roi = z_roi[in_bounds]
 
-        # Height map: mean z per cell
-        height_map = np.full((grid_height, grid_width), np.nan, dtype=np.float32)
+        # Height map: mean z per cell (NaN = unknown / no points)
         linear_indices = row * grid_width + col
+
         sum_z = np.zeros(grid_height * grid_width, dtype=np.float32)
         count_z = np.zeros(grid_height * grid_width, dtype=np.int32)
 
@@ -293,12 +336,12 @@ class LocalTraversability(Node):
         np.add.at(count_z, linear_indices, 1)
 
         valid_cells = count_z > 0
-        mean_z = np.full(grid_height * grid_width, np.nan, dtype=np.float32)
-        mean_z[valid_cells] = (sum_z[valid_cells] / count_z[valid_cells]).astype(
+        height_flat = np.full(grid_height * grid_width, np.nan, dtype=np.float32)
+        height_flat[valid_cells] = sum_z[valid_cells] / count_z[valid_cells].astype(
             np.float32
         )
-        height_map = mean_z.reshape(grid_height, grid_width)
 
+        height_map = height_flat.reshape(grid_height, grid_width)
         known_mask = ~np.isnan(height_map)
 
         # Gradients / slope on the height map
@@ -318,11 +361,15 @@ class LocalTraversability(Node):
             ) / (2.0 * baseline_cells * res)
 
         # Left-right slope (y direction)
-        if grid_height > 2:
-            mid_y_mask = known_mask[2:, :] & known_mask[:-2, :]
-            dz_dy[1:-1, :][mid_y_mask] = (
-                height_map[2:, :][mid_y_mask] - height_map[:-2, :][mid_y_mask]
-            ) / (2.0 * res)
+        if grid_height > 2 * baseline_cells:
+            mid_y_mask = (
+                known_mask[2 * baseline_cells :, :]
+                & known_mask[: -2 * baseline_cells, :]
+            )
+            dz_dy[baseline_cells:-baseline_cells, :][mid_y_mask] = (
+                height_map[2 * baseline_cells :, :][mid_y_mask]
+                - height_map[: -2 * baseline_cells, :][mid_y_mask]
+            ) / (2.0 * baseline_cells * res)
 
         slope_mag = np.sqrt(np.square(dz_dx) + np.square(dz_dy))
         slope_mag_deg = np.degrees(np.arctan(slope_mag))
@@ -346,6 +393,7 @@ class LocalTraversability(Node):
 
         local_relief = local_max - local_min
         step_hazard = np.zeros_like(height_map, dtype=bool)
+
         step_hazard[known_mask] = (
             local_relief[known_mask] > self.local_relief_step_thresh_m
         )

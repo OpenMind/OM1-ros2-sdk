@@ -161,6 +161,7 @@ def generate_launch_description():
                 output="screen",
                 respawn=True,
                 respawn_delay=2.0,
+                condition=UnlessCondition(use_sim),
             ),
             Node(
                 package="tf2_ros",
@@ -214,7 +215,7 @@ def generate_launch_description():
                 output="screen",
                 respawn=True,
                 respawn_delay=2.0,
-                parameters=[{"use_sim": use_sim}],
+                parameters=[{"use_sim": use_sim, "use_sim_time": use_sim}],
             ),
             Node(
                 package="go2_sdk",
@@ -223,6 +224,7 @@ def generate_launch_description():
                 output="screen",
                 respawn=True,
                 respawn_delay=2.0,
+                parameters=[{"use_sim_time": use_sim, "assume_optical_frame": use_sim}],
             ),
             Node(
                 package="go2_sdk",

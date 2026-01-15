@@ -425,6 +425,25 @@ def generate_launch_description():
         parameters=[{"use_sim_time": use_sim_time}],
     )
 
+    point_cloud_xyz_sim = Node(
+        package="depth_image_proc",
+        executable="point_cloud_xyz_node",
+        name="point_cloud_xyz_sim",
+        remappings=[
+            (
+                "image_rect",
+                "/camera/realsense2_camera_node/depth/image_rect_gazebo_raw",
+            ),
+            ("camera_info", "/camera/realsense2_camera_node/depth/camera_info"),
+            ("points", "/camera/depth/points"),
+        ],
+        parameters=[{"use_sim_time": use_sim_time}],
+        output="screen",
+        respawn=True,
+        respawn_delay=2.0,
+        condition=IfCondition(use_sim_time),
+    )
+
     # Camera topic relay for auto-docking (sim only)
     camera_relay_node = Node(
         package="topic_tools",
@@ -509,6 +528,8 @@ def generate_launch_description():
             go2_remapping_node,
             # Intel D435 depth remapping node
             intel435_depth_node,
+            # pointcloud2 remapping node
+            point_cloud_xyz_sim,
             # Camera relay (sim)
             camera_relay_node,
             # Teleoperation nodes
