@@ -3,13 +3,24 @@
 import json
 import os
 import subprocess
+from enum import IntEnum
 
 import rclpy
 from geometry_msgs.msg import PoseStamped
 from rclpy.node import Node
 
+from om_api.msg import OMChargingStatus
 from unitree_api.msg import Request, RequestHeader, RequestIdentity
 from unitree_go.msg import LowState
+
+
+class ChargingStatus(IntEnum):
+    """Charging status codes matching OMChargingStatus message."""
+
+    DISCHARGING = 0
+    CHARGING = 1
+    ENROUTE_CHARGING = 2
+    FULLY_CHARGED = 3
 
 
 class Go2AutoChargeMonitor(Node):
@@ -39,6 +50,11 @@ class Go2AutoChargeMonitor(Node):
         )
         self.sport_pub = self.create_publisher(Request, "/api/sport/request", 10)
 
+        # Publisher for charging status
+        self.status_pub = self.create_publisher(
+            OMChargingStatus, "/go2/charging_status", 10
+        )
+
         self.pose_sub = self.create_subscription(
             PoseStamped, "/utlidar/robot_pose", self.pose_callback, 10
         )
@@ -52,6 +68,9 @@ class Go2AutoChargeMonitor(Node):
         self.fully_charged_stand_triggered = False
         self.is_charging = False
         self.last_soc = None
+        self.current_status = (
+            ChargingStatus.DISCHARGING
+        )  # Track current status to avoid redundant publishing
 
         # Timer to periodically check battery status (every 10 seconds)
         self.timer = self.create_timer(10.0, self.periodic_check)
@@ -71,6 +90,12 @@ class Go2AutoChargeMonitor(Node):
         # Update charging status
         self.is_charging = current > 0
         self.last_soc = soc
+
+        # Determine and publish current status
+        new_status = self._determine_status(soc)
+        if new_status != self.current_status:
+            self.current_status = new_status
+            self._publish_status(new_status)
 
         # Only log battery status if navigation hasn't been triggered
         if not self.charging_navigation_triggered:
@@ -118,6 +143,63 @@ class Go2AutoChargeMonitor(Node):
             self.get_logger().info(
                 f"[Periodic Check] Battery: {self.last_soc:.1f}% | Status: {status}"
             )
+
+        # Always publish current status periodically
+        if self.last_soc is not None:
+            current_status = self._determine_status(self.last_soc)
+            self._publish_status(current_status)
+
+    def _determine_status(self, soc):
+        """
+        Determine the current charging status based on state.
+
+        Parameters
+        ----------
+        soc : float
+            State of charge (battery percentage)
+
+        Returns
+        -------
+        int
+            Status code: 0=DISCHARGING, 1=CHARGING, 2=ENROUTE_CHARGING, 3=FULLY_CHARGED
+        """
+        if soc >= self.full_battery_threshold and self.is_charging:
+            return ChargingStatus.FULLY_CHARGED
+        elif self.charging_navigation_triggered:
+            return ChargingStatus.ENROUTE_CHARGING
+        elif self.is_charging:
+            return ChargingStatus.CHARGING
+        else:
+            return ChargingStatus.DISCHARGING
+
+    def _publish_status(self, status):
+        """
+        Publish the charging status.
+
+        Parameters
+        ----------
+        status : int
+            The status code to publish (0-3)
+
+        """
+        try:
+            # Ensure status is an Enum member
+            status_enum = ChargingStatus(status)
+        except ValueError:
+            # Fallback for unknown status values
+            status_enum = None
+
+        msg = OMChargingStatus()
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.code = status
+
+        if status_enum is not None:
+            msg.status = status_enum.name
+        else:
+            msg.status = "UNKNOWN"
+
+        self.status_pub.publish(msg)
+        self.get_logger().info(f"Published charging status: {msg.status} ({status})")
 
     def trigger_charging_navigation(self):
         """Initiate the charging sequence by standing up and waiting for height confirmation."""
