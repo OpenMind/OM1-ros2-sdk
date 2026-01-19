@@ -9,7 +9,7 @@ import rclpy
 from docker.errors import APIError, DockerException, NotFound
 from rclpy.node import Node
 from sensor_msgs.msg import LaserScan
-from zenoh_sesson import open_zenoh_session
+from zenoh_session import open_zenoh_session
 
 import zenoh
 from om_api.msg import Paths
