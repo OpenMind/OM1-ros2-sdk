@@ -111,6 +111,7 @@
                       ".*/public_network_status",
                       ".*/rtc_status",
                       ".*/config_change_status",
+                      ".*/go2/charging_status",
 
                       // Input devices
                       ".*/joy",
@@ -221,6 +222,9 @@
                       ".*/joy",
                       ".*/wirelesscontroller",
                       ".*/wirelesscontroller_unprocessed",
+
+                      // Diagnostics and status
+                      ".*/go2/charging_status",
 
                       // GPT and AI integration
                       ".*/gpt_cmd",
