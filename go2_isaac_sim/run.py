@@ -1,12 +1,4 @@
-"""
-Isaac Sim 5.1
-Control one Unitree Go2 RL locomotion policy using ROS2 /cmd_vel (Twist) and keyboard
-in a warehouse environment with full sensor suite (cameras, LiDAR, IMU)
-compatible with OpenMind unitree_sdk.
-
-Publish cmd_vel:
-  ros2 topic pub /cmd_vel geometry_msgs/Twist "{linear: {x: 0.3, y: 0.0}, angular: {z: 0.2}}"
-"""
+# ruff: noqa: E402
 
 from isaacsim import SimulationApp
 
@@ -14,23 +6,25 @@ simulation_app = SimulationApp({"renderer": "RaytracedLighting", "headless": Fal
 
 import argparse
 import os
-import sys
 import time
 from typing import Optional, Tuple
 
 import carb
 import numpy as np
 import omni.appwindow  # Contains handle to keyboard
+import utils as ros_utils
 import yaml
 from isaacsim.core.api import World
 from isaacsim.core.utils.prims import define_prim
 from isaacsim.core.utils.rotations import quat_to_rot_matrix
 from isaacsim.core.utils.types import ArticulationAction
 from isaacsim.robot.policy.examples.controllers import PolicyController
-from isaacsim.robot.policy.examples.controllers.config_loader import get_action, get_observations, parse_env_config
+from isaacsim.robot.policy.examples.controllers.config_loader import (
+    get_action,
+    get_observations,
+    parse_env_config,
+)
 from isaacsim.storage.native import get_assets_root_path
-
-import utils as ros_utils
 
 DEFAULT_POLICY_DIR = ""
 
@@ -54,9 +48,15 @@ def _expand_param(value, size: int, default: float) -> np.ndarray:
     return arr
 
 
-def _resolve_command_limits(deploy_cfg: dict, env_cfg: dict) -> Tuple[np.ndarray, np.ndarray]:
+def _resolve_command_limits(
+    deploy_cfg: dict, env_cfg: dict
+) -> Tuple[np.ndarray, np.ndarray]:
     def _from_cfg(cfg: dict):
-        ranges = cfg.get("commands", {}).get("base_velocity", {}).get("ranges") if cfg else None
+        ranges = (
+            cfg.get("commands", {}).get("base_velocity", {}).get("ranges")
+            if cfg
+            else None
+        )
         if not isinstance(ranges, dict):
             return None
 
@@ -90,7 +90,9 @@ def _resolve_command_limits(deploy_cfg: dict, env_cfg: dict) -> Tuple[np.ndarray
 
 
 def _resolve_usd_path(env_cfg: dict) -> str:
-    usd_path = env_cfg.get("scene", {}).get("robot", {}).get("spawn", {}).get("usd_path")
+    usd_path = (
+        env_cfg.get("scene", {}).get("robot", {}).get("spawn", {}).get("usd_path")
+    )
     if usd_path:
         return usd_path
 
@@ -131,7 +133,9 @@ def _validate_policy_paths(policy_dir: str) -> Tuple[str, str, str]:
         raise FileNotFoundError("Required policy files not found.")
 
     if not os.path.isfile(deploy_path):
-        print(f"[WARN] deploy.yaml not found at {deploy_path}; using env.yaml ranges only")
+        print(
+            f"[WARN] deploy.yaml not found at {deploy_path}; using env.yaml ranges only"
+        )
 
     return policy_path, env_path, deploy_path
 
@@ -182,13 +186,18 @@ class Go2VelocityPolicy(PolicyController):
         self._policy_counter = 0
 
     def initialize(self, physics_sim_view=None) -> None:
+        """Initialize the robot controller with physics simulation view and control mode."""
         super().initialize(physics_sim_view=physics_sim_view, control_mode="position")
         dof_count = len(self.default_pos)
-        self._action_scale = _expand_param(self._action_cfg.get("scale"), dof_count, default=1.0)
+        self._action_scale = _expand_param(
+            self._action_cfg.get("scale"), dof_count, default=1.0
+        )
         if self._action_cfg.get("use_default_offset", False):
             self._action_offset = np.array(self.default_pos, dtype=np.float32)
         else:
-            self._action_offset = _expand_param(self._action_cfg.get("offset"), dof_count, default=0.0)
+            self._action_offset = _expand_param(
+                self._action_cfg.get("offset"), dof_count, default=0.0
+            )
 
         self._previous_action = np.zeros(dof_count, dtype=np.float32)
         self.action = np.zeros(dof_count, dtype=np.float32)
@@ -220,6 +229,7 @@ class Go2VelocityPolicy(PolicyController):
         return obs
 
     def forward(self, dt: float, command: np.ndarray) -> None:
+        """Execute one forward step of the policy with the given command."""
         if self._policy_counter % self._decimation == 0:
             obs = self._compute_observation(command)
             self.action = np.array(self._compute_action(obs), dtype=np.float32)
@@ -232,6 +242,8 @@ class Go2VelocityPolicy(PolicyController):
 
 
 class Go2RosRunner(object):
+    """Runner class for Go2 robot with ROS2 integration and sensor support."""
+
     def __init__(
         self,
         physics_dt: float,
@@ -247,7 +259,7 @@ class Go2RosRunner(object):
         enable_keyboard: bool,
     ) -> None:
         """
-        creates the simulation world with preset physics_dt and render_dt and creates a go2 robot inside the warehouse
+        Creates the simulation world with preset physics_dt and render_dt and creates a go2 robot inside the warehouse.
 
         Argument:
         physics_dt {float} -- Physics downtime of the scene.
@@ -260,9 +272,16 @@ class Go2RosRunner(object):
         deploy_cfg = _load_yaml(deploy_path)
 
         usd_path = _resolve_usd_path(env_cfg)
-        init_pos = np.array(env_cfg.get("scene", {}).get("robot", {}).get("init_state", {}).get("pos", (0.0, 0.0, 0.4)))
+        init_pos = np.array(
+            env_cfg.get("scene", {})
+            .get("robot", {})
+            .get("init_state", {})
+            .get("pos", (0.0, 0.0, 0.4))
+        )
 
-        self._world = World(stage_units_in_meters=1.0, physics_dt=physics_dt, rendering_dt=render_dt)
+        self._world = World(
+            stage_units_in_meters=1.0, physics_dt=physics_dt, rendering_dt=render_dt
+        )
         self._physics_dt = physics_dt
         self._render_dt = render_dt
 
@@ -271,7 +290,9 @@ class Go2RosRunner(object):
             raise RuntimeError("Could not find Isaac Sim assets folder")
 
         prim = define_prim("/World/Warehouse", "Xform")
-        asset_path = assets_root_path + "/Isaac/Environments/Simple_Warehouse/warehouse.usd"
+        asset_path = (
+            assets_root_path + "/Isaac/Environments/Simple_Warehouse/warehouse.usd"
+        )
         prim.GetReferences().AddReference(asset_path)
 
         if not usd_path:
@@ -331,7 +352,7 @@ class Go2RosRunner(object):
 
     def setup(self) -> None:
         """
-        Set up keyboard listener and add physics callback
+        Set up keyboard listener and add physics callback.
 
         """
         if self._enable_keyboard:
@@ -339,14 +360,21 @@ class Go2RosRunner(object):
             if self._appwindow is not None:
                 self._input = carb.input.acquire_input_interface()
                 self._keyboard = self._appwindow.get_keyboard()
-                self._sub_keyboard = self._input.subscribe_to_keyboard_events(self._keyboard, self._sub_keyboard_event)
+                self._sub_keyboard = self._input.subscribe_to_keyboard_events(
+                    self._keyboard, self._sub_keyboard_event
+                )
             else:
                 print("[WARN] No app window found; keyboard control disabled")
                 self._enable_keyboard = False
-        self._world.add_physics_callback("go2_ros2_step", callback_fn=self.on_physics_step)
+        self._world.add_physics_callback(
+            "go2_ros2_step", callback_fn=self.on_physics_step
+        )
 
     def setup_ros(self) -> None:
-        self._linear_attr, self._angular_attr = ros_utils.setup_cmd_vel_graph(self._cmd_vel_topic)
+        """Set up ROS2 nodes for command velocity and sensor publishers."""
+        self._linear_attr, self._angular_attr = ros_utils.setup_cmd_vel_graph(
+            self._cmd_vel_topic
+        )
         if not self._enable_sensors:
             return
 
@@ -356,7 +384,9 @@ class Go2RosRunner(object):
         render_hz = None
         if self._render_dt:
             render_hz = 1.0 / self._render_dt
-        self._sensors = ros_utils.setup_sensors_delayed(simulation_app, render_hz=render_hz)
+        self._sensors = ros_utils.setup_sensors_delayed(
+            simulation_app, render_hz=render_hz
+        )
         ros_utils.setup_ros_publishers(self._sensors, simulation_app)
 
         ros_utils.setup_depth_camerainfo_graph(
@@ -410,7 +440,7 @@ class Go2RosRunner(object):
 
     def on_physics_step(self, step_size) -> None:
         """
-        Physics call back, initialize robot (first frame) and call controller forward function
+        Physics call back, initialize robot (first frame) and call controller forward function.
 
         """
         if self.first_step:
@@ -437,7 +467,7 @@ class Go2RosRunner(object):
 
     def run(self, real_time: bool) -> None:
         """
-        Step simulation based on rendering downtime
+        Step simulation based on rendering downtime.
 
         """
         while simulation_app.is_running():
@@ -458,17 +488,21 @@ class Go2RosRunner(object):
         """
         if event.type == carb.input.KeyboardEventType.KEY_PRESS:
             if event.input.name in self._input_keyboard_mapping:
-                self._base_command += np.array(self._input_keyboard_mapping[event.input.name], dtype=np.float32)
+                self._base_command += np.array(
+                    self._input_keyboard_mapping[event.input.name], dtype=np.float32
+                )
 
         elif event.type == carb.input.KeyboardEventType.KEY_RELEASE:
             if event.input.name in self._input_keyboard_mapping:
-                self._base_command -= np.array(self._input_keyboard_mapping[event.input.name], dtype=np.float32)
+                self._base_command -= np.array(
+                    self._input_keyboard_mapping[event.input.name], dtype=np.float32
+                )
         return True
 
 
 def main():
     """
-    Instantiate the Go2 runner with ROS2 + sensors
+    Instantiate the Go2 runner with ROS2 + sensors.
 
     """
     parser = argparse.ArgumentParser()
@@ -479,8 +513,12 @@ def main():
     parser.add_argument("--wz_max", type=float, default=1.0)
     parser.add_argument("--robot_root", default="/World/Go2")
     parser.add_argument("--cmd_vel_only", action="store_true", default=False)
-    parser.add_argument("--no_sensors", action="store_true", help="Disable sensor setup")
-    parser.add_argument("--no_keyboard", action="store_true", help="Disable keyboard control")
+    parser.add_argument(
+        "--no_sensors", action="store_true", help="Disable sensor setup"
+    )
+    parser.add_argument(
+        "--no_keyboard", action="store_true", help="Disable keyboard control"
+    )
     parser.add_argument("--real_time", action="store_true", default=False)
     parser.add_argument("--physics_dt", type=float, default=1 / 200.0)
     parser.add_argument("--render_dt", type=float, default=1 / 60.0)

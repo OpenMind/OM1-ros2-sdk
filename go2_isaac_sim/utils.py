@@ -1,3 +1,5 @@
+# ruff: noqa: E402
+
 import glob
 import math
 import os
@@ -35,7 +37,9 @@ odom_orient_attr = None
 odom_lin_vel_attr = None
 odom_ang_vel_attr = None
 
+
 def find_latest_checkpoint(log_root: str) -> str:
+    """Find the latest checkpoint file in the log directory."""
     log_root = os.path.abspath(log_root)
     candidates = glob.glob(os.path.join(log_root, "**", "model_*.pt"), recursive=True)
     if not candidates:
@@ -51,6 +55,7 @@ def find_latest_checkpoint(log_root: str) -> str:
 
 
 def set_base_velocity_command(cm, cmd_tensor) -> None:
+    """Set the base velocity command on the command manager."""
     if hasattr(cm, "set_command"):
         cm.set_command("base_velocity", cmd_tensor)
         return
@@ -67,15 +72,18 @@ def set_base_velocity_command(cm, cmd_tensor) -> None:
 
 
 def clamp(x: float, lo: float, hi: float) -> float:
+    """Clamp a value between a lower and upper bound."""
     return max(lo, min(hi, x))
 
 
 def yaw_to_quat_xyzw(yaw: float):
+    """Convert yaw angle to quaternion in xyzw format."""
     half = yaw * 0.5
     return [0.0, 0.0, math.sin(half), math.cos(half)]
 
 
 def setup_cmd_vel_graph(topic_name: str = "/cmd_vel") -> Tuple[object, object]:
+    """Set up the command velocity subscriber graph for ROS2 integration."""
     import omni.graph.core as og
     from isaacsim.core.utils import extensions
     from isaacsim.core.utils.prims import is_prim_path_valid
@@ -85,8 +93,11 @@ def setup_cmd_vel_graph(topic_name: str = "/cmd_vel") -> Tuple[object, object]:
     graph_path = "/CmdVelActionGraph"
     if not is_prim_path_valid(graph_path):
         og.Controller.edit(
-            {"graph_path": graph_path, "evaluator_name": "execution",
-             "pipeline_stage": og.GraphPipelineStage.GRAPH_PIPELINE_STAGE_SIMULATION},
+            {
+                "graph_path": graph_path,
+                "evaluator_name": "execution",
+                "pipeline_stage": og.GraphPipelineStage.GRAPH_PIPELINE_STAGE_SIMULATION,
+            },
             {
                 og.Controller.Keys.CREATE_NODES: [
                     ("OnTick", "omni.graph.action.OnTick"),
@@ -113,17 +124,19 @@ def setup_cmd_vel_graph(topic_name: str = "/cmd_vel") -> Tuple[object, object]:
 
 def add_warehouse_environment() -> bool:
     """Add the warehouse environment."""
-    import omni.usd
-    from isaacsim.core.utils import stage, nucleus
-    from pxr import UsdGeom, Gf
     import carb
+    import omni.usd
+    from isaacsim.core.utils import nucleus, stage
+    from pxr import Gf, UsdGeom
 
     assets_root_path = nucleus.get_assets_root_path()
     if assets_root_path is None:
         carb.log_error("Could not find Isaac Sim assets folder.")
         return False
 
-    stage.add_reference_to_stage(assets_root_path + WAREHOUSE_USD_PATH, WAREHOUSE_STAGE_PATH)
+    stage.add_reference_to_stage(
+        assets_root_path + WAREHOUSE_USD_PATH, WAREHOUSE_STAGE_PATH
+    )
     usd_context = omni.usd.get_context()
     usd_stage = usd_context.get_stage()
 
@@ -193,10 +206,14 @@ def set_robot_pose(env, pos, yaw) -> bool:
     """Set the root pose for all envs when supported by the articulation."""
     device = env.unwrapped.device
     num_envs = env.unwrapped.num_envs
-    pos_tensor = torch.tensor([pos], device=device, dtype=torch.float32).repeat(num_envs, 1)
+    pos_tensor = torch.tensor([pos], device=device, dtype=torch.float32).repeat(
+        num_envs, 1
+    )
     half_yaw = yaw / 2.0
     quat = (math.cos(half_yaw), 0.0, 0.0, math.sin(half_yaw))
-    quat_tensor = torch.tensor([quat], device=device, dtype=torch.float32).repeat(num_envs, 1)
+    quat_tensor = torch.tensor([quat], device=device, dtype=torch.float32).repeat(
+        num_envs, 1
+    )
 
     unwrapped = env.unwrapped
     if hasattr(unwrapped, "scene") and hasattr(unwrapped.scene, "articulations"):
@@ -210,7 +227,9 @@ def set_robot_pose(env, pos, yaw) -> bool:
 
 
 def ensure_link_xform(usd_stage, path: str, translation=None, rpy_rad=None):
-    from pxr import UsdGeom, Gf
+    """Ensure a link Xform exists with the specified translation and rotation."""
+    from pxr import Gf, UsdGeom
+
     prim = usd_stage.GetPrimAtPath(path)
     if not prim or not prim.IsValid():
         prim = usd_stage.DefinePrim(path, "Xform")
@@ -226,13 +245,13 @@ def ensure_link_xform(usd_stage, path: str, translation=None, rpy_rad=None):
 
 def setup_sensors_delayed(simulation_app, render_hz: Optional[float] = None) -> dict:
     """Setup sensors after simulation is fully running."""
-    import omni.usd
     import omni.kit.commands
     import omni.replicator.core as rep
-    from pxr import Gf
+    import omni.usd
+    from isaacsim.core.utils.prims import is_prim_path_valid
     from isaacsim.sensors.camera import Camera
     from isaacsim.sensors.physics import IMUSensor
-    from isaacsim.core.utils.prims import is_prim_path_valid
+    from pxr import Gf
 
     usd_context = omni.usd.get_context()
     usd_stage = usd_context.get_stage()
@@ -245,11 +264,15 @@ def setup_sensors_delayed(simulation_app, render_hz: Optional[float] = None) -> 
     if render_hz is not None and render_hz > 0:
         render_hz_int = int(round(render_hz))
         if render_hz_int > 0:
-            divisors = [d for d in range(1, render_hz_int + 1) if render_hz_int % d == 0]
+            divisors = [
+                d for d in range(1, render_hz_int + 1) if render_hz_int % d == 0
+            ]
             if divisors:
                 head_candidate = [d for d in divisors if d <= head_camera_hz]
                 rgb_candidate = [d for d in divisors if d <= rgb_camera_hz]
-                head_camera_hz = max(head_candidate) if head_candidate else min(divisors)
+                head_camera_hz = (
+                    max(head_candidate) if head_candidate else min(divisors)
+                )
                 rgb_camera_hz = max(rgb_candidate) if rgb_candidate else min(divisors)
                 if head_camera_hz != 25 or rgb_camera_hz != 10:
                     print(
@@ -275,18 +298,19 @@ def setup_sensors_delayed(simulation_app, render_hz: Optional[float] = None) -> 
 
         head_cam_prim = usd_stage.GetPrimAtPath(HEAD_CAMERA_PRIM)
         if head_cam_prim and head_cam_prim.IsValid():
-            from pxr import UsdGeom, Gf
+            from pxr import Gf, UsdGeom
+
             xformable = UsdGeom.Xformable(head_cam_prim)
             xformable.ClearXformOpOrder()
             xformable.AddTranslateOp().Set(Gf.Vec3d(0.0, 0.0, 0.0))
             xformable.AddRotateXYZOp().Set(Gf.Vec3f(0.0, 0.0, 0.0))
-            print(f"[Sensors] Cleared head_camera transform offset")
+            print("[Sensors] Cleared head_camera transform offset")
 
         head_camera.set_clipping_range(near_distance=0.1, far_distance=100.0)
         head_camera.add_distance_to_image_plane_to_frame()
 
         sensors["head_camera"] = head_camera
-        print(f"[Sensors] Head camera initialized with depth enabled")
+        print("[Sensors] Head camera initialized with depth enabled")
 
         rgb_camera = Camera(
             prim_path=RGB_CAMERA_PRIM,
@@ -298,37 +322,46 @@ def setup_sensors_delayed(simulation_app, render_hz: Optional[float] = None) -> 
 
         rgb_cam_prim = usd_stage.GetPrimAtPath(RGB_CAMERA_PRIM)
         if rgb_cam_prim and rgb_cam_prim.IsValid():
-            from pxr import UsdGeom, Gf
+            from pxr import Gf, UsdGeom
+
             xformable = UsdGeom.Xformable(rgb_cam_prim)
             xformable.ClearXformOpOrder()
             xformable.AddTranslateOp().Set(Gf.Vec3d(0.0, 0.0, 0.0))
             xformable.AddRotateXYZOp().Set(Gf.Vec3f(0.0, 0.0, 0.0))
-            print(f"[Sensors] Cleared rgb_camera transform offset")
+            print("[Sensors] Cleared rgb_camera transform offset")
 
         rgb_camera.set_clipping_range(near_distance=0.1, far_distance=100.0)
         sensors["rgb_camera"] = rgb_camera
-        print(f"[Sensors] RGB camera initialized")
+        print("[Sensors] RGB camera initialized")
     except Exception as e:
         print(f"[WARN] Camera setup failed: {e}")
         import traceback
+
         traceback.print_exc()
 
     # IMU
     try:
         imu_sensor = IMUSensor(
-            prim_path=IMU_PRIM, name="imu_sensor", frequency=50,
+            prim_path=IMU_PRIM,
+            name="imu_sensor",
+            frequency=50,
             translation=np.array([0.0, 0.0, 0.0]),
             orientation=np.array([1.0, 0.0, 0.0, 0.0]),
         )
         imu_sensor.initialize()
         sensors["imu"] = imu_sensor
-        print(f"[Sensors] IMU initialized")
+        print("[Sensors] IMU initialized")
     except Exception as e:
         print(f"[WARN] IMU setup failed: {e}")
 
     # LiDARs
     try:
-        ensure_link_xform(usd_stage, L1_LINK_PRIM, translation=(0.15, 0.0, 0.15), rpy_rad=(0.0, 0.0, 0.0))
+        ensure_link_xform(
+            usd_stage,
+            L1_LINK_PRIM,
+            translation=(0.15, 0.0, 0.15),
+            rpy_rad=(0.0, 0.0, 0.0),
+        )
         lidar_path = L1_LIDAR_PRIM
         if not is_prim_path_valid(lidar_path):
             result = omni.kit.commands.execute(
@@ -347,19 +380,37 @@ def setup_sensors_delayed(simulation_app, render_hz: Optional[float] = None) -> 
                 print(f"[WARN] L1 LiDAR creation returned: {result}")
                 lidar_path = None
         if lidar_path:
-            l1_rp = rep.create.render_product(lidar_path, resolution=(1, 1), name="l1_lidar_rp")
+            l1_rp = rep.create.render_product(
+                lidar_path, resolution=(1, 1), name="l1_lidar_rp"
+            )
             pc_writer = rep.writers.get("RtxLidarROS2PublishPointCloud")
-            pc_writer.initialize(frameId="lidar_l1_link", nodeNamespace="", topicName="/unitree_lidar", queueSize=10)
+            pc_writer.initialize(
+                frameId="lidar_l1_link",
+                nodeNamespace="",
+                topicName="/unitree_lidar",
+                queueSize=10,
+            )
             pc_writer.attach([l1_rp])
-            print(f"[Sensors] L1 LiDAR -> /unitree_lidar")
+            print("[Sensors] L1 LiDAR -> /unitree_lidar")
     except Exception as e:
         print(f"[WARN] L1 LiDAR setup failed: {e}")
         import traceback
+
         traceback.print_exc()
 
     try:
-        ensure_link_xform(usd_stage, VELO_BASE_LINK_PRIM, translation=(0.1, 0.0, 0.2), rpy_rad=(0.0, 0.0, 0.0))
-        ensure_link_xform(usd_stage, VELO_LASER_LINK_PRIM, translation=(0.0, 0.0, 0.0377), rpy_rad=(0.0, 0.0, 0.0))
+        ensure_link_xform(
+            usd_stage,
+            VELO_BASE_LINK_PRIM,
+            translation=(0.1, 0.0, 0.2),
+            rpy_rad=(0.0, 0.0, 0.0),
+        )
+        ensure_link_xform(
+            usd_stage,
+            VELO_LASER_LINK_PRIM,
+            translation=(0.0, 0.0, 0.0377),
+            rpy_rad=(0.0, 0.0, 0.0),
+        )
         rplidar_path = f"{VELO_LASER_LINK_PRIM}/rplidar"
         lidar_path = rplidar_path
         if not is_prim_path_valid(rplidar_path):
@@ -379,14 +430,19 @@ def setup_sensors_delayed(simulation_app, render_hz: Optional[float] = None) -> 
                 print(f"[WARN] 2D LiDAR creation returned: {result}")
                 lidar_path = None
         if lidar_path:
-            velo_rp = rep.create.render_product(lidar_path, resolution=(1, 1), name="velo_lidar_rp")
+            velo_rp = rep.create.render_product(
+                lidar_path, resolution=(1, 1), name="velo_lidar_rp"
+            )
             scan_writer = rep.writers.get("RtxLidarROS2PublishLaserScan")
-            scan_writer.initialize(frameId="laser", nodeNamespace="", topicName="/scan", queueSize=10)
+            scan_writer.initialize(
+                frameId="laser", nodeNamespace="", topicName="/scan", queueSize=10
+            )
             scan_writer.attach([velo_rp])
-            print(f"[Sensors] 2D LiDAR -> /scan")
+            print("[Sensors] 2D LiDAR -> /scan")
     except Exception as e:
         print(f"[WARN] 2D LiDAR setup failed: {e}")
         import traceback
+
         traceback.print_exc()
 
     simulation_app.update()
@@ -425,7 +481,9 @@ def setup_static_tfs(simulation_app) -> None:
     ]
 
     for i, _ in enumerate(static_transforms):
-        create_nodes.append((f"TF{i}", "isaacsim.ros2.bridge.ROS2PublishRawTransformTree"))
+        create_nodes.append(
+            (f"TF{i}", "isaacsim.ros2.bridge.ROS2PublishRawTransformTree")
+        )
 
     connections = []
     for i, _ in enumerate(static_transforms):
@@ -436,19 +494,24 @@ def setup_static_tfs(simulation_app) -> None:
     set_values = [("Ctx.inputs:useDomainIDEnvVar", True)]
 
     for i, (parent, child, trans, rot) in enumerate(static_transforms):
-        set_values.extend([
-            (f"TF{i}.inputs:parentFrameId", parent),
-            (f"TF{i}.inputs:childFrameId", child),
-            (f"TF{i}.inputs:topicName", "/tf_static"),
-            (f"TF{i}.inputs:translation", trans),
-            (f"TF{i}.inputs:rotation", rot),
-            (f"TF{i}.inputs:staticPublisher", True),
-            (f"TF{i}.inputs:queueSize", 10),
-        ])
+        set_values.extend(
+            [
+                (f"TF{i}.inputs:parentFrameId", parent),
+                (f"TF{i}.inputs:childFrameId", child),
+                (f"TF{i}.inputs:topicName", "/tf_static"),
+                (f"TF{i}.inputs:translation", trans),
+                (f"TF{i}.inputs:rotation", rot),
+                (f"TF{i}.inputs:staticPublisher", True),
+                (f"TF{i}.inputs:queueSize", 10),
+            ]
+        )
 
     og.Controller.edit(
-        {"graph_path": graph_path, "evaluator_name": "execution",
-         "pipeline_stage": og.GraphPipelineStage.GRAPH_PIPELINE_STAGE_SIMULATION},
+        {
+            "graph_path": graph_path,
+            "evaluator_name": "execution",
+            "pipeline_stage": og.GraphPipelineStage.GRAPH_PIPELINE_STAGE_SIMULATION,
+        },
         {
             og.Controller.Keys.CREATE_NODES: create_nodes,
             og.Controller.Keys.CONNECT: connections,
@@ -456,8 +519,11 @@ def setup_static_tfs(simulation_app) -> None:
         },
     )
 
-    print(f"[ROS2] Static TFs published for {len(static_transforms)} transforms (staticPublisher=True)")
+    print(
+        f"[ROS2] Static TFs published for {len(static_transforms)} transforms (staticPublisher=True)"
+    )
     simulation_app.update()
+
 
 def setup_odom_publisher(simulation_app) -> None:
     """Publish nav_msgs/Odometry on /odom topic."""
@@ -472,8 +538,11 @@ def setup_odom_publisher(simulation_app) -> None:
         return
 
     og.Controller.edit(
-        {"graph_path": graph_path, "evaluator_name": "execution",
-         "pipeline_stage": og.GraphPipelineStage.GRAPH_PIPELINE_STAGE_SIMULATION},
+        {
+            "graph_path": graph_path,
+            "evaluator_name": "execution",
+            "pipeline_stage": og.GraphPipelineStage.GRAPH_PIPELINE_STAGE_SIMULATION,
+        },
         {
             og.Controller.Keys.CREATE_NODES: [
                 ("OnTick", "omni.graph.action.OnTick"),
@@ -503,9 +572,15 @@ def setup_odom_publisher(simulation_app) -> None:
 
     # Get attribute handles for updating each frame
     odom_pos_attr = og.Controller.attribute(graph_path + "/OdomPub.inputs:position")
-    odom_orient_attr = og.Controller.attribute(graph_path + "/OdomPub.inputs:orientation")
-    odom_lin_vel_attr = og.Controller.attribute(graph_path + "/OdomPub.inputs:linearVelocity")
-    odom_ang_vel_attr = og.Controller.attribute(graph_path + "/OdomPub.inputs:angularVelocity")
+    odom_orient_attr = og.Controller.attribute(
+        graph_path + "/OdomPub.inputs:orientation"
+    )
+    odom_lin_vel_attr = og.Controller.attribute(
+        graph_path + "/OdomPub.inputs:linearVelocity"
+    )
+    odom_ang_vel_attr = og.Controller.attribute(
+        graph_path + "/OdomPub.inputs:angularVelocity"
+    )
 
     print("[ROS2] Odometry publisher -> /odom")
     simulation_app.update()
@@ -518,7 +593,14 @@ def update_odom(pos, quat_xyzw, lin_vel, ang_vel) -> None:
     if odom_pos_attr is not None:
         odom_pos_attr.set([float(pos[0]), float(pos[1]), float(pos[2])])
     if odom_orient_attr is not None:
-        odom_orient_attr.set([float(quat_xyzw[0]), float(quat_xyzw[1]), float(quat_xyzw[2]), float(quat_xyzw[3])])
+        odom_orient_attr.set(
+            [
+                float(quat_xyzw[0]),
+                float(quat_xyzw[1]),
+                float(quat_xyzw[2]),
+                float(quat_xyzw[3]),
+            ]
+        )
     if odom_lin_vel_attr is not None:
         odom_lin_vel_attr.set([float(lin_vel[0]), float(lin_vel[1]), float(lin_vel[2])])
     if odom_ang_vel_attr is not None:
@@ -526,6 +608,7 @@ def update_odom(pos, quat_xyzw, lin_vel, ang_vel) -> None:
 
 
 def setup_color_camera_publishers(sensors, simulation_app) -> None:
+    """Set up ROS2 publishers for color camera images."""
     import omni.replicator.core as rep
     import omni.syntheticdata as syn_data
     import omni.syntheticdata._syntheticdata as sd
@@ -536,7 +619,9 @@ def setup_color_camera_publishers(sensors, simulation_app) -> None:
         if rp:
             try:
                 # Color image on RealSense topic
-                rv = syn_data.SyntheticData.convert_sensor_type_to_rendervar(sd.SensorType.Rgb.name)
+                rv = syn_data.SyntheticData.convert_sensor_type_to_rendervar(
+                    sd.SensorType.Rgb.name
+                )
                 w = rep.writers.get(rv + "ROS2PublishImage")
                 w.initialize(
                     frameId="head_camera",
@@ -545,7 +630,9 @@ def setup_color_camera_publishers(sensors, simulation_app) -> None:
                     topicName="/camera/realsense2_camera_node/color/image_raw",
                 )
                 w.attach([rp])
-                print("[ROS2] Color camera -> /camera/realsense2_camera_node/color/image_raw")
+                print(
+                    "[ROS2] Color camera -> /camera/realsense2_camera_node/color/image_raw"
+                )
 
                 # Also publish to /camera/image_raw for auto-docking compatibility
                 w2 = rep.writers.get(rv + "ROS2PublishImage")
@@ -627,7 +714,10 @@ def setup_color_camerainfo_graph(
                 ("Pub.inputs:r", R),
                 ("Pub.inputs:p", P),
                 ("Pub.inputs:physicalDistortionModel", "plumb_bob"),
-                ("Pub.inputs:physicalDistortionCoefficients", [0.0, 0.0, 0.0, 0.0, 0.0]),
+                (
+                    "Pub.inputs:physicalDistortionCoefficients",
+                    [0.0, 0.0, 0.0, 0.0, 0.0],
+                ),
             ],
         },
     )
@@ -640,8 +730,8 @@ def setup_color_camerainfo_graph(
 def setup_joint_states_publisher(simulation_app) -> None:
     """Publish sensor_msgs/JointState on /joint_states topic."""
     import omni.graph.core as og
-    from isaacsim.core.utils.prims import is_prim_path_valid
     from isaacsim.core.nodes.scripts.utils import set_target_prims
+    from isaacsim.core.utils.prims import is_prim_path_valid
 
     graph_path = "/JointStatesGraph"
     if is_prim_path_valid(graph_path):
@@ -651,8 +741,11 @@ def setup_joint_states_publisher(simulation_app) -> None:
     ROBOT_ARTICULATION_PATH = f"{GO2_STAGE_PATH}/base"
 
     og.Controller.edit(
-        {"graph_path": graph_path, "evaluator_name": "execution",
-         "pipeline_stage": og.GraphPipelineStage.GRAPH_PIPELINE_STAGE_SIMULATION},
+        {
+            "graph_path": graph_path,
+            "evaluator_name": "execution",
+            "pipeline_stage": og.GraphPipelineStage.GRAPH_PIPELINE_STAGE_SIMULATION,
+        },
         {
             og.Controller.Keys.CREATE_NODES: [
                 ("OnTick", "omni.graph.action.OnTick"),
@@ -679,7 +772,9 @@ def setup_joint_states_publisher(simulation_app) -> None:
         targetPrimPaths=[ROBOT_ARTICULATION_PATH],
     )
 
-    print(f"[ROS2] Joint states publisher -> /joint_states (articulation: {ROBOT_ARTICULATION_PATH})")
+    print(
+        f"[ROS2] Joint states publisher -> /joint_states (articulation: {ROBOT_ARTICULATION_PATH})"
+    )
     simulation_app.update()
 
 
@@ -695,8 +790,11 @@ def setup_ros_publishers(sensors, simulation_app) -> None:
     graph_path = "/ClockGraph"
     if not is_prim_path_valid(graph_path):
         og.Controller.edit(
-            {"graph_path": graph_path, "evaluator_name": "execution",
-             "pipeline_stage": og.GraphPipelineStage.GRAPH_PIPELINE_STAGE_SIMULATION},
+            {
+                "graph_path": graph_path,
+                "evaluator_name": "execution",
+                "pipeline_stage": og.GraphPipelineStage.GRAPH_PIPELINE_STAGE_SIMULATION,
+            },
             {
                 og.Controller.Keys.CREATE_NODES: [
                     ("OnTick", "omni.graph.action.OnTick"),
@@ -714,8 +812,11 @@ def setup_ros_publishers(sensors, simulation_app) -> None:
     # IMU publisher
     if not is_prim_path_valid("/ImuGraph"):
         og.Controller.edit(
-            {"graph_path": "/ImuGraph", "evaluator_name": "execution",
-             "pipeline_stage": og.GraphPipelineStage.GRAPH_PIPELINE_STAGE_SIMULATION},
+            {
+                "graph_path": "/ImuGraph",
+                "evaluator_name": "execution",
+                "pipeline_stage": og.GraphPipelineStage.GRAPH_PIPELINE_STAGE_SIMULATION,
+            },
             {
                 og.Controller.Keys.CREATE_NODES: [
                     ("OnTick", "omni.graph.action.OnTick"),
@@ -752,7 +853,9 @@ def setup_ros_publishers(sensors, simulation_app) -> None:
         if rp:
             try:
                 # RGB Image
-                rv = syn_data.SyntheticData.convert_sensor_type_to_rendervar(sd.SensorType.Rgb.name)
+                rv = syn_data.SyntheticData.convert_sensor_type_to_rendervar(
+                    sd.SensorType.Rgb.name
+                )
                 w = rep.writers.get(rv + "ROS2PublishImage")
                 w.initialize(
                     frameId="head_camera",
@@ -764,7 +867,9 @@ def setup_ros_publishers(sensors, simulation_app) -> None:
                 print("[ROS2] RGB camera -> camera/color/image_raw")
 
                 # Depth Image
-                rv = syn_data.SyntheticData.convert_sensor_type_to_rendervar(sd.SensorType.DistanceToImagePlane.name)
+                rv = syn_data.SyntheticData.convert_sensor_type_to_rendervar(
+                    sd.SensorType.DistanceToImagePlane.name
+                )
                 w = rep.writers.get(rv + "ROS2PublishImage")
                 w.initialize(
                     frameId="head_camera",
@@ -784,11 +889,15 @@ def setup_ros_publishers(sensors, simulation_app) -> None:
                     topicName="/camera/realsense2_camera_node/depth/image_rect_raw",
                 )
                 w_rs_depth.attach([rp])
-                print("[ROS2] Depth camera -> /camera/realsense2_camera_node/depth/image_rect_raw")
+                print(
+                    "[ROS2] Depth camera -> /camera/realsense2_camera_node/depth/image_rect_raw"
+                )
 
                 # For easier RViz viewing
                 try:
-                    depth_colorized = rep.writers.get("ROS2PublishNormalized" + "DepthImage")
+                    depth_colorized = rep.writers.get(
+                        "ROS2PublishNormalized" + "DepthImage"
+                    )
                     depth_colorized.initialize(
                         frameId="head_camera",
                         nodeNamespace="",
@@ -803,6 +912,7 @@ def setup_ros_publishers(sensors, simulation_app) -> None:
             except Exception as e:
                 print(f"[WARN] Camera publisher setup failed: {e}")
                 import traceback
+
                 traceback.print_exc()
 
     # Setup static TFs for sensor frames
@@ -812,8 +922,11 @@ def setup_ros_publishers(sensors, simulation_app) -> None:
     global odom_tf_trans_attr, odom_tf_rot_attr
     if not is_prim_path_valid(odom_graph_path):
         og.Controller.edit(
-            {"graph_path": odom_graph_path, "evaluator_name": "execution",
-             "pipeline_stage": og.GraphPipelineStage.GRAPH_PIPELINE_STAGE_SIMULATION},
+            {
+                "graph_path": odom_graph_path,
+                "evaluator_name": "execution",
+                "pipeline_stage": og.GraphPipelineStage.GRAPH_PIPELINE_STAGE_SIMULATION,
+            },
             {
                 og.Controller.Keys.CREATE_NODES: [
                     ("OnTick", "omni.graph.action.OnTick"),
@@ -834,7 +947,9 @@ def setup_ros_publishers(sensors, simulation_app) -> None:
                 ],
             },
         )
-    odom_tf_trans_attr = og.Controller.attribute(odom_graph_path + "/TF.inputs:translation")
+    odom_tf_trans_attr = og.Controller.attribute(
+        odom_graph_path + "/TF.inputs:translation"
+    )
     odom_tf_rot_attr = og.Controller.attribute(odom_graph_path + "/TF.inputs:rotation")
     print("[ROS2] Odom TF -> /tf (odom->base_link)")
 
@@ -864,23 +979,44 @@ def setup_depth_camerainfo_graph(
 
     # K matrix (3x3 intrinsic matrix, row-major)
     K = [
-        fx, 0.0, cx,
-        0.0, fy, cy,
-        0.0, 0.0, 1.0,
+        fx,
+        0.0,
+        cx,
+        0.0,
+        fy,
+        cy,
+        0.0,
+        0.0,
+        1.0,
     ]
 
     # R matrix (3x3 rectification matrix, identity for monocular)
     R = [
-        1.0, 0.0, 0.0,
-        0.0, 1.0, 0.0,
-        0.0, 0.0, 1.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
     ]
 
     # P matrix (3x4 projection matrix)
     P = [
-        fx, 0.0, cx, 0.0,
-        0.0, fy, cy, 0.0,
-        0.0, 0.0, 1.0, 0.0,
+        fx,
+        0.0,
+        cx,
+        0.0,
+        0.0,
+        fy,
+        cy,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
     ]
 
     og.Controller.edit(
@@ -912,12 +1048,17 @@ def setup_depth_camerainfo_graph(
                 ("Pub.inputs:r", R),
                 ("Pub.inputs:p", P),
                 ("Pub.inputs:physicalDistortionModel", "plumb_bob"),
-                ("Pub.inputs:physicalDistortionCoefficients", [0.0, 0.0, 0.0, 0.0, 0.0]),
+                (
+                    "Pub.inputs:physicalDistortionCoefficients",
+                    [0.0, 0.0, 0.0, 0.0, 0.0],
+                ),
             ],
         },
     )
 
-    print(f"[ROS2] Depth CameraInfo -> {topic} (width={width}, height={height}, fx={fx}, fy={fy})")
+    print(
+        f"[ROS2] Depth CameraInfo -> {topic} (width={width}, height={height}, fx={fx}, fy={fy})"
+    )
     simulation_app.update()
     return True
 
@@ -926,13 +1067,20 @@ def update_odom_tf(pos, quat_xyzw) -> None:
     """Update the odom -> base_link transform each frame."""
     if odom_tf_trans_attr is not None and odom_tf_rot_attr is not None:
         odom_tf_trans_attr.set([float(pos[0]), float(pos[1]), float(pos[2])])
-        odom_tf_rot_attr.set([float(quat_xyzw[0]), float(quat_xyzw[1]), float(quat_xyzw[2]), float(quat_xyzw[3])])
+        odom_tf_rot_attr.set(
+            [
+                float(quat_xyzw[0]),
+                float(quat_xyzw[1]),
+                float(quat_xyzw[2]),
+                float(quat_xyzw[3]),
+            ]
+        )
 
 
 def find_robot_articulation_path():
     """Find the actual robot articulation path in the stage."""
     import omni.usd
-    from pxr import UsdPhysics, Usd
+    from pxr import UsdPhysics
 
     usd_context = omni.usd.get_context()
     usd_stage = usd_context.get_stage()
