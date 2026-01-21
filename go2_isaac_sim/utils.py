@@ -1107,8 +1107,8 @@ def find_robot_articulation_path():
     for path in common_paths:
         prim = usd_stage.GetPrimAtPath(path)
         if prim and prim.IsValid():
-            has_artic = prim.HasAPI(UsdPhysics.ArticulationRootAPI)
-            print(f"  {path}: exists={True}, has_articulation_api={has_artic}")
+            has_arctic = prim.HasAPI(UsdPhysics.ArticulationRootAPI)
+            print(f"  {path}: exists={True}, has_articulation_api={has_arctic}")
         else:
             print(f"  {path}: exists=False")
 
@@ -1117,15 +1117,15 @@ def find_robot_articulation_path():
     if robot_prim and robot_prim.IsValid():
         print("\n[DEBUG] Children of /World/envs/env_0/Robot:")
         for child in robot_prim.GetChildren():
-            has_artic = child.HasAPI(UsdPhysics.ArticulationRootAPI)
-            print(f"  {child.GetPath().pathString} (articulation={has_artic})")
+            has_arctic = child.HasAPI(UsdPhysics.ArticulationRootAPI)
+            print(f"  {child.GetPath().pathString} (articulation={has_arctic})")
 
     # List direct children of /World/envs/env_0
     env_prim = usd_stage.GetPrimAtPath("/World/envs/env_0")
     if env_prim and env_prim.IsValid():
         print("\n[DEBUG] Children of /World/envs/env_0:")
         for child in env_prim.GetChildren():
-            has_artic = child.HasAPI(UsdPhysics.ArticulationRootAPI)
-            print(f"  {child.GetPath().pathString} (articulation={has_artic})")
+            has_arctic = child.HasAPI(UsdPhysics.ArticulationRootAPI)
+            print(f"  {child.GetPath().pathString} (articulation={has_arctic})")
 
     return articulations

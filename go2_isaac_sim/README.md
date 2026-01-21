@@ -1,6 +1,6 @@
 # Unitree Go2 Isaac Sim (go2_isaac_sim)
 
-This repository contains the ROS 2 Isaac Sim script for the Unitree Go2 quadruped robot. It provides a complete simulation environment compatible with the unitree-sdk, including mapping and navigation capabilities 
+This repository contains the ROS 2 Isaac Sim script for the Unitree Go2 quadruped robot. It provides a complete simulation environment compatible with the unitree-sdk, including mapping and navigation capabilities
 
 ## Features
 - **Isaac Sim**: Realistic physics simulation of the Unitree Go2.
