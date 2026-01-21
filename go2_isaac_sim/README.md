@@ -26,3 +26,10 @@ This repository contains the ROS 2 Isaac Sim script for the Unitree Go2 quadrupe
   # after installation, run the following to test successful installation
   isaacsim
   ```
+
+## Running
+  To run the script, simply do (note: a trained policy is required, which should contain the policy.pt, env.yaml, and deploy.yaml files)
+  ```bash
+  source env_isaacsim/bin/activate
+  python3 run.py --policy_dir YOUR_POLICY_DIR
+  ```
