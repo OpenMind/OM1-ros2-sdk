@@ -329,9 +329,18 @@ To set up the **Gazebo Simulator**, please install **ROS2 Humble** first.
 >
 > If you are using **ROS2 Jazzy**, you might need to manually modify the configuration file for **SLAM** and **NAV2** to ensure compatibility.
 
-Once **ROS2 Humble** is installed, use the following **CycloneDDS** configuration. It uses `lo` as the network interface.
+Once **ROS2 Humble** is installed, install all necessary dependencies.
 
-```xml
+```bash
+sudo apt install ros-humble-rmw-cyclonedds-cpp
+sudo apt install ros-humble-rosidl-generator-dds-idl
+```
+
+Use the following **CycloneDDS** configuration. It uses `lo` as the network interface.
+
+```bash
+export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+export CYCLONEDDS_URI='
 <CycloneDDS>
     <Domain>
         <General>
@@ -343,7 +352,7 @@ Once **ROS2 Humble** is installed, use the following **CycloneDDS** configuratio
             <MaxAutoParticipantIndex>200</MaxAutoParticipantIndex>
         </Discovery>
     </Domain>
-</CycloneDDS>
+</CycloneDDS>'
 ```
 
 Then you can start **Gazebo Simulator** through the following commands.
