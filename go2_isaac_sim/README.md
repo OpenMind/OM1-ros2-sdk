@@ -33,3 +33,11 @@ This repository contains the ROS 2 Isaac Sim script for the Unitree Go2 quadrupe
   source env_isaacsim/bin/activate
   python3 run.py --policy_dir YOUR_POLICY_DIR
   ```
+
+  You may need to additionally run the following
+
+  ```bash
+  export ROS_DISTRO=humble
+  export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:PATH_TO_VENV/env_isaaclab/lib/python3.11/site-packages/isaacsim/exts/isaacsim.ros2.bridge/humble/lib
+  ```

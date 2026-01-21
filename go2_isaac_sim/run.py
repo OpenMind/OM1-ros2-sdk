@@ -94,8 +94,26 @@ def _resolve_usd_path(env_cfg: dict) -> str:
         env_cfg.get("scene", {}).get("robot", {}).get("spawn", {}).get("usd_path")
     )
     if usd_path:
+        # If it's an absolute path that exists, use it
+        if os.path.isabs(usd_path) and os.path.isfile(usd_path):
+            return usd_path
+        # If it's a relative path, try to resolve it from the script directory
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        relative_path = os.path.join(script_dir, usd_path)
+        if os.path.isfile(relative_path):
+            print(f"[INFO] Using Go2 USD model from relative path: {relative_path}")
+            return relative_path
+        # Otherwise use as-is (might be resolved by Isaac Sim)
         return usd_path
 
+    # First check for local assets directory
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    local_usd_path = os.path.join(script_dir, "assets", "go2", "usd", "go2.usd")
+    if os.path.isfile(local_usd_path):
+        print(f"[INFO] Using local Go2 USD model: {local_usd_path}")
+        return local_usd_path
+
+    # Fallback to Isaac Sim assets
     assets_root_path = get_assets_root_path()
     if assets_root_path is None:
         carb.log_error("Could not find Isaac Sim assets folder")
