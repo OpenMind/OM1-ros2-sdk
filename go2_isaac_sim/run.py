@@ -26,7 +26,9 @@ from isaacsim.robot.policy.examples.controllers.config_loader import (
 )
 from isaacsim.storage.native import get_assets_root_path
 
-DEFAULT_POLICY_DIR = ""
+DEFAULT_POLICY_DIR = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "checkpoints", "50000"
+)
 
 
 def _load_yaml(path: str) -> dict:
