@@ -5,6 +5,7 @@ from isaacsim import SimulationApp
 simulation_app = SimulationApp({"renderer": "RaytracedLighting", "headless": False})
 
 import argparse
+import logging
 import os
 import time
 from typing import Optional, Tuple
@@ -29,6 +30,7 @@ from isaacsim.storage.native import get_assets_root_path
 DEFAULT_POLICY_DIR = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "checkpoints", "50000"
 )
+logger = logging.getLogger(__name__)
 
 
 def _load_yaml(path: str) -> dict:
@@ -96,7 +98,7 @@ def _resolve_usd_path(env_cfg: dict) -> str:
     script_dir = os.path.dirname(os.path.abspath(__file__))
     local_usd_path = os.path.join(script_dir, "assets", "go2", "usd", "go2.usd")
     if os.path.isfile(local_usd_path):
-        print(f"[INFO] Using local Go2 USD model: {local_usd_path}")
+        logger.info("Using local Go2 USD model: %s", local_usd_path)
         return local_usd_path
 
     # Second priority: check env.yaml usd_path
@@ -106,15 +108,15 @@ def _resolve_usd_path(env_cfg: dict) -> str:
     if usd_path:
         # If it's an absolute path that exists, use it
         if os.path.isabs(usd_path) and os.path.isfile(usd_path):
-            print(f"[INFO] Using Go2 USD model from absolute path: {usd_path}")
+            logger.info("Using Go2 USD model from absolute path: %s", usd_path)
             return usd_path
         # If it's a relative path, try to resolve it from the script directory
         relative_path = os.path.join(script_dir, usd_path)
         if os.path.isfile(relative_path):
-            print(f"[INFO] Using Go2 USD model from relative path: {relative_path}")
+            logger.info("Using Go2 USD model from relative path: %s", relative_path)
             return relative_path
         # Otherwise use as-is (might be resolved by Isaac Sim)
-        print(f"[WARN] USD path from env.yaml not found: {usd_path}")
+        logger.warning("USD path from env.yaml not found: %s", usd_path)
         return usd_path
 
     # Fallback to Isaac Sim assets
@@ -123,7 +125,7 @@ def _resolve_usd_path(env_cfg: dict) -> str:
         carb.log_error("Could not find Isaac Sim assets folder")
         return ""
     fallback_path = assets_root_path + "/Isaac/Robots/Unitree/Go2/go2.usd"
-    print(f"[INFO] Using Isaac Sim default Go2 USD model: {fallback_path}")
+    logger.info("Using Isaac Sim default Go2 USD model: %s", fallback_path)
     return fallback_path
 
 
@@ -157,8 +159,8 @@ def _validate_policy_paths(policy_dir: str) -> Tuple[str, str, str]:
         raise FileNotFoundError("Required policy files not found.")
 
     if not os.path.isfile(deploy_path):
-        print(
-            f"[WARN] deploy.yaml not found at {deploy_path}; using env.yaml ranges only"
+        logger.warning(
+            "deploy.yaml not found at %s; using env.yaml ranges only", deploy_path
         )
 
     return policy_path, env_path, deploy_path
@@ -388,7 +390,7 @@ class Go2RosRunner(object):
                     self._keyboard, self._sub_keyboard_event
                 )
             else:
-                print("[WARN] No app window found; keyboard control disabled")
+                logger.warning("No app window found; keyboard control disabled")
                 self._enable_keyboard = False
         self._world.add_physics_callback(
             "go2_ros2_step", callback_fn=self.on_physics_step

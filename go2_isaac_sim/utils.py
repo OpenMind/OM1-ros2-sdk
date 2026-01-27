@@ -1,6 +1,7 @@
 # ruff: noqa: E402
 
 import glob
+import logging
 import math
 import os
 import re
@@ -8,6 +9,8 @@ from typing import Optional, Tuple
 
 import numpy as np
 import torch
+
+logger = logging.getLogger(__name__)
 
 # Constants
 WAREHOUSE_STAGE_PATH = "/World/Warehouse"
@@ -149,7 +152,7 @@ def add_warehouse_environment() -> bool:
     warehouse_xform.ClearXformOpOrder()
     translate_op = warehouse_xform.AddTranslateOp()
     translate_op.Set(Gf.Vec3d(0.0, 0.0, -0.01))
-    print("[INFO] Warehouse environment added successfully")
+    logger.info("Warehouse environment added successfully")
     return True
 
 
@@ -167,7 +170,7 @@ def make_ground_invisible() -> None:
             imageable = UsdGeom.Imageable(prim)
             if imageable:
                 imageable.MakeInvisible()
-                print(f"[INFO] Made {path} invisible")
+                logger.info("Made %s invisible", path)
             for child in prim.GetAllChildren():
                 child_imageable = UsdGeom.Imageable(child)
                 if child_imageable:
@@ -182,7 +185,7 @@ def modify_env_config_for_warehouse(env_cfg, robot_pos, robot_yaw):
             init_state = robot_cfg.init_state
             if hasattr(init_state, "pos"):
                 init_state.pos = robot_pos
-                print(f"[INFO] Robot init pos: {robot_pos}")
+                logger.info("Robot init pos: %s", robot_pos)
             if hasattr(init_state, "rot"):
                 half_yaw = robot_yaw / 2.0
                 init_state.rot = (math.cos(half_yaw), 0.0, 0.0, math.sin(half_yaw))
@@ -190,11 +193,11 @@ def modify_env_config_for_warehouse(env_cfg, robot_pos, robot_yaw):
     if hasattr(env_cfg, "curriculum"):
         if hasattr(env_cfg.curriculum, "terrain_levels"):
             env_cfg.curriculum.terrain_levels = None
-            print("[INFO] Disabled terrain_levels curriculum")
+            logger.info("Disabled terrain_levels curriculum")
 
     if hasattr(env_cfg, "events") and hasattr(env_cfg.events, "push_robot"):
         env_cfg.events.push_robot = None
-        print("[INFO] Disabled push_robot event")
+        logger.info("Disabled push_robot event")
 
     if hasattr(env_cfg, "episode_length_s"):
         env_cfg.episode_length_s = 10000.0
@@ -221,7 +224,7 @@ def set_robot_pose(env, pos, yaw) -> bool:
             if hasattr(articulation, "write_root_pose_to_sim"):
                 pose = torch.cat([pos_tensor, quat_tensor], dim=-1)
                 articulation.write_root_pose_to_sim(pose)
-                print(f"[INFO] Set {name} pose via write_root_pose_to_sim")
+                logger.info("Set %s pose via write_root_pose_to_sim", name)
                 return True
     return False
 
@@ -275,9 +278,11 @@ def setup_sensors_delayed(simulation_app, render_hz: Optional[float] = None) -> 
                 )
                 rgb_camera_hz = max(rgb_candidate) if rgb_candidate else min(divisors)
                 if head_camera_hz != 25 or rgb_camera_hz != 10:
-                    print(
-                        f"[Sensors] Adjusted camera Hz to match render_hz={render_hz_int}: "
-                        f"head={head_camera_hz}, rgb={rgb_camera_hz}"
+                    logger.info(
+                        "[Sensors] Adjusted camera Hz to match render_hz=%s: head=%s, rgb=%s",
+                        render_hz_int,
+                        head_camera_hz,
+                        rgb_camera_hz,
                     )
     try:
         # Camera link
@@ -304,13 +309,13 @@ def setup_sensors_delayed(simulation_app, render_hz: Optional[float] = None) -> 
             xformable.ClearXformOpOrder()
             xformable.AddTranslateOp().Set(Gf.Vec3d(0.0, 0.0, 0.0))
             xformable.AddRotateXYZOp().Set(Gf.Vec3f(0.0, 0.0, 0.0))
-            print("[Sensors] Cleared head_camera transform offset")
+            logger.info("[Sensors] Cleared head_camera transform offset")
 
         head_camera.set_clipping_range(near_distance=0.1, far_distance=100.0)
         head_camera.add_distance_to_image_plane_to_frame()
 
         sensors["head_camera"] = head_camera
-        print("[Sensors] Head camera initialized with depth enabled")
+        logger.info("[Sensors] Head camera initialized with depth enabled")
 
         rgb_camera = Camera(
             prim_path=RGB_CAMERA_PRIM,
@@ -328,16 +333,13 @@ def setup_sensors_delayed(simulation_app, render_hz: Optional[float] = None) -> 
             xformable.ClearXformOpOrder()
             xformable.AddTranslateOp().Set(Gf.Vec3d(0.0, 0.0, 0.0))
             xformable.AddRotateXYZOp().Set(Gf.Vec3f(0.0, 0.0, 0.0))
-            print("[Sensors] Cleared rgb_camera transform offset")
+            logger.info("[Sensors] Cleared rgb_camera transform offset")
 
         rgb_camera.set_clipping_range(near_distance=0.1, far_distance=100.0)
         sensors["rgb_camera"] = rgb_camera
-        print("[Sensors] RGB camera initialized")
+        logger.info("[Sensors] RGB camera initialized")
     except Exception as e:
-        print(f"[WARN] Camera setup failed: {e}")
-        import traceback
-
-        traceback.print_exc()
+        logger.warning("Camera setup failed: %s", e, exc_info=True)
 
     # IMU
     try:
@@ -350,9 +352,9 @@ def setup_sensors_delayed(simulation_app, render_hz: Optional[float] = None) -> 
         )
         imu_sensor.initialize()
         sensors["imu"] = imu_sensor
-        print("[Sensors] IMU initialized")
+        logger.info("[Sensors] IMU initialized")
     except Exception as e:
-        print(f"[WARN] IMU setup failed: {e}")
+        logger.warning("IMU setup failed: %s", e, exc_info=True)
 
     # LiDARs
     try:
@@ -375,9 +377,9 @@ def setup_sensors_delayed(simulation_app, render_hz: Optional[float] = None) -> 
             if result and len(result) > 1 and result[1]:
                 lidar_prim = result[1]
                 lidar_path = lidar_prim.GetPath().pathString
-                print(f"[Sensors] L1 LiDAR created at: {lidar_path}")
+                logger.info("[Sensors] L1 LiDAR created at: %s", lidar_path)
             else:
-                print(f"[WARN] L1 LiDAR creation returned: {result}")
+                logger.warning("[Sensors] L1 LiDAR creation returned: %s", result)
                 lidar_path = None
         if lidar_path:
             l1_rp = rep.create.render_product(
@@ -391,12 +393,9 @@ def setup_sensors_delayed(simulation_app, render_hz: Optional[float] = None) -> 
                 queueSize=10,
             )
             pc_writer.attach([l1_rp])
-            print("[Sensors] L1 LiDAR -> /unitree_lidar")
+            logger.info("[Sensors] L1 LiDAR -> /unitree_lidar")
     except Exception as e:
-        print(f"[WARN] L1 LiDAR setup failed: {e}")
-        import traceback
-
-        traceback.print_exc()
+        logger.warning("L1 LiDAR setup failed: %s", e, exc_info=True)
 
     try:
         ensure_link_xform(
@@ -425,9 +424,9 @@ def setup_sensors_delayed(simulation_app, render_hz: Optional[float] = None) -> 
             if result and len(result) > 1 and result[1]:
                 lidar_prim = result[1]
                 lidar_path = lidar_prim.GetPath().pathString
-                print(f"[Sensors] 2D LiDAR created at: {lidar_path}")
+                logger.info("[Sensors] 2D LiDAR created at: %s", lidar_path)
             else:
-                print(f"[WARN] 2D LiDAR creation returned: {result}")
+                logger.warning("[Sensors] 2D LiDAR creation returned: %s", result)
                 lidar_path = None
         if lidar_path:
             velo_rp = rep.create.render_product(
@@ -438,12 +437,9 @@ def setup_sensors_delayed(simulation_app, render_hz: Optional[float] = None) -> 
                 frameId="laser", nodeNamespace="", topicName="/scan", queueSize=10
             )
             scan_writer.attach([velo_rp])
-            print("[Sensors] 2D LiDAR -> /scan")
+            logger.info("[Sensors] 2D LiDAR -> /scan")
     except Exception as e:
-        print(f"[WARN] 2D LiDAR setup failed: {e}")
-        import traceback
-
-        traceback.print_exc()
+        logger.warning("2D LiDAR setup failed: %s", e, exc_info=True)
 
     simulation_app.update()
     return sensors
@@ -456,7 +452,7 @@ def setup_static_tfs(simulation_app) -> None:
 
     graph_path = "/StaticTFGraph"
     if is_prim_path_valid(graph_path):
-        print("[ROS2] Static TF graph already exists")
+        logger.info("[ROS2] Static TF graph already exists")
         return
 
     # Define all the static transforms for Go2
@@ -519,8 +515,9 @@ def setup_static_tfs(simulation_app) -> None:
         },
     )
 
-    print(
-        f"[ROS2] Static TFs published for {len(static_transforms)} transforms (staticPublisher=True)"
+    logger.info(
+        "[ROS2] Static TFs published for %s transforms (staticPublisher=True)",
+        len(static_transforms),
     )
     simulation_app.update()
 
@@ -534,7 +531,7 @@ def setup_odom_publisher(simulation_app) -> None:
 
     graph_path = "/OdomPublisherGraph"
     if is_prim_path_valid(graph_path):
-        print("[ROS2] Odom publisher graph already exists")
+        logger.info("[ROS2] Odom publisher graph already exists")
         return
 
     og.Controller.edit(
@@ -582,7 +579,7 @@ def setup_odom_publisher(simulation_app) -> None:
         graph_path + "/OdomPub.inputs:angularVelocity"
     )
 
-    print("[ROS2] Odometry publisher -> /odom")
+    logger.info("[ROS2] Odometry publisher -> /odom")
     simulation_app.update()
 
 
@@ -630,7 +627,7 @@ def setup_color_camera_publishers(sensors, simulation_app) -> None:
                     topicName="/camera/realsense2_camera_node/color/image_raw",
                 )
                 w.attach([rp])
-                print(
+                logger.info(
                     "[ROS2] Color camera -> /camera/realsense2_camera_node/color/image_raw"
                 )
 
@@ -643,7 +640,7 @@ def setup_color_camera_publishers(sensors, simulation_app) -> None:
                     topicName="/camera/image_raw",
                 )
                 w2.attach([rp])
-                print("[ROS2] Color camera -> /camera/image_raw")
+                logger.info("[ROS2] Color camera -> /camera/image_raw")
 
                 # Also publish to /rgb_image for Gazebo compatibility
                 w3 = rep.writers.get(rv + "ROS2PublishImage")
@@ -654,10 +651,12 @@ def setup_color_camera_publishers(sensors, simulation_app) -> None:
                     topicName="/rgb_image",
                 )
                 w3.attach([rp])
-                print("[ROS2] Color camera -> /rgb_image")
+                logger.info("[ROS2] Color camera -> /rgb_image")
 
             except Exception as e:
-                print(f"[WARN] Color camera publisher setup failed: {e}")
+                logger.warning(
+                    "Color camera publisher setup failed: %s", e, exc_info=True
+                )
 
 
 def setup_color_camerainfo_graph(
@@ -675,7 +674,7 @@ def setup_color_camerainfo_graph(
 
     graph_path = "/ColorCameraInfoGraph"
     if is_prim_path_valid(graph_path):
-        print("[ROS2] Color CameraInfo graph already exists")
+        logger.info("[ROS2] Color CameraInfo graph already exists")
         return True
 
     cx = width / 2.0
@@ -722,7 +721,7 @@ def setup_color_camerainfo_graph(
         },
     )
 
-    print(f"[ROS2] Color CameraInfo -> {topic}")
+    logger.info("[ROS2] Color CameraInfo -> %s", topic)
     simulation_app.update()
     return True
 
@@ -735,7 +734,7 @@ def setup_joint_states_publisher(simulation_app) -> None:
 
     graph_path = "/JointStatesGraph"
     if is_prim_path_valid(graph_path):
-        print("[ROS2] Joint states graph already exists")
+        logger.info("[ROS2] Joint states graph already exists")
         return
 
     ROBOT_ARTICULATION_PATH = f"{GO2_STAGE_PATH}/base"
@@ -772,8 +771,9 @@ def setup_joint_states_publisher(simulation_app) -> None:
         targetPrimPaths=[ROBOT_ARTICULATION_PATH],
     )
 
-    print(
-        f"[ROS2] Joint states publisher -> /joint_states (articulation: {ROBOT_ARTICULATION_PATH})"
+    logger.info(
+        "[ROS2] Joint states publisher -> /joint_states (articulation: %s)",
+        ROBOT_ARTICULATION_PATH,
     )
     simulation_app.update()
 
@@ -807,7 +807,7 @@ def setup_ros_publishers(sensors, simulation_app) -> None:
                 ],
             },
         )
-    print("[ROS2] Clock publisher -> /clock")
+    logger.info("[ROS2] Clock publisher -> /clock")
 
     # IMU publisher
     if not is_prim_path_valid("/ImuGraph"):
@@ -844,7 +844,7 @@ def setup_ros_publishers(sensors, simulation_app) -> None:
                 ],
             },
         )
-    print("[ROS2] IMU publisher -> imu/data")
+    logger.info("[ROS2] IMU publisher -> imu/data")
 
     # Camera publishers with CameraInfo
     if sensors.get("head_camera"):
@@ -864,7 +864,7 @@ def setup_ros_publishers(sensors, simulation_app) -> None:
                     topicName="camera/color/image_raw",
                 )
                 w.attach([rp])
-                print("[ROS2] RGB camera -> camera/color/image_raw")
+                logger.info("[ROS2] RGB camera -> camera/color/image_raw")
 
                 # Depth Image
                 rv = syn_data.SyntheticData.convert_sensor_type_to_rendervar(
@@ -878,7 +878,7 @@ def setup_ros_publishers(sensors, simulation_app) -> None:
                     topicName="camera/depth/image_rect_raw",
                 )
                 w.attach([rp])
-                print("[ROS2] Depth camera -> camera/depth/image_rect_raw")
+                logger.info("[ROS2] Depth camera -> camera/depth/image_rect_raw")
 
                 # For compatibility
                 w_rs_depth = rep.writers.get(rv + "ROS2PublishImage")
@@ -889,7 +889,7 @@ def setup_ros_publishers(sensors, simulation_app) -> None:
                     topicName="/camera/realsense2_camera_node/depth/image_rect_raw",
                 )
                 w_rs_depth.attach([rp])
-                print(
+                logger.info(
                     "[ROS2] Depth camera -> /camera/realsense2_camera_node/depth/image_rect_raw"
                 )
 
@@ -905,15 +905,14 @@ def setup_ros_publishers(sensors, simulation_app) -> None:
                         topicName="camera/depth/image_colorized",
                     )
                     depth_colorized.attach([rp])
-                    print("[ROS2] Depth colorized -> camera/depth/image_colorized")
+                    logger.info(
+                        "[ROS2] Depth colorized -> camera/depth/image_colorized"
+                    )
                 except Exception as de:
-                    print(f"[INFO] Normalized depth writer not available: {de}")
+                    logger.info("Normalized depth writer not available: %s", de)
 
             except Exception as e:
-                print(f"[WARN] Camera publisher setup failed: {e}")
-                import traceback
-
-                traceback.print_exc()
+                logger.warning("Camera publisher setup failed: %s", e, exc_info=True)
 
     # Setup static TFs for sensor frames
     setup_static_tfs(simulation_app)
@@ -951,7 +950,7 @@ def setup_ros_publishers(sensors, simulation_app) -> None:
         odom_graph_path + "/TF.inputs:translation"
     )
     odom_tf_rot_attr = og.Controller.attribute(odom_graph_path + "/TF.inputs:rotation")
-    print("[ROS2] Odom TF -> /tf (odom->base_link)")
+    logger.info("[ROS2] Odom TF -> /tf (odom->base_link)")
 
     simulation_app.update()
 
@@ -971,7 +970,7 @@ def setup_depth_camerainfo_graph(
 
     graph_path = "/DepthCameraInfoGraph"
     if is_prim_path_valid(graph_path):
-        print("[ROS2] Depth CameraInfo graph already exists")
+        logger.info("[ROS2] Depth CameraInfo graph already exists")
         return True
 
     cx = width / 2.0
@@ -1056,8 +1055,13 @@ def setup_depth_camerainfo_graph(
         },
     )
 
-    print(
-        f"[ROS2] Depth CameraInfo -> {topic} (width={width}, height={height}, fx={fx}, fy={fy})"
+    logger.info(
+        "[ROS2] Depth CameraInfo -> %s (width=%s, height=%s, fx=%s, fy=%s)",
+        topic,
+        width,
+        height,
+        fx,
+        fy,
     )
     simulation_app.update()
     return True
@@ -1085,14 +1089,14 @@ def find_robot_articulation_path():
     usd_context = omni.usd.get_context()
     usd_stage = usd_context.get_stage()
 
-    print("[DEBUG] Searching for articulation roots in stage...")
+    logger.debug("Searching for articulation roots in stage...")
 
     # Find all ArticulationRootAPI prims
     articulations = []
     for prim in usd_stage.Traverse():
         if prim.HasAPI(UsdPhysics.ArticulationRootAPI):
             articulations.append(prim.GetPath().pathString)
-            print(f"  [ArticulationRoot] {prim.GetPath().pathString}")
+            logger.debug("  [ArticulationRoot] %s", prim.GetPath().pathString)
 
     # Check for common robot paths
     common_paths = [
@@ -1103,29 +1107,33 @@ def find_robot_articulation_path():
         "/World/robot",
     ]
 
-    print("\n[DEBUG] Checking common paths:")
+    logger.debug("Checking common paths:")
     for path in common_paths:
         prim = usd_stage.GetPrimAtPath(path)
         if prim and prim.IsValid():
             has_arctic = prim.HasAPI(UsdPhysics.ArticulationRootAPI)
-            print(f"  {path}: exists={True}, has_articulation_api={has_arctic}")
+            logger.debug("  %s: exists=True, has_articulation_api=%s", path, has_arctic)
         else:
-            print(f"  {path}: exists=False")
+            logger.debug("  %s: exists=False", path)
 
     # List children of /World/envs/env_0/Robot if it exists
     robot_prim = usd_stage.GetPrimAtPath("/World/envs/env_0/Robot")
     if robot_prim and robot_prim.IsValid():
-        print("\n[DEBUG] Children of /World/envs/env_0/Robot:")
+        logger.debug("Children of /World/envs/env_0/Robot:")
         for child in robot_prim.GetChildren():
             has_arctic = child.HasAPI(UsdPhysics.ArticulationRootAPI)
-            print(f"  {child.GetPath().pathString} (articulation={has_arctic})")
+            logger.debug(
+                "  %s (articulation=%s)", child.GetPath().pathString, has_arctic
+            )
 
     # List direct children of /World/envs/env_0
     env_prim = usd_stage.GetPrimAtPath("/World/envs/env_0")
     if env_prim and env_prim.IsValid():
-        print("\n[DEBUG] Children of /World/envs/env_0:")
+        logger.debug("Children of /World/envs/env_0:")
         for child in env_prim.GetChildren():
             has_arctic = child.HasAPI(UsdPhysics.ArticulationRootAPI)
-            print(f"  {child.GetPath().pathString} (articulation={has_arctic})")
+            logger.debug(
+                "  %s (articulation=%s)", child.GetPath().pathString, has_arctic
+            )
 
     return articulations
