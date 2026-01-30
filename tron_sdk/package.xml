@@ -11,7 +11,7 @@
   <depend>tf2_ros</depend>
   <depend>sensor_msgs</depend>
   <depend>geometry_msgs</depend>
-  <depend>unitree_common</depend>
+  <depend>om_common</depend>
   <depend>rplidar_ros</depend>
   <depend>topic_tools</depend>
   <depend>launch</depend>
