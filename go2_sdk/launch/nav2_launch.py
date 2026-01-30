@@ -383,7 +383,7 @@ def generate_launch_description():
             # )
             # Custom Lidar Localization Node
             Node(
-                package="go2_sdk",
+                package="unitree_common",
                 executable="go2_lidar_localization",
                 name="go2_lidar_localization",
                 output="screen",

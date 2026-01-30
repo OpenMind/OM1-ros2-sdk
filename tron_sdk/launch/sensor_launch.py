@@ -1,18 +1,13 @@
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.conditions import IfCondition, UnlessCondition
-from launch.substitutions import (
-    AndSubstitution,
-    EnvironmentVariable,
-    LaunchConfiguration,
-    NotSubstitution,
-)
+from launch.conditions import UnlessCondition
+from launch.substitutions import EnvironmentVariable, LaunchConfiguration
 from launch_ros.actions import Node
 
 
 def generate_launch_description():
     """
-    Generate the launch description for Go2 robot sensors.
+    Generate the launch description for TRON robot sensors.
     """
     channel_type = LaunchConfiguration(
         "channel_type",
@@ -39,10 +34,6 @@ def generate_launch_description():
     scan_mode = LaunchConfiguration(
         "scan_mode",
         default=EnvironmentVariable("SCAN_MODE", default_value="Sensitivity"),
-    )
-    go2_camera_stream_enable = LaunchConfiguration(
-        "go2_camera_stream_enable",
-        default=EnvironmentVariable("GO2_CAMERA_STREAM_ENABLE", default_value="true"),
     )
     d435_camera_stream_enable = LaunchConfiguration(
         "d435_camera_stream_enable",
@@ -89,11 +80,6 @@ def generate_launch_description():
                 "scan_mode",
                 default_value=scan_mode,
                 description="Specifying scan mode of lidar (can be set via SCAN_MODE environment variable)",
-            ),
-            DeclareLaunchArgument(
-                "go2_camera_stream_enable",
-                default_value=go2_camera_stream_enable,
-                description="Enable or disable the go2_camera_stream node (can be set via GO2_CAMERA_STREAM_ENABLE environment variable)",
             ),
             DeclareLaunchArgument(
                 "d435_camera_stream_enable",
@@ -190,16 +176,16 @@ def generate_launch_description():
                 respawn_delay=2.0,
                 condition=UnlessCondition(use_sim),
             ),
-            Node(
-                package="topic_tools",
-                executable="relay",
-                name="odom_relay",
-                arguments=["/utlidar/robot_odom", "/odom"],
-                output="screen",
-                respawn=True,
-                respawn_delay=2.0,
-                condition=UnlessCondition(use_sim),
-            ),
+            # Node(
+            #     package="topic_tools",
+            #     executable="relay",
+            #     name="odom_relay",
+            #     arguments=["/utlidar/robot_odom", "/odom"],
+            #     output="screen",
+            #     respawn=True,
+            #     respawn_delay=2.0,
+            #     condition=UnlessCondition(use_sim),
+            # ),
             Node(
                 package="unitree_common",
                 executable="d435_obstacle_dector",
@@ -227,26 +213,22 @@ def generate_launch_description():
                 parameters=[{"use_sim_time": use_sim, "assume_optical_frame": use_sim}],
             ),
             Node(
-                package="go2_sdk",
-                executable="go2_camera_stream",
-                name="go2_camera_stream",
+                package="tron_sdk",
+                executable="tron_odom",
+                name="tron_odom",
                 output="screen",
                 respawn=True,
                 respawn_delay=2.0,
-                condition=IfCondition(
-                    AndSubstitution(go2_camera_stream_enable, NotSubstitution(use_sim))
-                ),
+                condition=UnlessCondition(use_sim),
             ),
             Node(
-                package="go2_sdk",
-                executable="d435_camera_stream",
-                name="d435_camera_stream",
+                package="tron_sdk",
+                executable="cmd_vel_to_tron",
+                name="cmd_vel_to_tron",
                 output="screen",
                 respawn=True,
                 respawn_delay=2.0,
-                condition=IfCondition(
-                    AndSubstitution(d435_camera_stream_enable, NotSubstitution(use_sim))
-                ),
+                condition=UnlessCondition(use_sim),
             ),
         ]
     )
