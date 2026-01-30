@@ -181,7 +181,6 @@ class AprilTagNode(Node):
 
     def imu_callback(self, msg: Imu):
         """Handle incoming IMU message and update yaw."""
-
         q = msg.orientation
         yaw = self.quaternion_to_yaw(q)
 
@@ -201,7 +200,6 @@ class AprilTagNode(Node):
 
     def quaternion_to_yaw(self, q):
         """Convert quaternion orientation to yaw angle in radians."""
-        
         siny_cosp = 2.0 * (q.w * q.z + q.x * q.y)
         cosy_cosp = 1.0 - 2.0 * (q.y * q.y + q.z * q.z)
         return math.atan2(siny_cosp, cosy_cosp)
@@ -229,7 +227,6 @@ class AprilTagNode(Node):
         Main control loop called at fixed frequency.
         Turns 180 degrees once ID=1 is detected 5 times.
         """
-
         if not self.yaw_initialized:
             self.send_stop_command()
             return
