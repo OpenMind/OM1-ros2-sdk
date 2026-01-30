@@ -36,6 +36,7 @@ setup(
             "go2_battery_monitor = go2_auto_dock.go2_dock:main",
             "go2_nav_to_charger = go2_auto_dock.go2_nav_to_charger:main",
             "go2_camera_publisher = go2_auto_dock.go2_camera_with_adjustable_publisher:main",
+            "go2_initial_turn_welcome = go2_auto_dock.go2_initial_turn_welcome:main",
         ],
     },
 )
