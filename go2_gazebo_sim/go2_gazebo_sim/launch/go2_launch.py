@@ -82,11 +82,18 @@ def generate_launch_description():
     declare_gui = DeclareLaunchArgument(
         "gui", default_value="true", description="Use gui"
     )
-    declare_world_init_x = DeclareLaunchArgument("world_init_x", default_value="0.0")
-    declare_world_init_y = DeclareLaunchArgument("world_init_y", default_value="0.0")
+    # declare_world_init_x = DeclareLaunchArgument("world_init_x", default_value="0.0")
+    # declare_world_init_y = DeclareLaunchArgument("world_init_y", default_value="0.0")
+    # declare_world_init_z = DeclareLaunchArgument("world_init_z", default_value="0.375")
+    # declare_world_init_heading = DeclareLaunchArgument(
+    #     "world_init_heading", default_value="0.0"
+    # )
+
+    declare_world_init_x = DeclareLaunchArgument("world_init_x", default_value="-1.0")
+    declare_world_init_y = DeclareLaunchArgument("world_init_y", default_value="-2.0")
     declare_world_init_z = DeclareLaunchArgument("world_init_z", default_value="0.375")
     declare_world_init_heading = DeclareLaunchArgument(
-        "world_init_heading", default_value="0.0"
+        "world_init_heading", default_value="3.14159"
     )
     declare_description_path = DeclareLaunchArgument(
         "go2_description_path",
@@ -457,6 +464,15 @@ def generate_launch_description():
         condition=IfCondition(use_sim_time),
     )
 
+    # AprilTag detector and welcome mode node
+    apriltag_welcome_node = Node(
+        package="go2_auto_dock",
+        executable="go2_initial_turn_welcome",
+        name="apriltag_detector",
+        output="screen",
+        parameters=[{"use_sim_time": use_sim_time}],
+    )
+
     # Nodes for teleoperation
     joy = Node(package="joy", executable="joy_node", name="joy_node", output="screen")
     # RB is the enable button
@@ -532,6 +548,8 @@ def generate_launch_description():
             point_cloud_xyz_sim,
             # Camera relay (sim)
             camera_relay_node,
+            # AprilTag detector and welcome mode node
+            apriltag_welcome_node,
             # Teleoperation nodes
             joy,
             joy_teleops_node,
