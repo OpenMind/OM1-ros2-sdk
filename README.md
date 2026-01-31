@@ -51,7 +51,7 @@ git clone https://github.com/OpenMind/OM1-ros2-sdk.git
 ```bash
 cd ~/ros2_ws
 rosdep install --from-paths . --ignore-src -r -y
-pip install -r requirements.txt
+pip install -e .
 ```
 
 ### 3. Build the workspace
@@ -66,7 +66,12 @@ source install/setup.bash
 For detailed setup instructions for each robot, see the robot-specific guides linked above.
 
 Quick example for Unitree Go2:
+
 ```bash
+# Launch sensor nodes
+ros2 launch go2_sdk sensor_launch.py
+
+# Launch SLAM system
 ros2 launch go2_sdk slam_launch.py
 ```
 
