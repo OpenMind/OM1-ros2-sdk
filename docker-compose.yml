@@ -37,7 +37,8 @@ services:
       - CYCLONEDDS_INTERFACE=${CYCLONEDDS_INTERFACE:-eno1}
       - OM_API_KEY=${OM_API_KEY:-}
       - OM_API_KEY_ID=${OM_API_KEY_ID:-}
-    command: "ros2 launch go2_sdk sensor_launch.py"
+      - ROBOT_TYPE=${ROBOT_TYPE:-go2}
+    command: "ros2 launch $${ROBOT_TYPE}_sdk sensor_launch.py"
     volumes:
       - /dev:/dev
       - /run/udev:/run/udev:ro
