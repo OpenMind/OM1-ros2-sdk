@@ -3,7 +3,6 @@ import json
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Joy
-
 from unitree_api.msg import Request, RequestHeader, RequestIdentity
 
 

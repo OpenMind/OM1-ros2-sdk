@@ -8,10 +8,10 @@ from enum import IntEnum
 import rclpy
 from geometry_msgs.msg import PoseStamped
 from rclpy.node import Node
-
-from om_api.msg import OMChargingStatus
 from unitree_api.msg import Request, RequestHeader, RequestIdentity
 from unitree_go.msg import LowState
+
+from om_api.msg import OMChargingStatus
 
 
 class ChargingStatus(IntEnum):

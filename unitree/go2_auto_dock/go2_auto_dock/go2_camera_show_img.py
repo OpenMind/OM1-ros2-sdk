@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 import rclpy
 from rclpy.node import Node
-
 from unitree_api.msg import Request, RequestHeader, RequestIdentity, Response
 
 

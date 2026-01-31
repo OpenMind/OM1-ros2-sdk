@@ -3,7 +3,6 @@ import json
 import rclpy
 from geometry_msgs.msg import Twist
 from rclpy.node import Node
-
 from unitree_api.msg import Request, RequestHeader, RequestIdentity
 
 
