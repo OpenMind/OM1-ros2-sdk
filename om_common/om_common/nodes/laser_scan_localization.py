@@ -123,13 +123,13 @@ def create_gradient_mask_numba(size):
     return mask
 
 
-class Go2LidarLocalizationNode(Node):
+class LaserScanLocalizationNode(Node):
     """
-    A ROS2 node that performs lidar-based localization for the Go2 robot.
+    A ROS2 node that performs laser scan-based localization using scan matching.
     """
 
     def __init__(self):
-        super().__init__("go2_lidar_localization")
+        super().__init__("laser_scan_localization")
 
         # Declare parameters
         self.declare_parameter("base_frame", "base_link")
@@ -1204,7 +1204,7 @@ class Go2LidarLocalizationNode(Node):
 
 def main(args=None):
     """
-    Main function to run the Go2 Lidar Localization Node.
+    Main function to run the laser scan localization node.
 
     Parameters
     ----------
@@ -1212,7 +1212,7 @@ def main(args=None):
         Command line arguments
     """
     rclpy.init(args=args)
-    node = Go2LidarLocalizationNode()
+    node = LaserScanLocalizationNode()
 
     try:
         rclpy.spin(node)

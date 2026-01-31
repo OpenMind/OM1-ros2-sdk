@@ -383,9 +383,9 @@ def generate_launch_description():
             # )
             # Custom Lidar Localization Node
             Node(
-                package="go2_sdk",
-                executable="go2_lidar_localization",
-                name="go2_lidar_localization",
+                package="om_common",
+                executable="laser_scan_localization",
+                name="laser_scan_localization",
                 output="screen",
                 parameters=[
                     {
