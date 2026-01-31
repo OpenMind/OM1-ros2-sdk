@@ -1,4 +1,4 @@
-name: Unitree Go2 ROS2 SDK Release
+name: OM1 ROS2 SDK Release
 on:
   push:
     branches: main
