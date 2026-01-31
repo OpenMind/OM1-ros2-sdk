@@ -3,10 +3,9 @@ from collections import deque
 
 import numpy as np
 import rclpy
+from frontier_explorer.costmap_client import Costmap2DClient
 from geometry_msgs.msg import Point
 from nav_msgs.msg import MapMetaData
-
-from frontier_explorer.costmap_client import Costmap2DClient
 
 # Constants
 NO_INFORMATION = -1

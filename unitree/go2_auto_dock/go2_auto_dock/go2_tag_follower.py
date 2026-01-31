@@ -6,7 +6,6 @@ from time import time
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32MultiArray
-
 from unitree_api.msg import Request, RequestHeader, RequestIdentity
 
 
@@ -34,31 +33,27 @@ class Go2TagFollower(Node):
         # Control targets
         self.forward_target_slow = -0.70
         self.last_move_time = 0
-        self.move_delay = 1.8  # 1.8  # Wait 1 second between moves
+        self.move_delay = 1.8  # Wait 1 second between moves
         self.forward_target_min = -0.43  # want z_forward in [-0.35, -0.30]
         self.forward_target_max = -0.30
         self.forward_target_center = -0.30  # ideal target
 
-        self.right_target_min = (
-            -0.045
-        )  # -0.07 #-0.045  #-0.045    # want x_right in [-0.05, 0.05]
-        self.right_target_max = 0.07  # 0.045
+        self.right_target_min = -0.045  # want x_right in [-0.05, 0.05]
+        self.right_target_max = 0.045
 
-        self.yaw_angle_min = (
-            -10.0
-        )  # heading to right, need to turn counterclock wise (+)
-        self.yaw_angle_max = 10.0  # heading to left, need to turn clock wise (-)
+        self.yaw_angle_min = -10.0  # left
+        self.yaw_angle_max = 10.0  # right
 
-        # ===== Timing / state =====
+        # Timing / state
 
         # 1 Hz control/supervisor loop
-        # self.create_timer(0.8, self.timer_callback)  # 0.5 = 2 hz
-        self.create_timer(1.5, self.timer_callback)  # 0.5 = 2 hz
-        # self.create_timer(2.0, self.timer_callback)  # Too slow
+        self.create_timer(0.8, self.timer_callback)  # 0.5 = 2 hz
 
         # ~5 degrees per step (used as angular velocity for ~1s → ~5°)
         self.small_turn_rad = math.radians(5)  # ≈ 0.087 rad
 
+        # Optional: put robot into balance-stand at startup
+        self.send_balance_stand_command()
         self.get_logger().info(
             "Go2TagFollower initialized (1 Hz, ~5° turns, 30s timeout)"
         )
@@ -83,20 +78,6 @@ class Go2TagFollower(Node):
         self.increase_back_step_after_continuous_back = (
             0.3  # to prevent getting stuck in the same sport
         )
-        self.continuous_side_count = 0  # when reach 3 times, move large sidewalk
-        self.side_walk_than_yaw_control = True
-
-        # add bearing angle limit and also turn larger angle after twice
-        self.continuous_turn_count = 0
-
-        # Initial search state
-        self.initial_search = True
-        self.search_start_time = time()  # mark the time we start searching
-        self.search_timeout = 100.0  # seconds
-
-        self.waiting_after_move = False
-        self.wait_start_time = 0.0
-        self.wait_duration = 1.0  # seconds
 
     def _publish_request(self, api_id: int, params_dict=None):
         """
@@ -105,9 +86,9 @@ class Go2TagFollower(Node):
         Parameters
         ----------
         api_id : int
-            The Unitree Sport API ID.
+            The API ID for the request.
         params_dict : dict, optional
-            The parameters to include in the request (default is None).
+            The parameters to include in the request as a dictionary.
         """
         req = Request()
         req.header = RequestHeader()
@@ -125,11 +106,11 @@ class Go2TagFollower(Node):
         Parameters
         ----------
         x : float
-            Forward/backward speed (m/s).
+            Forward/backward velocity (m/s).
         y : float
-            Left/right speed (m/s).
+            Left/right velocity (m/s).
         yaw_rad_s : float
-            Yaw rate (radians/second).
+            Yaw angular velocity (radians/s).
         """
         params = {"x": float(x), "y": float(y), "z": float(yaw_rad_s)}
         self._publish_request(self.ROBOT_SPORT_API_ID_MOVE, params)
@@ -160,12 +141,13 @@ class Go2TagFollower(Node):
 
     def tag_callback(self, msg: Float32MultiArray):
         """
-        Callback function for AprilTag relative position messages.
+        Callback for receiving AprilTag relative position data.
 
         Parameters
         ----------
-        msg : std_msgs.msg.Float32MultiArray
-            The incoming AprilTag relative position message.
+        msg : Float32MultiArray
+            The incoming message containing tag relative data.
+            Expected format: [x_right, y_up, z_forward, yaw_error, current_hz, see_target, bearing_angle_deg_high_accurate, see_angle]
         """
         # Save latest tag and update timestamp
         self.latest_tag = (
@@ -173,65 +155,25 @@ class Go2TagFollower(Node):
         )  # [x_right, y_up, z_forward, yaw_error, self.current_hz, see_target, self.bearing_angle_deg_high_accurate, see_angle]   8 parameters
         see_target = msg.data[5]
         if int(see_target) == 1:
-            self.last_seen_time = time()  # see the target, update time
+            self.last_seen_time = time()
             self.continuous_back_count = 0
 
     def timer_callback(self):
         """
-        Timer callback to process tag data and command robot movement.
+        Main control loop called at fixed frequency.
         """
         now = time()
 
-        # --- Check for tag loss ---
         time_since_seen = now - self.last_seen_time
 
         if self.arrived:
             return
 
-        # --- Initial clockwise search state ---
-        if self.initial_search:
-            # Check if AprilTag is detected - STOP IMMEDIATELY
-            if self.latest_tag is not None and int(self.latest_tag[5]) == 1:
-                self.get_logger().info("AprilTag detected! Ending initial search.")
-                self.send_stop_command()
-                self.initial_search = False
-                return
-
-            # Check for timeout
-            if now - self.search_start_time > self.search_timeout:
-                self.get_logger().warn(
-                    "Initial search timed out after 100s. Stopping search."
-                )
-                self.send_stop_command()
-                self.initial_search = False
-                return
-
-            # Continue searching
-            if not self.waiting_after_move:
-                # Send rotate command
-                yaw_rate = -math.radians(30)  # clockwise
-                self.send_move(0.0, 0.0, yaw_rate)
-                self.get_logger().info(
-                    f"Initial search: rotating clockwise... {now - self.search_start_time:.2f} / {self.search_timeout:.2f} sec"
-                )
-                # Start waiting
-                self.wait_start_time = now
-                self.waiting_after_move = True
-                return
-            else:
-                # Check if wait time passed
-                if now - self.wait_start_time >= self.wait_duration:
-                    self.get_logger().info(
-                        "Initial search: wait for image processing..."
-                    )
-                    self.waiting_after_move = False  # ready for next move
-                return
-
-        # Search policy when tag is lost during tracking
         if self.latest_tag is None or time_since_seen > self.lost_threshold:
             self.get_logger().info(
-                f"Tag lost - performing search maneuver {time_since_seen:.2f} > {self.lost_threshold:.2f}"
+                f"Tag lost = performing search maneuver {time_since_seen:.2f} > {self.lost_threshold:.2f}"
             )
+            # self.send_move(-0.05, 0.0, self.small_turn_rad if int(now) % 2 == 0 else -self.small_turn_rad)
 
             # Compute turn (left = -, right = +)
             direction = -1 if self.search_turn_side == 0 else 1
@@ -254,15 +196,12 @@ class Go2TagFollower(Node):
                     self.continuous_back_count += 1  # reset after see the marker again
 
                     if (
-                        self.continuous_back_count >= 4
-                    ):  # fourth time, move bigger step to escape
+                        self.continuous_back_count == 3
+                    ):  # third time, move bigger step to escape
                         self.send_move(
                             -self.increase_back_step_after_continuous_back, 0.0, 0.0
                         )
-                        self.get_logger().info(
-                            "Move larger back, because continuous back, prevent stucking"
-                        )
-                        self.continuous_back_count = 0
+                        print("move larger back, because continuous back")
                     else:
                         self.send_move(-self.backward_after_max, 0.0, 0.0)
 
@@ -270,7 +209,6 @@ class Go2TagFollower(Node):
                     self.search_turn_side = 0  # state machine
             return
 
-        # Extract latest measurements
         (
             x_right,
             _,
@@ -282,7 +220,7 @@ class Go2TagFollower(Node):
             see_angle,
         ) = self.latest_tag
 
-        if int(see_target) == 0:  # equal 0, no target count
+        if int(see_target) == 0:  # eqaupl 0 , no target count
             self.get_logger().info(
                 f"Tag lost = {time_since_seen:.2f} > {self.lost_threshold:.2f}"
             )
@@ -292,46 +230,49 @@ class Go2TagFollower(Node):
             f"Target: x_right={x_right:.2f}, z_forward={z_forward:.2f}, bearing_degree={bearing_angle:.2f}"
         )
 
-        # Forward/backward control
         x_cmd = 0.0
 
-        if z_forward < self.forward_target_min:  # < -0.43   move forward
-            error = self.forward_target_center - z_forward
-            # e.g. -0.35 - (-0.50) = 0.15        -0.35 - (-0.60) = 0.25
+        if z_forward < self.forward_target_min:  # < -0.43
+            # x_cmd = 0.23
+            error = (
+                self.forward_target_center - z_forward
+            )  # e.g. -0.35 - (-0.50) = 0.15        -0.35 - (-0.60) = 0.25
             x_cmd = error  # directly use error, or clamp to max step
-            x_cmd = min(x_cmd, 0.215)  # if last step keep gesture for 2 second    0.23
+            x_cmd = min(x_cmd, 0.23)  # if last step keep geasture for 2 second    0.25
 
             if (
                 z_forward > self.forward_target_slow
             ):  # slow down when the robot is close to the target, less than  -0.7 ~ -0.43
                 if now - self.last_move_time < self.move_delay:
-                    self.get_logger().info("Slow Down Close to Target")
+                    print("Slow Down Close to Target")
                     return  # Skip this control cycle
                 self.last_move_time = now  # send command, update current time
 
-        elif z_forward > self.forward_target_max:  # move backward
+        elif z_forward > self.forward_target_max:
             x_cmd = -0.2
-            self.send_move(x_cmd, 0.0, 0.0)
-            self.get_logger().info("backward")
-            return
 
         # Lateral control
         y_cmd = 0.0
         if x_right < self.right_target_min:
-            y_cmd = -0.21
-            self.continuous_side_count += 1
+            y_cmd = -0.2
         elif x_right > self.right_target_max:
-            y_cmd = 0.21
-            self.continuous_side_count += 1
-        else:
-            self.continuous_side_count = 0
+            y_cmd = 0.2
 
-        if self.continuous_side_count >= 5:
-            y_cmd = y_cmd * 1.3  # (0.2*1.3=0.26)
-            self.continuous_side_count = 0
-            self.get_logger().info(
-                "Move larger side, because continuous side move, prevent stucking"
-            )
+        # Yaw control
+        yaw_cmd_radian = 0.0
+        if int(see_angle) == 1:  # see target
+            if abs(bearing_angle) > 10.0:
+                x_cmd = 0.5 * x_cmd
+                yaw_cmd_degree = max(
+                    -9, min(9, 0.8 * bearing_angle)
+                )  # proportional adjustment change 30 degree to radian
+                yaw_cmd_radian = math.radians(yaw_cmd_degree) * (
+                    -1
+                )  # because unitree turn left is positive
+            # if  bearing_angle < self.yaw_angle_min:
+            #     yaw_cmd_radian = np.deg2rad(-30)
+            # elif bearing_angle  > self.yaw_angle_max:
+            #     yaw_cmd_radian = np.deg2rad(30)
 
         # Check if inside charging zone
         in_forward = self.forward_target_min <= z_forward <= self.forward_target_max
@@ -339,35 +280,22 @@ class Go2TagFollower(Node):
 
         if in_forward and in_right:
             self.zone_counter += 1
-            self.get_logger().info(
+            self.get_logger().debug(
                 f"In charging zone candidate ({self.zone_counter}/3)"
             )
-            if self.zone_counter >= 2:  # 3
+            if self.zone_counter >= 3:
                 self.get_logger().info("Confirmed arrival in charging zone!")
+                self.send_stop_command()
                 self.send_sit_command()
                 self.arrived = True
-                self.get_logger().info("Docking complete. Exiting...")
-                # Exit the node so the parent process can clean up
-                raise SystemExit
             return
         else:
             if self.zone_counter > 0:
                 self.get_logger().debug("Left zone → reset counter")
             self.zone_counter = 0
 
-        # Send movement command with waiting mechanism
-        if not self.waiting_after_move:
-            # Send move command
-            self.send_move(x_cmd, y_cmd, 0.0)
-
-            self.wait_start_time = now
-            self.waiting_after_move = True
-        else:
-            # Check if wait time passed
-            if now - self.wait_start_time >= self.wait_duration + 2:
-                self.get_logger().info("Moving: wait for image processing...")
-                self.waiting_after_move = False  # ready for next move
-                return
+        # Send movement command
+        self.send_move(x_cmd, y_cmd, yaw_cmd_radian)
 
 
 def main(args=None):
