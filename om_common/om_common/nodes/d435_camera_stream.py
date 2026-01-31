@@ -245,6 +245,9 @@ class D435RGBStream(Node):
 
                 if self.restart_needed or not self._is_process_healthy():
                     self.get_logger().warning("Restarting FFmpeg process...")
+
+                    time.sleep(1)
+
                     self.setup_ffmpeg_stream()
 
                     if not self._is_process_healthy():
