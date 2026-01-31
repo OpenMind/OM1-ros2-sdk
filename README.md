@@ -42,7 +42,7 @@ You can find the 3D model for the mount in the `docs` directory of this reposito
 
 ```bash
 cd ~/ros2_ws/src
-git clone https://github.com/OpenmindAGI/unitree_sdk.git
+git clone https://github.com/OpenMind/om1_ros2_sdk.git
 ```
 
 ### 2. Install dependencies:
@@ -222,7 +222,7 @@ zenoh-bridge-ros2dds -c ./zenoh/zenoh_bridge_config.json5
 
 ## Production Guidance
 
-We release the Docker image `openmindagi/unitree_sdk`, which provides the full ROS2 system for running the Unitree Go2 SDK.
+We release the Docker image `openmindagi/om1_ros2_sdk`, which provides the full ROS2 system for running the Unitree Go2 SDK.
 
 ### Starting the System
 
