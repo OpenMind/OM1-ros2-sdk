@@ -18,11 +18,11 @@ setup(
     license="MIT",
     entry_points={
         "console_scripts": [
-            "d435_obstacle_dector = om_common.d435_obstacle_dector:main",
-            "d435_camera_stream = om_common.d435_camera_stream:main",
-            "laser_scan_localization = om_common.laser_scan_localization:main",
-            "local_traversability_node = om_common.local_traversability_node:main",
-            "om_path = om_common.om_path:main",
+            "d435_obstacle_dector = om_common.nodes.d435_obstacle_dector:main",
+            "d435_camera_stream = om_common.nodes.d435_camera_stream:main",
+            "laser_scan_localization = om_common.nodes.laser_scan_localization:main",
+            "local_traversability_node = om_common.nodes.local_traversability_node:main",
+            "om_path = om_common.nodes.om_path:main",
         ],
     },
 )
