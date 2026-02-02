@@ -44,6 +44,10 @@ def get_sensor_launch():
         "d435_camera_stream_enable",
         default=EnvironmentVariable("D435_CAMERA_STREAM_ENABLE", default_value="true"),
     )
+    local_traversability_enable = LaunchConfiguration(
+        "local_traversability_enable",
+        default=EnvironmentVariable("LOCAL_TRAVERSABILITY_ENABLE", default_value="true"),
+    )
     use_sim = LaunchConfiguration(
         "use_sim",
         default=EnvironmentVariable("USE_SIM", default_value="false"),
@@ -89,6 +93,11 @@ def get_sensor_launch():
             "d435_camera_stream_enable",
             default_value=d435_camera_stream_enable,
             description="Enable or disable the d435_camera_stream node (can be set via D435_CAMERA_STREAM_ENABLE environment variable)",
+        ),
+        DeclareLaunchArgument(
+            "local_traversability_enable",
+            default_value=local_traversability_enable,
+            description="Enable or disable the local_traversability_node (can be set via LOCAL_TRAVERSABILITY_ENABLE environment variable)",
         ),
         DeclareLaunchArgument(
             "use_sim",
@@ -205,6 +214,7 @@ def get_sensor_launch():
             respawn=True,
             respawn_delay=2.0,
             parameters=[{"use_sim_time": use_sim, "assume_optical_frame": use_sim}],
+            condition=IfCondition(local_traversability_enable),
         ),
         Node(
             package="om_common",
