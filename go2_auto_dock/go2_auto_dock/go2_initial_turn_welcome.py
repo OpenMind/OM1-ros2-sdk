@@ -1,3 +1,5 @@
+import json
+import math
 import os
 import time
 
@@ -10,15 +12,12 @@ from ament_index_python.packages import get_package_share_directory
 from cv_bridge import CvBridge
 from geometry_msgs.msg import PoseStamped, TransformStamped
 from rclpy.node import Node
-from sensor_msgs.msg import Image
+from sensor_msgs.msg import Image, Imu
 from std_msgs.msg import Float32MultiArray, String
 from tf2_ros import TransformBroadcaster
 
 from unitree_api.msg import Request, RequestHeader, RequestIdentity
-import json
-import math
 
-from sensor_msgs.msg import Imu
 
 class AprilTagNode(Node):
     """
@@ -43,17 +42,16 @@ class AprilTagNode(Node):
         self.turn_180_sent = False
         self.turning_180 = False
         self.turn_start_time = None
-        
+
         # Subscribe to welcome message
         self.create_subscription(String, "/om/welcome", self.welcome_callback, 10)
-        
+
         # Unitree SPORT publisher
         self.ROBOT_SPORT_API_ID_MOVE = 1008
         self.ROBOT_SPORT_API_ID_STOPMOVE = 1009
         self.sport_pub = self.create_publisher(Request, "/api/sport/request", 10)
         # 1 Hz control/supervisor loop
         self.create_timer(0.8, self.timer_callback)  # 0.5 = 2 hz
-
 
         # --- IMU yaw ---
         self.current_yaw = None
@@ -71,7 +69,6 @@ class AprilTagNode(Node):
         self.target_yaw = None
 
         self.create_subscription(Imu, "/imu/data", self.imu_callback, 10)
-
 
         # ------------------------------
 
@@ -130,7 +127,9 @@ class AprilTagNode(Node):
         self.bearing_angle = 0.0
         self.bearing_angle_deg_high_accurate = 0.0  # High accuracy bearing angle
 
-        self.get_logger().info("The go2_initial_turn_welcome.py successfully run and listening to OM1 mode topic")
+        self.get_logger().info(
+            "The go2_initial_turn_welcome.py successfully run and listening to OM1 mode topic"
+        )
 
     def _publish_request(self, api_id: int, params_dict=None):
         """
@@ -178,7 +177,6 @@ class AprilTagNode(Node):
         self._publish_request(self.ROBOT_SPORT_API_ID_STOPMOVE)
         self.get_logger().info("STOP command sent")
 
-
     def imu_callback(self, msg: Imu):
         """Handle incoming IMU message and update yaw."""
         q = msg.orientation
@@ -220,7 +218,6 @@ class AprilTagNode(Node):
             self.get_logger().info("AprilTag detector ENABLED")
         else:
             self.get_logger().debug(f"Message received: {msg.data}")
-
 
     def timer_callback(self):
         """
@@ -280,9 +277,7 @@ class AprilTagNode(Node):
             return
 
         # --- DEFAULT ---
-        #self.send_stop_command()
-
-
+        # self.send_stop_command()
 
     def load_camera_intrinsics(self, yaml_file: str):
         """
