@@ -19,7 +19,7 @@ class D435ObstacleDector(Node):
         self.cx = None
         self.cy = None
 
-        self.declare_parameter('camera_ahead', 0)
+        self.declare_parameter('camera_ahead', 0.05)
         self.declare_parameter('camera_height', 0.35)
         self.declare_parameter('tilt_angle', 65.0)
         self.declare_parameter('obstacle_threshold', 0.10)
