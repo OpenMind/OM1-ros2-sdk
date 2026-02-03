@@ -50,7 +50,7 @@ def get_sensor_launch():
     )
     d435_camera_ahead = LaunchConfiguration(
         "d435_camera_ahead",
-        default=EnvironmentVariable("D435_CAMERA_AHEAD", default_value="0.07"),
+        default=EnvironmentVariable("D435_CAMERA_AHEAD", default_value="0"),
     )
     d435_camera_height = LaunchConfiguration(
         "d435_camera_height",
