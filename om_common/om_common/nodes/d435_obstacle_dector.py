@@ -64,8 +64,8 @@ class D435ObstacleDector(Node):
         self,
         depth_image: np.ndarray,
         camera_ahead=0.3,
-        camera_height=0.45,
-        tilt_angle=55,
+        camera_height=0.35,
+        tilt_angle=65,
     ):
         """
         Vectorized conversion from image coordinates to world coordinates.
@@ -164,7 +164,7 @@ class D435ObstacleDector(Node):
             depth_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding="passthrough")
 
             obstacle = self.image_to_world_vectorized(
-                depth_image, camera_height=0.45, tilt_angle=55
+                depth_image, camera_height=0.35, tilt_angle=65
             )
 
             self.obstacle = obstacle
