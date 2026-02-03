@@ -19,7 +19,15 @@ class D435ObstacleDector(Node):
         self.cx = None
         self.cy = None
 
-        self.obstacle_threshold = 0.10  # 10cm above ground
+        self.declare_parameter('camera_ahead', 0.3)
+        self.declare_parameter('camera_height', 0.35)
+        self.declare_parameter('tilt_angle', 65.0)
+        self.declare_parameter('obstacle_threshold', 0.10)
+
+        self.camera_ahead = self.get_parameter('camera_ahead').value
+        self.camera_height = self.get_parameter('camera_height').value
+        self.tilt_angle = self.get_parameter('tilt_angle').value
+        self.obstacle_threshold = self.get_parameter('obstacle_threshold').value
         self.obstacle = []
 
         self.depth_subscription = self.create_subscription(
@@ -164,7 +172,10 @@ class D435ObstacleDector(Node):
             depth_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding="passthrough")
 
             obstacle = self.image_to_world_vectorized(
-                depth_image, camera_height=0.35, tilt_angle=65
+                depth_image,
+                camera_ahead=self.camera_ahead,
+                camera_height=self.camera_height,
+                tilt_angle=self.tilt_angle
             )
 
             self.obstacle = obstacle
