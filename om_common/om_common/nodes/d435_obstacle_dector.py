@@ -19,15 +19,15 @@ class D435ObstacleDector(Node):
         self.cx = None
         self.cy = None
 
-        self.declare_parameter('camera_ahead', 0)
-        self.declare_parameter('camera_height', 0.35)
-        self.declare_parameter('tilt_angle', 25.0)
-        self.declare_parameter('obstacle_threshold', 0.10)
+        self.declare_parameter("camera_ahead", 0)
+        self.declare_parameter("camera_height", 0.35)
+        self.declare_parameter("tilt_angle", 25.0)
+        self.declare_parameter("obstacle_threshold", 0.10)
 
-        self.camera_ahead = self.get_parameter('camera_ahead').value
-        self.camera_height = self.get_parameter('camera_height').value
-        self.tilt_angle = self.get_parameter('tilt_angle').value
-        self.obstacle_threshold = self.get_parameter('obstacle_threshold').value
+        self.camera_ahead = self.get_parameter("camera_ahead").value
+        self.camera_height = self.get_parameter("camera_height").value
+        self.tilt_angle = self.get_parameter("tilt_angle").value
+        self.obstacle_threshold = self.get_parameter("obstacle_threshold").value
         self.obstacle = []
 
         self.depth_subscription = self.create_subscription(
@@ -176,7 +176,7 @@ class D435ObstacleDector(Node):
                 depth_image,
                 camera_ahead=self.camera_ahead,
                 camera_height=self.camera_height,
-                tilt_angle=self.tilt_angle
+                tilt_angle=self.tilt_angle,
             )
 
             self.obstacle = obstacle
