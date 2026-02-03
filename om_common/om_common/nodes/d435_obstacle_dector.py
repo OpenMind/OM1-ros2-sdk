@@ -71,7 +71,7 @@ class D435ObstacleDector(Node):
     def image_to_world_vectorized(
         self,
         depth_image: np.ndarray,
-        camera_ahead=0.07,
+        camera_ahead=0.05,
         camera_height=0.35,
         tilt_angle=65,
     ):
