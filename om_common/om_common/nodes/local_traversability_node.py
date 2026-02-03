@@ -1,3 +1,10 @@
+import os
+
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
+
 import math
 
 import geometry_msgs.msg
@@ -121,10 +128,20 @@ class LocalTraversability(Node):
             self.get_parameter("assume_optical_frame").get_parameter_value().bool_value
         )
 
-        # Allow overriding the input topic without changing the code
-        self.declare_parameter("depth_cloud_topic", self.depth_cloud_topic)
-        self.depth_cloud_topic = (
-            self.get_parameter("depth_cloud_topic").get_parameter_value().string_value
+        # Performance knobs
+        self.process_hz = 10.0
+        self.cloud_stride = 4
+        self.max_points = 60000
+        self._rng = np.random.default_rng()
+
+        # mm->m scale detection (do once)
+        self._scale_checked = False
+        self._cloud_scale = 1.0
+
+        # Throttle state
+        self._last_process_ns = 0
+        self._min_process_dt_ns = (
+            int(1e9 / self.process_hz) if self.process_hz > 0 else 0
         )
 
         # Optical -> link axis mapping (REP-103 optical frame to link frame)
@@ -198,7 +215,13 @@ class LocalTraversability(Node):
         msg : sensor_msgs.msg.PointCloud2
             Incoming depth point cloud in camera frame.
         """
-        source_frame = msg.header.frame_id  # camera frame
+        if self._min_process_dt_ns > 0:
+            now_ns = self.get_clock().now().nanoseconds
+            if (now_ns - self._last_process_ns) < self._min_process_dt_ns:
+                return
+            self._last_process_ns = now_ns
+
+        source_frame = msg.header.frame_id
         try:
             points = pc2.read_points_numpy(
                 msg, field_names=("x", "y", "z"), skip_nans=True
@@ -208,28 +231,41 @@ class LocalTraversability(Node):
             return
 
         points = np.asarray(points, dtype=np.float32).reshape(-1, 3)
-
         points = points[np.isfinite(points).all(axis=1)]
         if points.size == 0:
             return
 
-        # Drop invalid/zero-depth rays (common in sim and can create fake "steps")
+        # If data is optical (or frame_id says optical), drop near-zero depth rays using optical Z (forward)
         if self.assume_optical_frame or ("optical" in source_frame):
             points = points[points[:, 2] > 0.05]
             if points.size == 0:
                 return
 
-        # D435/depth_image_proc in your sim looks like millimeters (z ~ 50..700)
-        z_med = float(np.median(points[:, 2]))
-        if z_med > 20.0:  # >20 is impossible for D435 in meters, so it's mm
-            points *= 0.001  # mm -> m
+        # Downsample early
+        if self.cloud_stride > 1 and points.shape[0] > self.cloud_stride:
+            points = points[:: self.cloud_stride]
+
+        if points.shape[0] > self.max_points:
+            idx = self._rng.choice(points.shape[0], self.max_points, replace=False)
+            points = points[idx]
+
+        if points.size == 0:
+            return
+
+        # Detect mm->m scale once (sampled)
+        if not self._scale_checked:
+            step = max(1, points.shape[0] // 2048)
+            z_med = float(np.median(points[::step, 2]))
+            self._cloud_scale = 0.001 if z_med > 20.0 else 1.0
+            self._scale_checked = True
+
+        if self._cloud_scale != 1.0:
+            points = points * self._cloud_scale
 
         self._run_pipeline(points, source_frame)
 
     def _run_pipeline(
-        self,
-        points_in_source_frame: np.ndarray,
-        source_frame: str,
+        self, points_in_source_frame: np.ndarray, source_frame: str
     ) -> None:
         """
         Run the full traversability computation.
@@ -255,10 +291,8 @@ class LocalTraversability(Node):
 
         # Transform camera -> base_link (self.map_frame)
         try:
-            transform_cloud_to_robot = self.tf_buffer.lookup_transform(
-                self.map_frame,
-                source_frame,
-                Time(),
+            tf_msg = self.tf_buffer.lookup_transform(
+                self.map_frame, source_frame, Time()
             )
         except Exception as e:
             self.get_logger().warn(
@@ -266,47 +300,40 @@ class LocalTraversability(Node):
             )
             return
 
-        T_cloud = tf_to_matrix(transform_cloud_to_robot)
+        # Fast transform
+        T = tf_to_matrix(tf_msg)
+        R = T[:3, :3]
+        t = T[:3, 3]
+        points_robot = points_in_source_frame @ R.T + t
 
-        homogeneous_points = np.hstack(
-            [
-                points_in_source_frame,
-                np.ones((points_in_source_frame.shape[0], 1), dtype=np.float32),
-            ]
-        )
-        # Points in robot frame (base_link)
-        points_robot = (T_cloud @ homogeneous_points.T).T[:, :3]  # (N, 3)
-
-        x_robot = points_robot[:, 0]
-        y_robot = points_robot[:, 1]
-        z_robot = points_robot[:, 2]
+        x = points_robot[:, 0]
+        y = points_robot[:, 1]
+        z = points_robot[:, 2]
 
         # ROI filter in robot frame: only points near the robot
         roi_mask = (
-            (x_robot >= 0.0)
-            & (x_robot <= self.max_forward_range_m)
-            & (np.abs(y_robot) <= self.half_lateral_fov_m)
-            & (z_robot >= self.min_height_m)
-            & (z_robot <= self.max_height_m)
+            (x >= 0.0)
+            & (x <= self.max_forward_range_m)
+            & (np.abs(y) <= self.half_lateral_fov_m)
+            & (z >= self.min_height_m)
+            & (z <= self.max_height_m)
         )
 
         if not np.any(roi_mask):
-            # Publish an empty hazard cloud to clear stale data downstream
             self._publish_hazard_cloud2(
-                np.empty((0, 3), dtype=np.float32),
-                self.hazard_points_frame,
+                np.empty((0, 3), dtype=np.float32), self.hazard_points_frame
             )
             return
 
-        x_roi = x_robot[roi_mask]
-        y_roi = y_robot[roi_mask]
-        z_roi = z_robot[roi_mask]
+        x_roi = x[roi_mask]
+        y_roi = y[roi_mask]
+        z_roi = z[roi_mask].astype(np.float32)
 
         # Local grid geometry: 5 m x 5 m centered on base_link
-        grid_size_m = self.local_grid_size_m
         res = self.local_grid_resolution_m
-        grid_width = int(math.ceil(grid_size_m / res))
-        grid_height = int(math.ceil(grid_size_m / res))
+        grid_size_m = self.local_grid_size_m
+        grid_w = int(math.ceil(grid_size_m / res))
+        grid_h = int(math.ceil(grid_size_m / res))
 
         # Origin (bottom-left corner) in map_frame; robot is at the grid center
         origin_x = -grid_size_m / 2.0
@@ -314,11 +341,10 @@ class LocalTraversability(Node):
 
         col = np.floor((x_roi - origin_x) / res).astype(np.int32)
         row = np.floor((y_roi - origin_y) / res).astype(np.int32)
-        in_bounds = (col >= 0) & (col < grid_width) & (row >= 0) & (row < grid_height)
+        in_bounds = (col >= 0) & (col < grid_w) & (row >= 0) & (row < grid_h)
         if not np.any(in_bounds):
             self._publish_hazard_cloud2(
-                np.empty((0, 3), dtype=np.float32),
-                self.hazard_points_frame,
+                np.empty((0, 3), dtype=np.float32), self.hazard_points_frame
             )
             return
 
@@ -326,56 +352,40 @@ class LocalTraversability(Node):
         row = row[in_bounds]
         z_roi = z_roi[in_bounds]
 
-        # Height map: mean z per cell (NaN = unknown / no points)
-        linear_indices = row * grid_width + col
+        # Height map via bincount
+        n_cells = grid_h * grid_w
+        idx_lin = row * grid_w + col
+        cnt = np.bincount(idx_lin, minlength=n_cells).astype(np.int32)
+        sm = np.bincount(idx_lin, weights=z_roi, minlength=n_cells).astype(np.float32)
 
-        sum_z = np.zeros(grid_height * grid_width, dtype=np.float32)
-        count_z = np.zeros(grid_height * grid_width, dtype=np.int32)
+        height_flat = np.full(n_cells, np.nan, dtype=np.float32)
+        valid = cnt > 0
+        height_flat[valid] = sm[valid] / cnt[valid].astype(np.float32)
 
-        np.add.at(sum_z, linear_indices, z_roi.astype(np.float32))
-        np.add.at(count_z, linear_indices, 1)
-
-        valid_cells = count_z > 0
-        height_flat = np.full(grid_height * grid_width, np.nan, dtype=np.float32)
-        height_flat[valid_cells] = sum_z[valid_cells] / count_z[valid_cells].astype(
-            np.float32
-        )
-
-        height_map = height_flat.reshape(grid_height, grid_width)
-        known_mask = ~np.isnan(height_map)
+        height_map = height_flat.reshape(grid_h, grid_w)
+        known = ~np.isnan(height_map)
 
         # Gradients / slope on the height map
+        b = max(1, int(self.slope_baseline_cells))
         dz_dx = np.full_like(height_map, np.nan, dtype=np.float32)
         dz_dy = np.full_like(height_map, np.nan, dtype=np.float32)
-        baseline_cells = max(1, int(self.slope_baseline_cells))
 
-        # orward-backward slope (x direction)
-        if grid_width > 2 * baseline_cells:
-            mid_x_mask = (
-                known_mask[:, 2 * baseline_cells :]
-                & known_mask[:, : -2 * baseline_cells]
-            )
-            dz_dx[:, baseline_cells:-baseline_cells][mid_x_mask] = (
-                height_map[:, 2 * baseline_cells :][mid_x_mask]
-                - height_map[:, : -2 * baseline_cells][mid_x_mask]
-            ) / (2.0 * baseline_cells * res)
+        if grid_w > 2 * b:
+            m = known[:, 2 * b :] & known[:, : -2 * b]
+            dz_dx[:, b:-b][m] = (
+                height_map[:, 2 * b :][m] - height_map[:, : -2 * b][m]
+            ) / (2.0 * b * res)
 
-        # Left-right slope (y direction)
-        if grid_height > 2 * baseline_cells:
-            mid_y_mask = (
-                known_mask[2 * baseline_cells :, :]
-                & known_mask[: -2 * baseline_cells, :]
-            )
-            dz_dy[baseline_cells:-baseline_cells, :][mid_y_mask] = (
-                height_map[2 * baseline_cells :, :][mid_y_mask]
-                - height_map[: -2 * baseline_cells, :][mid_y_mask]
-            ) / (2.0 * baseline_cells * res)
+        if grid_h > 2 * b:
+            m = known[2 * b :, :] & known[: -2 * b, :]
+            dz_dy[b:-b, :][m] = (
+                height_map[2 * b :, :][m] - height_map[: -2 * b, :][m]
+            ) / (2.0 * b * res)
 
         slope_mag = np.sqrt(np.square(dz_dx) + np.square(dz_dy))
         slope_mag_deg = np.degrees(np.arctan(slope_mag))
         slope_fwd_deg = np.degrees(np.arctan(dz_dx))
 
-        # Slope-based hazards
         hazard_slope_down = np.isfinite(slope_fwd_deg) & (
             slope_fwd_deg < -self.max_forward_downhill_deg
         )
@@ -393,71 +403,61 @@ class LocalTraversability(Node):
 
         local_relief = local_max - local_min
         step_hazard = np.zeros_like(height_map, dtype=bool)
-
-        step_hazard[known_mask] = (
-            local_relief[known_mask] > self.local_relief_step_thresh_m
-        )
+        step_hazard[known] = local_relief[known] > self.local_relief_step_thresh_m
 
         # Combine hazards from all sources
         hazard = step_hazard | hazard_slope_down | hazard_slope_mag
 
-        # De-speckle: keep only blobs with area >= (min_hazard_blob_side_m)^2
-        structure = np.ones((3, 3), dtype=bool)
-        labels, num_labels = label(hazard, structure=structure)
-        if num_labels > 0:
+        # Remove tiny blobs
+        labels, num = label(hazard, structure=np.ones((3, 3), dtype=bool))
+        if num > 0:
             sizes = np.bincount(labels.ravel())
-            min_side_cells = max(1, int(round(self.min_hazard_blob_side_m / res)))
-            min_area_cells = min_side_cells * min_side_cells
-            keep = sizes >= min_area_cells
-            keep[0] = False  # background
+            min_side = max(1, int(round(self.min_hazard_blob_side_m / res)))
+            min_area = min_side * min_side
+            keep = sizes >= min_area
+            keep[0] = False
             hazard = keep[labels]
         else:
-            hazard = np.zeros_like(hazard, dtype=bool)
+            hazard[:] = False
 
-        # Optional dilation around hazard blobs (currently zero radius => no-op)
-        inflate_cells = max(0, int(round(self.hazard_inflation_radius_m / res)))
-        if inflate_cells > 0:
-            se = np.ones((2 * inflate_cells + 1, 2 * inflate_cells + 1), dtype=bool)
+        # Inflate (optional)
+        inflate = max(0, int(round(self.hazard_inflation_radius_m / res)))
+        if inflate > 0:
+            se = np.ones((2 * inflate + 1, 2 * inflate + 1), dtype=bool)
             hazard = binary_dilation(hazard, structure=se)
 
-        # Build OccupancyGrid (-1 unknown, 0 free, 100 hazard/occupied)
-        occupancy = np.full((grid_height, grid_width), -1, dtype=np.int8)
-        free_mask = (~hazard) & (~np.isnan(height_map))
-        occupancy[free_mask] = 0
-        occupancy[~free_mask & (~np.isnan(height_map))] = 100
-        occupancy[hazard] = 100
+        # Occupancy grid
+        occ = np.full((grid_h, grid_w), -1, dtype=np.int8)  # unknown
+        occ[known & (~hazard)] = 0  # free
+        occ[known & hazard] = 100  # occupied
 
         grid = OccupancyGrid()
         grid.header = Header()
         grid.header.stamp = self.get_clock().now().to_msg()
         grid.header.frame_id = self.map_frame
         grid.info.resolution = res
-        grid.info.width = grid_width
-        grid.info.height = grid_height
+        grid.info.width = grid_w
+        grid.info.height = grid_h
         grid.info.origin.position.x = origin_x
         grid.info.origin.position.y = origin_y
         grid.info.origin.position.z = 0.0
         grid.info.origin.orientation.w = 1.0
-        grid.data = occupancy.flatten(order="C").tolist()
+        grid.data = occ.flatten(order="C").tolist()
         self.grid_pub.publish(grid)
 
-        # Hazard point clouds (for om_path)
-        hazard_mask = np.array(hazard, dtype=bool)
-
-        # Thin points by stride if desired
+        # Hazard points cloud
+        hazard_mask = hazard.copy()
         if self.hazard_thinning_stride > 1:
-            thinning_mask = np.zeros_like(hazard_mask, dtype=bool)
-            thinning_mask[
-                0 :: self.hazard_thinning_stride,
-                0 :: self.hazard_thinning_stride,
-            ] = True
-            hazard_mask &= thinning_mask
+            thin = np.zeros_like(hazard_mask, dtype=bool)
+            thin[0 :: self.hazard_thinning_stride, 0 :: self.hazard_thinning_stride] = (
+                True
+            )
+            hazard_mask &= thin
 
         rr, cc = np.where(hazard_mask)
         if rr.size == 0:
             self._publish_hazard_cloud2(
-                np.empty((0, 3), dtype=np.float32),
-                self.hazard_points_frame,
+                np.empty((0, 3), dtype=np.float32), self.hazard_points_frame
             )
             return
 
@@ -465,11 +465,8 @@ class LocalTraversability(Node):
         yg = origin_y + (rr.astype(np.float32) + 0.5) * res
         zg = np.zeros_like(xg, dtype=np.float32)
 
-        hazard_points_robot = np.stack([xg, yg, zg], axis=1)
-        self._publish_hazard_cloud2(
-            hazard_points_robot.astype(np.float32),
-            self.hazard_points_frame,
-        )
+        hazard_pts = np.stack([xg, yg, zg], axis=1).astype(np.float32)
+        self._publish_hazard_cloud2(hazard_pts, self.hazard_points_frame)
 
 
 def main():
