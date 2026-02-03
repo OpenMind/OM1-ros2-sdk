@@ -19,7 +19,7 @@ class D435ObstacleDector(Node):
         self.cx = None
         self.cy = None
 
-        self.declare_parameter('camera_ahead', 0.3)
+        self.declare_parameter('camera_ahead', 0.07)
         self.declare_parameter('camera_height', 0.35)
         self.declare_parameter('tilt_angle', 65.0)
         self.declare_parameter('obstacle_threshold', 0.10)
@@ -71,7 +71,7 @@ class D435ObstacleDector(Node):
     def image_to_world_vectorized(
         self,
         depth_image: np.ndarray,
-        camera_ahead=0.3,
+        camera_ahead=0.07,
         camera_height=0.35,
         tilt_angle=65,
     ):
@@ -83,7 +83,7 @@ class D435ObstacleDector(Node):
         depth_image : np.ndarray
             The depth image as a 2D numpy array.
         camera_ahead : float
-            The forward offset of the camera from the robot base (in meters).
+            The forward offset of the camera from the lidar (in meters).
         camera_height : float
             The height of the camera from the ground (in meters).
         tilt_angle : float

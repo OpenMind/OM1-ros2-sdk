@@ -50,7 +50,7 @@ def get_sensor_launch():
     )
     d435_camera_ahead = LaunchConfiguration(
         "d435_camera_ahead",
-        default=EnvironmentVariable("D435_CAMERA_AHEAD", default_value="0.3"),
+        default=EnvironmentVariable("D435_CAMERA_AHEAD", default_value="0.07"),
     )
     d435_camera_height = LaunchConfiguration(
         "d435_camera_height",
@@ -114,7 +114,7 @@ def get_sensor_launch():
         DeclareLaunchArgument(
             "d435_camera_ahead",
             default_value=d435_camera_ahead,
-            description="Forward offset of the camera from robot base in meters (can be set via D435_CAMERA_AHEAD+- environment variable)",
+            description="Forward offset of the camera from lidar in meters (can be set via D435_CAMERA_AHEAD environment variable)",
         ),
         DeclareLaunchArgument(
             "d435_camera_height",
