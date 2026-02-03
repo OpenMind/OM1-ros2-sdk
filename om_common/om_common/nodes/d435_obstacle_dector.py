@@ -19,7 +19,15 @@ class D435ObstacleDector(Node):
         self.cx = None
         self.cy = None
 
-        self.obstacle_threshold = 0.10  # 10cm above ground
+        self.declare_parameter("camera_ahead", 0)
+        self.declare_parameter("camera_height", 0.35)
+        self.declare_parameter("tilt_angle", 25.0)
+        self.declare_parameter("obstacle_threshold", 0.10)
+
+        self.camera_ahead = self.get_parameter("camera_ahead").value
+        self.camera_height = self.get_parameter("camera_height").value
+        self.tilt_angle = self.get_parameter("tilt_angle").value
+        self.obstacle_threshold = self.get_parameter("obstacle_threshold").value
         self.obstacle = []
 
         self.depth_subscription = self.create_subscription(
@@ -63,9 +71,9 @@ class D435ObstacleDector(Node):
     def image_to_world_vectorized(
         self,
         depth_image: np.ndarray,
-        camera_ahead=0.3,
-        camera_height=0.45,
-        tilt_angle=55,
+        camera_ahead=0,
+        camera_height=0.35,
+        tilt_angle=25,
     ):
         """
         Vectorized conversion from image coordinates to world coordinates.
@@ -75,7 +83,7 @@ class D435ObstacleDector(Node):
         depth_image : np.ndarray
             The depth image as a 2D numpy array.
         camera_ahead : float
-            The forward offset of the camera from the robot base (in meters).
+            The forward offset of the camera from the lidar (in meters).
         camera_height : float
             The height of the camera from the ground (in meters).
         tilt_angle : float
@@ -106,12 +114,13 @@ class D435ObstacleDector(Node):
         # only use world_z to filter obstacles
         points_camera = np.vstack([cam_x, cam_y, cam_z])
 
-        theta = np.radians(tilt_angle)
+        # rotate around X-axis by -tilt_angle
+        theta = np.radians(-tilt_angle)
         R_tilt = np.array(
             [
                 [1, 0, 0],
-                [0, np.cos(theta), np.sin(theta)],
-                [0, -np.sin(theta), np.cos(theta)],
+                [0, np.cos(theta), -np.sin(theta)],
+                [0, np.sin(theta), np.cos(theta)],
             ]
         )
 
@@ -129,7 +138,7 @@ class D435ObstacleDector(Node):
         camera_position_world = np.array([[camera_ahead], [0], [camera_height]])
         points_world = points_world + camera_position_world
 
-        world_z = points_world[2]  # up
+        world_z = points_world[2]
 
         obstacle_mask = world_z > self.obstacle_threshold
         if not np.any(obstacle_mask):
@@ -164,7 +173,10 @@ class D435ObstacleDector(Node):
             depth_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding="passthrough")
 
             obstacle = self.image_to_world_vectorized(
-                depth_image, camera_height=0.45, tilt_angle=55
+                depth_image,
+                camera_ahead=self.camera_ahead,
+                camera_height=self.camera_height,
+                tilt_angle=self.tilt_angle,
             )
 
             self.obstacle = obstacle
