@@ -32,7 +32,11 @@ def generate_launch_description():
     )
 
     entities = get_sensor_launch()
-    entities = [e for e in entities if not (hasattr(e, 'node_name') and e.node_name == 'd435_obstacle_dector')]
+    entities = [
+        e
+        for e in entities
+        if not (hasattr(e, "node_name") and e.node_name == "d435_obstacle_dector")
+    ]
 
     entities.extend(
         [
