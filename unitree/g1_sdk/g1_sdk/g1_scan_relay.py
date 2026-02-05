@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
+from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 from sensor_msgs.msg import LaserScan
 
+
 class ScanRelay(Node):
+    """
+    ROS2 node that subscribes to /scan_raw, reverses the LaserScan data, and republishes to /scan.
+    """
+
     def __init__(self):
-        super().__init__('scan_relay')
+        super().__init__("scan_relay")
 
         qos_sub = QoSProfile(depth=10)
         qos_sub.reliability = ReliabilityPolicy.BEST_EFFORT
@@ -16,10 +21,20 @@ class ScanRelay(Node):
         qos_pub.reliability = ReliabilityPolicy.RELIABLE
         qos_pub.durability = DurabilityPolicy.VOLATILE
 
-        self.sub = self.create_subscription(LaserScan, '/scan_raw', self.callback, qos_sub)
-        self.pub = self.create_publisher(LaserScan, '/scan', qos_pub)
+        self.sub = self.create_subscription(
+            LaserScan, "/scan_raw", self.callback, qos_sub
+        )
+        self.pub = self.create_publisher(LaserScan, "/scan", qos_pub)
 
-    def callback(self, msg):
+    def callback(self, msg: LaserScan):
+        """
+        Callback function that reverses the LaserScan data and republishes it.
+
+        Parameters
+        ----------
+        msg : LaserScan
+            The incoming LaserScan message from /scan_raw.
+        """
         msg.ranges = list(reversed(msg.ranges))
         msg.intensities = list(reversed(msg.intensities))
 
@@ -28,10 +43,15 @@ class ScanRelay(Node):
 
         self.pub.publish(msg)
 
+
 def main():
+    """
+    ROS2 node that subscribes to /scan_raw, reverses the LaserScan data, and republishes to /scan.
+    """
     rclpy.init()
     node = ScanRelay()
     rclpy.spin(node)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

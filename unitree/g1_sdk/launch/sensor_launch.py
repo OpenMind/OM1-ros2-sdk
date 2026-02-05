@@ -125,7 +125,7 @@ def generate_launch_description():
                 output="screen",
                 respawn=True,
                 respawn_delay=2.0,
-            )
+            ),
         ]
     )
 
