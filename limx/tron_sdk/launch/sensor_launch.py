@@ -35,7 +35,11 @@ def generate_launch_description():
     entities = [
         e
         for e in entities
-        if not (isinstance(e, Node) and hasattr(e, "_Node__node_name") and e._Node__node_name == "d435_obstacle_dector")
+        if not (
+            isinstance(e, Node)
+            and hasattr(e, "_Node__node_name")
+            and e._Node__node_name == "d435_obstacle_dector"
+        )
     ]
 
     entities.extend(
