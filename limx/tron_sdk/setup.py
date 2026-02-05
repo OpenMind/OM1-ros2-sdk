@@ -24,6 +24,7 @@ setup(
         "console_scripts": [
             "cmd_vel_to_tron = tron_sdk.tron_movement:main",
             "tron_odom = tron_sdk.tron_odom:main",
+            "insta360_stream = tron_sdk.insta360_stream:main",
         ],
     },
 )
