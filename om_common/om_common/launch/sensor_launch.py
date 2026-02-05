@@ -203,7 +203,7 @@ def get_sensor_launch():
                 "--roll",
                 "0",
                 "--pitch",
-                "0.610865",
+                "0.436332313",
                 "--yaw",
                 "0",
                 "--frame-id",
