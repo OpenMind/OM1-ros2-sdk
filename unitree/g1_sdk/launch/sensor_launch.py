@@ -8,7 +8,7 @@ from om_common.launch.sensor_launch import get_sensor_launch
 
 def generate_launch_description():
     """
-    Generate the launch description for TRON robot sensors.
+    Generate the launch description for Go2 robot sensors.
     """
     d435_camera_ahead = LaunchConfiguration(
         "d435_camera_ahead",
@@ -16,7 +16,7 @@ def generate_launch_description():
     )
     d435_camera_height = LaunchConfiguration(
         "d435_camera_height",
-        default=EnvironmentVariable("D435_CAMERA_HEIGHT", default_value="0.85"),
+        default=EnvironmentVariable("D435_CAMERA_HEIGHT", default_value="1.05"),
     )
     d435_tilt_angle = LaunchConfiguration(
         "d435_tilt_angle",
@@ -32,6 +32,7 @@ def generate_launch_description():
     )
 
     entities = get_sensor_launch()
+
     entities = [
         e
         for e in entities
@@ -39,7 +40,11 @@ def generate_launch_description():
             isinstance(e, Node)
             and hasattr(e, "_Node__node_name")
             and e._Node__node_name
-            in ["d435_obstacle_dector", "static_transform_publisher_camera"]
+            in [
+                "static_transform_publisher_camera",
+                "rplidar_node",
+                "d435_obstacle_dector",
+            ]
         )
     ]
 
@@ -89,31 +94,37 @@ def generate_launch_description():
                 respawn_delay=2.0,
             ),
             Node(
-                package="tron_sdk",
-                executable="tron_odom",
-                name="tron_odom",
-                output="screen",
-                respawn=True,
-                respawn_delay=2.0,
-                condition=UnlessCondition(use_sim),
+                package="pointcloud_to_laserscan",
+                executable="pointcloud_to_laserscan_node",
+                name="pointcloud_to_laserscan_node",
+                remappings=[
+                    ("cloud_in", "/utlidar/cloud_livox_mid360"),
+                    ("scan", "/scan_raw"),
+                ],
+                parameters=[
+                    {
+                        "target_frame": "livox_frame",
+                        "transform_tolerance": 0.01,
+                        "min_height": 0.05,
+                        "max_height": 0.8,
+                        "angle_min": -3.14159,
+                        "angle_max": 3.14159,
+                        "angle_increment": 0.017,
+                        "scan_time": 0.05,
+                        "range_min": 0.15,
+                        "range_max": 30.0,
+                        "use_inf": True,
+                        "inf_epsilon": 1.0,
+                    }
+                ],
             ),
             Node(
-                package="tron_sdk",
-                executable="cmd_vel_to_tron",
-                name="cmd_vel_to_tron",
+                package="g1_sdk",
+                executable="g1_scan_relay",
+                name="g1_scan_relay",
                 output="screen",
                 respawn=True,
                 respawn_delay=2.0,
-                condition=UnlessCondition(use_sim),
-            ),
-            Node(
-                package="tron_sdk",
-                executable="insta360_stream",
-                name="insta360_stream",
-                output="screen",
-                respawn=True,
-                respawn_delay=2.0,
-                condition=UnlessCondition(use_sim),
             ),
         ]
     )
