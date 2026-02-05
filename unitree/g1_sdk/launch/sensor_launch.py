@@ -97,7 +97,10 @@ def generate_launch_description():
                 package="pointcloud_to_laserscan",
                 executable="pointcloud_to_laserscan_node",
                 name="pointcloud_to_laserscan_node",
-                remappings=[("cloud_in", "/utlidar/cloud_livox_mid360")],
+                remappings=[
+                    ("cloud_in", "/utlidar/cloud_livox_mid360"),
+                    ("scan", "/scan_raw"),
+                ],
                 parameters=[
                     {
                         "target_frame": "livox_frame",
@@ -106,7 +109,7 @@ def generate_launch_description():
                         "max_height": 0.8,
                         "angle_min": -3.14159,
                         "angle_max": 3.14159,
-                        "angle_increment": 0.00436,
+                        "angle_increment": 0.017,
                         "scan_time": 0.05,
                         "range_min": 0.15,
                         "range_max": 30.0,
@@ -115,6 +118,14 @@ def generate_launch_description():
                     }
                 ],
             ),
+            Node(
+                package="g1_sdk",
+                executable="g1_scan_relay",
+                name="g1_scan_relay",
+                output="screen",
+                respawn=True,
+                respawn_delay=2.0,
+            )
         ]
     )
 
