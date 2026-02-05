@@ -2,7 +2,7 @@
 """
 OpenMind BrainPack Insta360 Stream RTSP Bridge.
 
-Connects to Insta360 Stream via RTSP, receives video frames,and publishes to ROS2 /insta360/camera/image_raw topic.
+Connects to Insta360 Stream via RTSP, receives video frames,and publishes to ROS2 /camera/insta360/image_raw topic.
 
 Usage:
     ros2 run <package> insta360_stream.py
@@ -21,7 +21,7 @@ from sensor_msgs.msg import Image
 
 
 class Insta360Stream(Node):
-    """ROS2 node that bridges Insta360 Stream RTSP to ROS2 /insta360/camera/image_raw topic."""
+    """ROS2 node that bridges Insta360 Stream RTSP to ROS2 /camera/insta360/image_rawtopic."""
 
     def __init__(self):
         super().__init__("insta360_stream")
@@ -36,7 +36,7 @@ class Insta360Stream(Node):
         self.bridge = CvBridge()
 
         self.image_publisher = self.create_publisher(
-            Image, "/insta360/camera/image_raw", 10
+            Image, "/camera/insta360/image_raw", 10
         )
 
         self.cap = None
@@ -47,7 +47,7 @@ class Insta360Stream(Node):
 
         self.get_logger().info("Insta360 Stream Bridge started")
         self.get_logger().info(f"RTSP URL: {self.rtsp_url}")
-        self.get_logger().info("Publishing to: /insta360/camera/image_raw")
+        self.get_logger().info("Publishing to: /camera/insta360/image_raw")
 
     def initialize_capture(self):
         """Initialize video capture from RTSP stream."""
