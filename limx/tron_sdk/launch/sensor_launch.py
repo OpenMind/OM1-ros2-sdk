@@ -109,6 +109,15 @@ def generate_launch_description():
                 respawn_delay=2.0,
                 condition=UnlessCondition(use_sim),
             ),
+            Node(
+                package="tron_sdk",
+                executable="insta360_stream",
+                name="insta360_stream",
+                output="screen",
+                respawn=True,
+                respawn_delay=2.0,
+                condition=UnlessCondition(use_sim),
+            ),
         ]
     )
 
