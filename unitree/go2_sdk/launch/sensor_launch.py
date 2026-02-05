@@ -33,7 +33,8 @@ def generate_launch_description():
         for e in entities
         if not (
             isinstance(e, Node)
-            and getattr(e, "_Node__name", None) == "static_transform_publisher_camera"
+            and hasattr(e, "_Node__node_name")
+            and e._Node__node_name == "static_transform_publisher_camera"
         )
     ]
 
