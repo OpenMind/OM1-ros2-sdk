@@ -1,12 +1,6 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
-from launch.conditions import IfCondition, UnlessCondition
-from launch.substitutions import (
-    AndSubstitution,
-    EnvironmentVariable,
-    LaunchConfiguration,
-    NotSubstitution,
-)
+from launch.conditions import UnlessCondition
+from launch.substitutions import EnvironmentVariable, LaunchConfiguration
 from launch_ros.actions import Node
 
 from om_common.launch.sensor_launch import get_sensor_launch
@@ -45,7 +39,12 @@ def generate_launch_description():
         if not (
             isinstance(e, Node)
             and hasattr(e, "_Node__node_name")
-            and e._Node__node_name in ["static_transform_publisher_camera", "rplidar_node", "d435_obstacle_dector"]
+            and e._Node__node_name
+            in [
+                "static_transform_publisher_camera",
+                "rplidar_node",
+                "d435_obstacle_dector",
+            ]
         )
     ]
 
@@ -95,24 +94,26 @@ def generate_launch_description():
                 respawn_delay=2.0,
             ),
             Node(
-                package='pointcloud_to_laserscan',
-                executable='pointcloud_to_laserscan_node',
-                name='pointcloud_to_laserscan_node',
-                remappings=[('cloud_in', '/utlidar/cloud_livox_mid360')],
-                parameters=[{
-                    'target_frame': 'livox_frame',
-                    'transform_tolerance': 0.01,
-                    'min_height': 0.05,
-                    'max_height': 0.8,
-                    'angle_min': -3.14159,
-                    'angle_max': 3.14159,
-                    'angle_increment': 0.00436,
-                    'scan_time': 0.05,
-                    'range_min': 0.15,
-                    'range_max': 30.0,
-                    'use_inf': True,
-                    'inf_epsilon': 1.0,
-                }],
+                package="pointcloud_to_laserscan",
+                executable="pointcloud_to_laserscan_node",
+                name="pointcloud_to_laserscan_node",
+                remappings=[("cloud_in", "/utlidar/cloud_livox_mid360")],
+                parameters=[
+                    {
+                        "target_frame": "livox_frame",
+                        "transform_tolerance": 0.01,
+                        "min_height": 0.05,
+                        "max_height": 0.8,
+                        "angle_min": -3.14159,
+                        "angle_max": 3.14159,
+                        "angle_increment": 0.00436,
+                        "scan_time": 0.05,
+                        "range_min": 0.15,
+                        "range_max": 30.0,
+                        "use_inf": True,
+                        "inf_epsilon": 1.0,
+                    }
+                ],
             ),
         ]
     )
