@@ -11,11 +11,13 @@ Usage:
     python3 insta360_stream.py
 """
 
+import time
+
 import cv2
 import rclpy
+from cv_bridge import CvBridge
 from rclpy.node import Node
 from sensor_msgs.msg import Image
-from cv_bridge import CvBridge
 
 
 class Insta360Stream(Node):
@@ -43,9 +45,9 @@ class Insta360Stream(Node):
         timer_period = 1.0 / self.fps
         self.timer = self.create_timer(timer_period, self.capture_and_publish)
 
-        self.get_logger().info(f"Insta360 Stream Bridge started")
+        self.get_logger().info("Insta360 Stream Bridge started")
         self.get_logger().info(f"RTSP URL: {self.rtsp_url}")
-        self.get_logger().info(f"Publishing to: /insta360/camera/image_raw")
+        self.get_logger().info("Publishing to: /insta360/camera/image_raw")
 
     def initialize_capture(self):
         """Initialize video capture from RTSP stream."""
@@ -59,6 +61,7 @@ class Insta360Stream(Node):
             return True
         except Exception as e:
             self.get_logger().error(f"Error initializing capture: {e}")
+            time.sleep(5)
             return False
 
     def capture_and_publish(self):
@@ -72,7 +75,9 @@ class Insta360Stream(Node):
             ret, frame = self.cap.read()
 
             if not ret:
-                self.get_logger().warn("Failed to capture frame, attempting reconnection...")
+                self.get_logger().warn(
+                    "Failed to capture frame, attempting reconnection..."
+                )
                 self.cap.release()
                 self.initialize_capture()
                 return
@@ -110,4 +115,3 @@ def main(args=None):
 
 if __name__ == "__main__":
     main()
-
