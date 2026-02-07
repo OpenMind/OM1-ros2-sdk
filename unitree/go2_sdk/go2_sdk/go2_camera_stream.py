@@ -34,7 +34,7 @@ class Go2CameraStreamNode(Node):
         self.VIDEO_API_ID_GETIMAGESAMPLE = 1001
 
         # Camera parameters
-        self.width = 680
+        self.width = 640
         self.height = 480
         self.estimated_fps = 15
 
