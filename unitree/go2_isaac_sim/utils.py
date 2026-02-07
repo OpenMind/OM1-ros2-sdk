@@ -22,8 +22,9 @@ GO2_STAGE_PATH = "/World/envs/env_0/Robot"
 # Sensor prim paths on Go2 base
 IMU_PRIM = f"{GO2_STAGE_PATH}/base/imu_link"
 CAMERA_LINK_PRIM = f"{GO2_STAGE_PATH}/base/camera_link"
-HEAD_CAMERA_PRIM = f"{CAMERA_LINK_PRIM}/head_camera"
-RGB_CAMERA_PRIM = f"{CAMERA_LINK_PRIM}/rgb_camera"
+REALSENSE_DEPTH_CAMERA_PRIM = f"{CAMERA_LINK_PRIM}/realsense_depth_camera"
+REALSENSE_RGB_CAMERA_PRIM = f"{CAMERA_LINK_PRIM}/realsense_rgb_camera"
+GO2_RGB_CAMERA_PRIM = f"{CAMERA_LINK_PRIM}/go2_rgb_camera"
 L1_LINK_PRIM = f"{GO2_STAGE_PATH}/base/lidar_l1_link"
 L1_LIDAR_PRIM = f"{L1_LINK_PRIM}/lidar_l1_rtx"
 VELO_BASE_LINK_PRIM = f"{GO2_STAGE_PATH}/base/velodyne_base_link"
@@ -259,187 +260,150 @@ def setup_sensors_delayed(simulation_app, render_hz: Optional[float] = None) -> 
     usd_context = omni.usd.get_context()
     usd_stage = usd_context.get_stage()
 
-    sensors = {"head_camera": None, "rgb_camera": None, "imu": None}
+    sensors = {"realsense_depth_camera": None, "realsense_rgb_camera": None, "go2_rgb_camera": None, "imu": None}
 
-    # Cameras
-    head_camera_hz = 25
-    rgb_camera_hz = 10
-    if render_hz is not None and render_hz > 0:
-        render_hz_int = int(round(render_hz))
-        if render_hz_int > 0:
-            divisors = [
-                d for d in range(1, render_hz_int + 1) if render_hz_int % d == 0
-            ]
-            if divisors:
-                head_candidate = [d for d in divisors if d <= head_camera_hz]
-                rgb_candidate = [d for d in divisors if d <= rgb_camera_hz]
-                head_camera_hz = (
-                    max(head_candidate) if head_candidate else min(divisors)
-                )
-                rgb_camera_hz = max(rgb_candidate) if rgb_candidate else min(divisors)
-                if head_camera_hz != 25 or rgb_camera_hz != 10:
-                    logger.info(
-                        "[Sensors] Adjusted camera Hz to match render_hz=%s: head=%s, rgb=%s",
-                        render_hz_int,
-                        head_camera_hz,
-                        rgb_camera_hz,
-                    )
+    # --- Cameras ---
     try:
         # Camera link
-        ensure_link_xform(
-            usd_stage,
-            CAMERA_LINK_PRIM,
-            translation=(0.3, 0.0, 0.1),  # Forward and slightly up from base
-            rpy_rad=(math.radians(90.0), 0.0, math.radians(-90.0)),
-        )
+        ensure_link_xform(usd_stage, CAMERA_LINK_PRIM,
+                          translation=(0.3, 0.0, 0.10),
+                          rpy_rad=(math.radians(90.0), math.radians(-25.0), math.radians(-90.0)))
 
-        head_camera = Camera(
-            prim_path=HEAD_CAMERA_PRIM,
-            name="head_camera",
-            frequency=head_camera_hz,
+        realsense_depth_camera = Camera(
+            prim_path=REALSENSE_DEPTH_CAMERA_PRIM,
+            name="realsense_depth_camera",
+            frequency=25,
             resolution=(480, 270),
         )
-        head_camera.initialize()
+        realsense_depth_camera.initialize()
 
-        head_cam_prim = usd_stage.GetPrimAtPath(HEAD_CAMERA_PRIM)
-        if head_cam_prim and head_cam_prim.IsValid():
-            from pxr import Gf, UsdGeom
-
-            xformable = UsdGeom.Xformable(head_cam_prim)
+        realsense_depth_cam_prim = usd_stage.GetPrimAtPath(REALSENSE_DEPTH_CAMERA_PRIM)
+        if realsense_depth_cam_prim and realsense_depth_cam_prim.IsValid():
+            from pxr import UsdGeom, Gf
+            xformable = UsdGeom.Xformable(realsense_depth_cam_prim)
             xformable.ClearXformOpOrder()
             xformable.AddTranslateOp().Set(Gf.Vec3d(0.0, 0.0, 0.0))
             xformable.AddRotateXYZOp().Set(Gf.Vec3f(0.0, 0.0, 0.0))
-            logger.info("[Sensors] Cleared head_camera transform offset")
+            logger.info(f"[Sensors] Cleared realsense_depth_camera transform offset")
 
-        head_camera.set_clipping_range(near_distance=0.1, far_distance=100.0)
-        head_camera.add_distance_to_image_plane_to_frame()
+        realsense_depth_camera.set_clipping_range(near_distance=0.1, far_distance=100.0)
+        realsense_depth_camera.add_distance_to_image_plane_to_frame()
 
-        sensors["head_camera"] = head_camera
-        logger.info("[Sensors] Head camera initialized with depth enabled")
+        sensors["realsense_depth_camera"] = realsense_depth_camera
+        logger.info(f"[Sensors] RealSense depth camera initialized with depth enabled")
 
-        rgb_camera = Camera(
-            prim_path=RGB_CAMERA_PRIM,
-            name="rgb_camera",
-            frequency=rgb_camera_hz,
+        realsense_rgb_camera = Camera(
+            prim_path=REALSENSE_RGB_CAMERA_PRIM,
+            name="realsense_rgb_camera",
+            frequency=10,
             resolution=(640, 480),
         )
-        rgb_camera.initialize()
+        realsense_rgb_camera.initialize()
 
-        rgb_cam_prim = usd_stage.GetPrimAtPath(RGB_CAMERA_PRIM)
-        if rgb_cam_prim and rgb_cam_prim.IsValid():
-            from pxr import Gf, UsdGeom
-
-            xformable = UsdGeom.Xformable(rgb_cam_prim)
+        realsense_rgb_cam_prim = usd_stage.GetPrimAtPath(REALSENSE_RGB_CAMERA_PRIM)
+        if realsense_rgb_cam_prim and realsense_rgb_cam_prim.IsValid():
+            from pxr import UsdGeom, Gf
+            xformable = UsdGeom.Xformable(realsense_rgb_cam_prim)
             xformable.ClearXformOpOrder()
             xformable.AddTranslateOp().Set(Gf.Vec3d(0.0, 0.0, 0.0))
             xformable.AddRotateXYZOp().Set(Gf.Vec3f(0.0, 0.0, 0.0))
-            logger.info("[Sensors] Cleared rgb_camera transform offset")
+            logger.info(f"[Sensors] Cleared realsense_rgb_camera transform offset")
 
-        rgb_camera.set_clipping_range(near_distance=0.1, far_distance=100.0)
-        sensors["rgb_camera"] = rgb_camera
-        logger.info("[Sensors] RGB camera initialized")
+        realsense_rgb_camera.set_clipping_range(near_distance=0.1, far_distance=100.0)
+        sensors["realsense_rgb_camera"] = realsense_rgb_camera
+        logger.info(f"[Sensors] RealSense RGB camera initialized")
+
+        go2_rgb_camera = Camera(
+            prim_path=GO2_RGB_CAMERA_PRIM,
+            name="go2_rgb_camera",
+            frequency=10,
+            resolution=(640, 480),
+        )
+        go2_rgb_camera.initialize()
+
+        go2_rgb_cam_prim = usd_stage.GetPrimAtPath(GO2_RGB_CAMERA_PRIM)
+        if go2_rgb_cam_prim and go2_rgb_cam_prim.IsValid():
+            from pxr import UsdGeom, Gf
+            xformable = UsdGeom.Xformable(go2_rgb_cam_prim)
+            xformable.ClearXformOpOrder()
+            xformable.AddTranslateOp().Set(Gf.Vec3d(0.0, 0.0, 0.0))
+            xformable.AddRotateXYZOp().Set(Gf.Vec3f(0.0, 25.0, 0.0))  # Counteract camera_link's -25° tilt
+            logger.info(f"[Sensors] Set go2_rgb_camera to face forward (counteracting camera_link tilt)")
+
+        go2_rgb_camera.set_clipping_range(near_distance=0.1, far_distance=100.0)
+        sensors["go2_rgb_camera"] = go2_rgb_camera
+        logger.info(f"[Sensors] Go2 RGB camera initialized")
     except Exception as e:
-        logger.warning("Camera setup failed: %s", e, exc_info=True)
+        logger.info(f"[WARN] Camera setup failed: {e}")
+        import traceback
+        traceback.logger.info_exc()
 
-    # IMU
+    # --- IMU ---
     try:
         imu_sensor = IMUSensor(
-            prim_path=IMU_PRIM,
-            name="imu_sensor",
-            frequency=50,
+            prim_path=IMU_PRIM, name="imu_sensor", frequency=50,
             translation=np.array([0.0, 0.0, 0.0]),
             orientation=np.array([1.0, 0.0, 0.0, 0.0]),
         )
         imu_sensor.initialize()
         sensors["imu"] = imu_sensor
-        logger.info("[Sensors] IMU initialized")
+        logger.info(f"[Sensors] IMU initialized")
     except Exception as e:
-        logger.warning("IMU setup failed: %s", e, exc_info=True)
+        logger.info(f"[WARN] IMU setup failed: {e}")
 
-    # LiDARs
+    # --- LiDARs ---
     try:
-        ensure_link_xform(
-            usd_stage,
-            L1_LINK_PRIM,
-            translation=(0.15, 0.0, 0.15),
-            rpy_rad=(0.0, 0.0, 0.0),
+        ensure_link_xform(usd_stage, L1_LINK_PRIM, translation=(0.15, 0.0, 0.15), rpy_rad=(0.0, 0.0, 0.0))
+        result = omni.kit.commands.execute(
+            "IsaacSensorCreateRtxLidar",
+            path="lidar_l1_rtx",
+            parent=L1_LINK_PRIM,
+            config="Example_Rotary",
+            translation=(0.0, 0.0, 0.0),
+            orientation=Gf.Quatd(1, 0, 0, 0)
         )
-        lidar_path = L1_LIDAR_PRIM
-        if not is_prim_path_valid(lidar_path):
-            result = omni.kit.commands.execute(
-                "IsaacSensorCreateRtxLidar",
-                path="lidar_l1_rtx",
-                parent=L1_LINK_PRIM,
-                config="Example_Rotary",
-                translation=(0.0, 0.0, 0.0),
-                orientation=Gf.Quatd(1, 0, 0, 0),
-            )
-            if result and len(result) > 1 and result[1]:
-                lidar_prim = result[1]
-                lidar_path = lidar_prim.GetPath().pathString
-                logger.info("[Sensors] L1 LiDAR created at: %s", lidar_path)
-            else:
-                logger.warning("[Sensors] L1 LiDAR creation returned: %s", result)
-                lidar_path = None
-        if lidar_path:
-            l1_rp = rep.create.render_product(
-                lidar_path, resolution=(1, 1), name="l1_lidar_rp"
-            )
+        if result and len(result) > 1 and result[1]:
+            lidar_prim = result[1]
+            lidar_path = lidar_prim.GetPath().pathString
+            logger.info(f"[Sensors] L1 LiDAR created at: {lidar_path}")
+            l1_rp = rep.create.render_product(lidar_path, resolution=(1, 1), name="l1_lidar_rp")
             pc_writer = rep.writers.get("RtxLidarROS2PublishPointCloud")
-            pc_writer.initialize(
-                frameId="lidar_l1_link",
-                nodeNamespace="",
-                topicName="/unitree_lidar",
-                queueSize=10,
-            )
+            pc_writer.initialize(frameId="lidar_l1_link", nodeNamespace="", topicName="/unitree_lidar", queueSize=10)
             pc_writer.attach([l1_rp])
-            logger.info("[Sensors] L1 LiDAR -> /unitree_lidar")
+            logger.info(f"[Sensors] L1 LiDAR -> /unitree_lidar")
+        else:
+            logger.info(f"[WARN] L1 LiDAR creation returned: {result}")
     except Exception as e:
-        logger.warning("L1 LiDAR setup failed: %s", e, exc_info=True)
+        logger.info(f"[WARN] L1 LiDAR setup failed: {e}")
+        import traceback
+        traceback.logger.info_exc()
 
     try:
-        ensure_link_xform(
-            usd_stage,
-            VELO_BASE_LINK_PRIM,
-            translation=(0.1, 0.0, 0.2),
-            rpy_rad=(0.0, 0.0, 0.0),
+        ensure_link_xform(usd_stage, VELO_BASE_LINK_PRIM, translation=(0.1, 0.0, 0.2), rpy_rad=(0.0, 0.0, 0.0))
+        ensure_link_xform(usd_stage, VELO_LASER_LINK_PRIM, translation=(0.0, 0.0, 0.0377), rpy_rad=(0.0, 0.0, 0.0))
+        result = omni.kit.commands.execute(
+            "IsaacSensorCreateRtxLidar",
+            path="rplidar",
+            parent=VELO_LASER_LINK_PRIM,
+            config="Slamtec_RPLIDAR_S2E",
+            translation=(0.0, 0.0, 0.0),
+            orientation=Gf.Quatd(1, 0, 0, 0)
         )
-        ensure_link_xform(
-            usd_stage,
-            VELO_LASER_LINK_PRIM,
-            translation=(0.0, 0.0, 0.0377),
-            rpy_rad=(0.0, 0.0, 0.0),
-        )
-        rplidar_path = f"{VELO_LASER_LINK_PRIM}/rplidar"
-        lidar_path = rplidar_path
-        if not is_prim_path_valid(rplidar_path):
-            result = omni.kit.commands.execute(
-                "IsaacSensorCreateRtxLidar",
-                path="rplidar",
-                parent=VELO_LASER_LINK_PRIM,
-                config="Slamtec_RPLIDAR_S2E",
-                translation=(0.0, 0.0, 0.0),
-                orientation=Gf.Quatd(1, 0, 0, 0),
-            )
-            if result and len(result) > 1 and result[1]:
-                lidar_prim = result[1]
-                lidar_path = lidar_prim.GetPath().pathString
-                logger.info("[Sensors] 2D LiDAR created at: %s", lidar_path)
-            else:
-                logger.warning("[Sensors] 2D LiDAR creation returned: %s", result)
-                lidar_path = None
-        if lidar_path:
-            velo_rp = rep.create.render_product(
-                lidar_path, resolution=(1, 1), name="velo_lidar_rp"
-            )
+        if result and len(result) > 1 and result[1]:
+            lidar_prim = result[1]
+            lidar_path = lidar_prim.GetPath().pathString
+            logger.info(f"[Sensors] 2D LiDAR created at: {lidar_path}")
+            velo_rp = rep.create.render_product(lidar_path, resolution=(1, 1), name="velo_lidar_rp")
             scan_writer = rep.writers.get("RtxLidarROS2PublishLaserScan")
-            scan_writer.initialize(
-                frameId="laser", nodeNamespace="", topicName="/scan", queueSize=10
-            )
+            scan_writer.initialize(frameId="laser", nodeNamespace="", topicName="/scan", queueSize=10)
             scan_writer.attach([velo_rp])
-            logger.info("[Sensors] 2D LiDAR -> /scan")
+            logger.info(f"[Sensors] 2D LiDAR -> /scan")
+        else:
+            logger.info(f"[WARN] 2D LiDAR creation returned: {result}")
     except Exception as e:
-        logger.warning("2D LiDAR setup failed: %s", e, exc_info=True)
+        logger.info(f"[WARN] 2D LiDAR setup failed: {e}")
+        import traceback
+        traceback.logger.info_exc()
 
     simulation_app.update()
     return sensors
@@ -464,9 +428,9 @@ def setup_static_tfs(simulation_app) -> None:
         ("velodyne_base_link", "laser", [0.0, 0.0, 0.0377], [0.0, 0.0, 0.0, 1.0]),
         ("base", "imu_link", [0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0]),
         ("base", "camera_link", [0.3, 0.0, 0.1], [0.5, -0.5, -0.5, 0.5]),
-        ("camera_link", "head_camera", [0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0]),
-        ("camera_link", "rgb_camera", [0.0, 0.05, 0.0], [0.0, 0.0, 0.0, 1.0]),
-        ("base_link", "head_camera", [0.3, 0.0, 0.1], [0.5, -0.5, -0.5, 0.5]),
+        ("camera_link", "realsense_depth_camera", [0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0]),
+        ("camera_link", "realsense_rgb_camera", [0.0, 0.05, 0.0], [0.0, 0.0, 0.0, 1.0]),
+        ("base_link", "realsense_depth_camera", [0.3, 0.0, 0.1], [0.5, -0.5, -0.5, 0.5]),
         ("map", "odom", [0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0]),
     ]
 
@@ -515,10 +479,7 @@ def setup_static_tfs(simulation_app) -> None:
         },
     )
 
-    logger.info(
-        "[ROS2] Static TFs published for %s transforms (staticPublisher=True)",
-        len(static_transforms),
-    )
+    logger.info(f"[ROS2] Static TFs published for {len(static_transforms)} transforms (staticPublisher=True)")
     simulation_app.update()
 
 
@@ -610,63 +571,58 @@ def setup_color_camera_publishers(sensors, simulation_app) -> None:
     import omni.syntheticdata as syn_data
     import omni.syntheticdata._syntheticdata as sd
 
-    if sensors.get("head_camera"):
-        cam = sensors["head_camera"]
+    if sensors.get("realsense_depth_camera"):
+        cam = sensors["realsense_depth_camera"]
         rp = cam.get_render_product_path()
         if rp:
             try:
                 # Color image on RealSense topic
-                rv = syn_data.SyntheticData.convert_sensor_type_to_rendervar(
-                    sd.SensorType.Rgb.name
-                )
+                rv = syn_data.SyntheticData.convert_sensor_type_to_rendervar(sd.SensorType.Rgb.name)
                 w = rep.writers.get(rv + "ROS2PublishImage")
                 w.initialize(
-                    frameId="head_camera",
+                    frameId="realsense_depth_camera",
                     nodeNamespace="",
                     queueSize=10,
-                    topicName="/camera/realsense2_camera_node/color/image_raw",
+                    topicName="/camera/realsense2_camera_node/color/image_isaac_sim_raw"
                 )
                 w.attach([rp])
-                logger.info(
-                    "[ROS2] Color camera -> /camera/realsense2_camera_node/color/image_raw"
-                )
-
-                # Also publish to /camera/image_raw for auto-docking compatibility
-                w2 = rep.writers.get(rv + "ROS2PublishImage")
-                w2.initialize(
-                    frameId="head_camera",
-                    nodeNamespace="",
-                    queueSize=10,
-                    topicName="/camera/image_raw",
-                )
-                w2.attach([rp])
-                logger.info("[ROS2] Color camera -> /camera/image_raw")
-
-                # Also publish to /rgb_image for Gazebo compatibility
-                w3 = rep.writers.get(rv + "ROS2PublishImage")
-                w3.initialize(
-                    frameId="head_camera",
-                    nodeNamespace="",
-                    queueSize=10,
-                    topicName="/rgb_image",
-                )
-                w3.attach([rp])
-                logger.info("[ROS2] Color camera -> /rgb_image")
+                logger.info("[ROS2] Color camera -> /camera/realsense2_camera_node/color/image_isaac_sim_raw")
 
             except Exception as e:
-                logger.warning(
-                    "Color camera publisher setup failed: %s", e, exc_info=True
+                logger.info(f"[WARN] Color camera publisher setup failed: {e}")
+
+    # Go2 RGB Camera
+    if sensors.get("go2_rgb_camera"):
+        cam = sensors["go2_rgb_camera"]
+        rp = cam.get_render_product_path()
+        if rp:
+            try:
+                # RGB image for Go2 camera
+                rv = syn_data.SyntheticData.convert_sensor_type_to_rendervar(sd.SensorType.Rgb.name)
+                w = rep.writers.get(rv + "ROS2PublishImage")
+                w.initialize(
+                    frameId="go2_rgb_camera",
+                    nodeNamespace="",
+                    queueSize=10,
+                    topicName="camera/go2/image_raw"
                 )
+                w.attach([rp])
+                logger.info("[ROS2] Go2 RGB camera -> camera/go2/image_raw")
+
+            except Exception as e:
+                logger.info(f"[WARN] Go2 RGB camera publisher setup failed: {e}")
 
 
 def setup_color_camerainfo_graph(
     simulation_app,
     topic="/camera/realsense2_camera_node/color/camera_info",
-    frame_id="head_camera",
+    frame_id="realsense_depth_camera",
     width=480,
     height=270,
     fx=320.0,
     fy=320.0,
+    cx=None,
+    cy=None,
 ) -> bool:
     """Publish CameraInfo for color camera."""
     import omni.graph.core as og
@@ -677,8 +633,10 @@ def setup_color_camerainfo_graph(
         logger.info("[ROS2] Color CameraInfo graph already exists")
         return True
 
-    cx = width / 2.0
-    cy = height / 2.0
+    if cx is None:
+        cx = width / 2.0
+    if cy is None:
+        cy = height / 2.0
 
     K = [fx, 0.0, cx, 0.0, fy, cy, 0.0, 0.0, 1.0]
     R = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
@@ -713,15 +671,12 @@ def setup_color_camerainfo_graph(
                 ("Pub.inputs:r", R),
                 ("Pub.inputs:p", P),
                 ("Pub.inputs:physicalDistortionModel", "plumb_bob"),
-                (
-                    "Pub.inputs:physicalDistortionCoefficients",
-                    [0.0, 0.0, 0.0, 0.0, 0.0],
-                ),
+                ("Pub.inputs:physicalDistortionCoefficients", [0.0, 0.0, 0.0, 0.0, 0.0]),
             ],
         },
     )
 
-    logger.info("[ROS2] Color CameraInfo -> %s", topic)
+    logger.info(f"[ROS2] Color CameraInfo -> {topic}")
     simulation_app.update()
     return True
 
@@ -771,10 +726,7 @@ def setup_joint_states_publisher(simulation_app) -> None:
         targetPrimPaths=[ROBOT_ARTICULATION_PATH],
     )
 
-    logger.info(
-        "[ROS2] Joint states publisher -> /joint_states (articulation: %s)",
-        ROBOT_ARTICULATION_PATH,
-    )
+    logger.info(f"[ROS2] Joint states publisher -> /joint_states (articulation: {ROBOT_ARTICULATION_PATH})")
     simulation_app.update()
 
 
@@ -847,72 +799,43 @@ def setup_ros_publishers(sensors, simulation_app) -> None:
     logger.info("[ROS2] IMU publisher -> imu/data")
 
     # Camera publishers with CameraInfo
-    if sensors.get("head_camera"):
-        cam = sensors["head_camera"]
+    if sensors.get("realsense_depth_camera"):
+        cam = sensors["realsense_depth_camera"]
         rp = cam.get_render_product_path()
         if rp:
             try:
-                # RGB Image
-                rv = syn_data.SyntheticData.convert_sensor_type_to_rendervar(
-                    sd.SensorType.Rgb.name
-                )
-                w = rep.writers.get(rv + "ROS2PublishImage")
-                w.initialize(
-                    frameId="head_camera",
-                    nodeNamespace="",
-                    queueSize=10,
-                    topicName="camera/color/image_raw",
-                )
-                w.attach([rp])
-                logger.info("[ROS2] RGB camera -> camera/color/image_raw")
-
                 # Depth Image
                 rv = syn_data.SyntheticData.convert_sensor_type_to_rendervar(
                     sd.SensorType.DistanceToImagePlane.name
                 )
-                w = rep.writers.get(rv + "ROS2PublishImage")
-                w.initialize(
-                    frameId="head_camera",
-                    nodeNamespace="",
-                    queueSize=10,
-                    topicName="camera/depth/image_rect_raw",
-                )
-                w.attach([rp])
-                logger.info("[ROS2] Depth camera -> camera/depth/image_rect_raw")
-
-                # For compatibility
                 w_rs_depth = rep.writers.get(rv + "ROS2PublishImage")
                 w_rs_depth.initialize(
-                    frameId="head_camera",
+                    frameId="realsense_depth_camera",
                     nodeNamespace="",
                     queueSize=10,
-                    topicName="/camera/realsense2_camera_node/depth/image_rect_raw",
+                    topicName="/camera/realsense2_camera_node/depth/image_rect_isaac_sim_raw",
                 )
                 w_rs_depth.attach([rp])
-                logger.info(
-                    "[ROS2] Depth camera -> /camera/realsense2_camera_node/depth/image_rect_raw"
-                )
+                logger.info("[ROS2] Depth camera -> /camera/realsense2_camera_node/depth/image_rect_isaac_sim_raw")
 
                 # For easier RViz viewing
                 try:
-                    depth_colorized = rep.writers.get(
-                        "ROS2PublishNormalized" + "DepthImage"
-                    )
+                    depth_colorized = rep.writers.get("ROS2PublishNormalized" + "DepthImage")
                     depth_colorized.initialize(
-                        frameId="head_camera",
+                        frameId="realsense_depth_camera",
                         nodeNamespace="",
                         queueSize=10,
-                        topicName="camera/depth/image_colorized",
+                        topicName="camera/depth/image_colorized"
                     )
                     depth_colorized.attach([rp])
-                    logger.info(
-                        "[ROS2] Depth colorized -> camera/depth/image_colorized"
-                    )
+                    logger.info("[ROS2] Depth colorized -> camera/depth/image_colorized")
                 except Exception as de:
-                    logger.info("Normalized depth writer not available: %s", de)
+                    logger.info(f"[INFO] Normalized depth writer not available: {de}")
 
             except Exception as e:
-                logger.warning("Camera publisher setup failed: %s", e, exc_info=True)
+                logger.info(f"[WARN] Camera publisher setup failed: {e}")
+                import traceback
+                traceback.logger.info_exc()
 
     # Setup static TFs for sensor frames
     setup_static_tfs(simulation_app)
@@ -958,13 +881,17 @@ def setup_ros_publishers(sensors, simulation_app) -> None:
 def setup_depth_camerainfo_graph(
     simulation_app,
     topic="/camera/realsense2_camera_node/depth/camera_info",
-    frame_id="head_camera",
+    frame_id="realsense_depth_camera",
     width=480,
     height=270,
     fx=320.0,
     fy=320.0,
+    cx=None,
+    cy=None,
 ) -> bool:
-    """Publish depth CameraInfo."""
+    """
+    Publish depth CameraInfo
+    """
     import omni.graph.core as og
     from isaacsim.core.utils.prims import is_prim_path_valid
 
@@ -973,50 +900,25 @@ def setup_depth_camerainfo_graph(
         logger.info("[ROS2] Depth CameraInfo graph already exists")
         return True
 
-    cx = width / 2.0
-    cy = height / 2.0
+    if cx is None:
+        cx = width / 2.0
+    if cy is None:
+        cy = height / 2.0
 
     # K matrix (3x3 intrinsic matrix, row-major)
-    K = [
-        fx,
-        0.0,
-        cx,
-        0.0,
-        fy,
-        cy,
-        0.0,
-        0.0,
-        1.0,
-    ]
+    K = [fx, 0.0, cx,
+         0.0, fy, cy,
+         0.0, 0.0, 1.0]
 
     # R matrix (3x3 rectification matrix, identity for monocular)
-    R = [
-        1.0,
-        0.0,
-        0.0,
-        0.0,
-        1.0,
-        0.0,
-        0.0,
-        0.0,
-        1.0,
-    ]
+    R = [1.0, 0.0, 0.0,
+         0.0, 1.0, 0.0,
+         0.0, 0.0, 1.0]
 
     # P matrix (3x4 projection matrix)
-    P = [
-        fx,
-        0.0,
-        cx,
-        0.0,
-        0.0,
-        fy,
-        cy,
-        0.0,
-        0.0,
-        0.0,
-        1.0,
-        0.0,
-    ]
+    P = [fx, 0.0, cx, 0.0,
+         0.0, fy, cy, 0.0,
+         0.0, 0.0, 1.0, 0.0]
 
     og.Controller.edit(
         {
@@ -1047,22 +949,12 @@ def setup_depth_camerainfo_graph(
                 ("Pub.inputs:r", R),
                 ("Pub.inputs:p", P),
                 ("Pub.inputs:physicalDistortionModel", "plumb_bob"),
-                (
-                    "Pub.inputs:physicalDistortionCoefficients",
-                    [0.0, 0.0, 0.0, 0.0, 0.0],
-                ),
+                ("Pub.inputs:physicalDistortionCoefficients", [0.0, 0.0, 0.0, 0.0, 0.0]),
             ],
         },
     )
 
-    logger.info(
-        "[ROS2] Depth CameraInfo -> %s (width=%s, height=%s, fx=%s, fy=%s)",
-        topic,
-        width,
-        height,
-        fx,
-        fy,
-    )
+    logger.info(f"[ROS2] Depth CameraInfo -> {topic} (width={width}, height={height}, fx={fx}, fy={fy})")
     simulation_app.update()
     return True
 
