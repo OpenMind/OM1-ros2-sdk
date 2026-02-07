@@ -269,7 +269,7 @@ def get_sensor_launch():
             respawn=True,
             respawn_delay=2.0,
             condition=IfCondition(use_sim),
-        )
+        ),
     ]
 
     return entities
