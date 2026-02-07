@@ -36,7 +36,7 @@ class Go2CameraStreamNode(Node):
         # Camera parameters
         self.width = 640
         self.height = 480
-        self.estimated_fps = 15
+        self.estimated_fps = 30
 
         # FPS calculation variables
         self.frame_times = deque(maxlen=30)
@@ -70,8 +70,8 @@ class Go2CameraStreamNode(Node):
 
         self.image_publisher = self.create_publisher(Image, "/camera/go2/image_raw", 10)
 
-        # 15 Hz timer to request camera images
-        self.create_timer(1 / 15, self.request_camera_image)
+        # 30 Hz timer to request camera images
+        self.create_timer(1 / 30, self.request_camera_image)
 
         self.get_logger().info("Go2 Camera Stream Node initialized")
 
