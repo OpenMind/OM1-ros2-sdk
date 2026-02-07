@@ -261,6 +261,15 @@ def get_sensor_launch():
                 AndSubstitution(d435_camera_stream_enable, NotSubstitution(use_sim))
             ),
         ),
+        Node(
+            package="om_common",
+            executable="d435_isaac_sim_scaler",
+            name="d435_isaac_sim_scaler",
+            output="screen",
+            respawn=True,
+            respawn_delay=2.0,
+            condition=IfCondition(use_sim),
+        ),
     ]
 
     return entities

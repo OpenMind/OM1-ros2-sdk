@@ -8,7 +8,9 @@ from collections import deque
 import cv2
 import numpy as np
 import rclpy
+from cv_bridge import CvBridge
 from rclpy.node import Node
+from sensor_msgs.msg import Image
 from unitree_api.msg import Request, RequestHeader, RequestIdentity, Response
 
 
@@ -32,9 +34,9 @@ class Go2CameraStreamNode(Node):
         self.VIDEO_API_ID_GETIMAGESAMPLE = 1001
 
         # Camera parameters
-        self.width = 680
+        self.width = 640
         self.height = 480
-        self.estimated_fps = 15
+        self.estimated_fps = 30
 
         # FPS calculation variables
         self.frame_times = deque(maxlen=30)
@@ -51,6 +53,9 @@ class Go2CameraStreamNode(Node):
         self.stop_event = threading.Event()
         self.writer_thread = threading.Thread(target=self._writer_thread, daemon=True)
 
+        # CV Bridge for ROS2 image publishing
+        self.bridge = CvBridge()
+
         # Start FFmpeg and writer thread
         self.setup_ffmpeg_stream()
         self.writer_thread.start()
@@ -63,8 +68,10 @@ class Go2CameraStreamNode(Node):
             Response, "/api/videohub/response", self.camera_response_callback, 10
         )
 
-        # 15 Hz timer to request camera images
-        self.create_timer(1 / 15, self.request_camera_image)
+        self.image_publisher = self.create_publisher(Image, "/camera/go2/image_raw", 10)
+
+        # 30 Hz timer to request camera images
+        self.create_timer(1 / 30, self.request_camera_image)
 
         self.get_logger().info("Go2 Camera Stream Node initialized")
 
@@ -248,6 +255,14 @@ class Go2CameraStreamNode(Node):
 
             if frame.shape[0] != self.height or frame.shape[1] != self.width:
                 frame = cv2.resize(frame, (self.width, self.height))
+
+            try:
+                image_msg = self.bridge.cv2_to_imgmsg(frame, encoding="bgr8")
+                image_msg.header.stamp = self.get_clock().now().to_msg()
+                image_msg.header.frame_id = "go2_camera"
+                self.image_publisher.publish(image_msg)
+            except Exception as e:
+                self.get_logger().error(f"Error publishing image: {e}")
 
             try:
                 while self.frame_queue.qsize() >= 3:
