@@ -31,6 +31,7 @@ setup(
             "g1_nav2_api = g1_sdk.g1_nav2_api:main",
             "g1_scan_relay = g1_sdk.g1_scan_relay:main",
             "waypoint_manager = g1_sdk.waypoint_manager:main",
+            "insta360_stream = g1_sdk.insta360_stream:main",
         ],
     },
 )
