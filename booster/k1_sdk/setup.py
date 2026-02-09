@@ -2,7 +2,7 @@ from glob import glob
 
 from setuptools import find_packages, setup
 
-package_name = "K1_sdk"
+package_name = "k1_sdk"
 
 setup(
     name=package_name,
@@ -22,8 +22,9 @@ setup(
     license="MIT",
     entry_points={
         "console_scripts": [
-            "cmd_vel_to_K1 = K1_sdk.K1_movement:main",
-            "K1_odom = K1_sdk.K1_odom:main",
+            "cmd_vel_to_k1 = k1_sdk.k1_movement:main",
+            "k1_odom = k1_sdk.k1_odom:main",
+            "insta360_stream = k1_sdk.insta360_stream:main",
         ],
     },
 )

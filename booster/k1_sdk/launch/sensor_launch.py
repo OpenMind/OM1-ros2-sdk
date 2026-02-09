@@ -18,18 +18,18 @@ def generate_launch_description():
     entities.extend(
         [
             Node(
-                package="K1_sdk",
-                executable="K1_odom",
-                name="K1_odom",
+                package="k1_sdk",
+                executable="k1_odom",
+                name="k1_odom",
                 output="screen",
                 respawn=True,
                 respawn_delay=2.0,
                 condition=UnlessCondition(use_sim),
             ),
             Node(
-                package="K1_sdk",
-                executable="cmd_vel_to_K1",
-                name="cmd_vel_to_K1",
+                package="k1_sdk",
+                executable="cmd_vel_to_k1",
+                name="cmd_vel_to_k1",
                 output="screen",
                 respawn=True,
                 respawn_delay=2.0,

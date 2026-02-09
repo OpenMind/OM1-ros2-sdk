@@ -3,6 +3,15 @@
 
 Subscribes to /cmd_vel (geometry_msgs/Twist) and forwards to K1
 via /remote_controller_state (booster_interface/RemoteControllerState).
+
+Usage:
+    ros2 run k1_sdk cmd_vel_to_k1
+
+    or directly:
+    python3 k1_movement.py
+
+Then publish cmd_vel:
+    ros2 run teleop_twist_keyboard teleop_twist_keyboard
 """
 
 import threading
@@ -18,7 +27,7 @@ class K1Bridge(Node):
     """Bridge ROS2 cmd_vel messages to K1 RemoteControllerState."""
 
     def __init__(self):
-        super().__init__("K1_cmd_vel_bridge")
+        super().__init__("k1_cmd_vel_bridge")
 
         # Parameters
         self.declare_parameter("max_linear", 1.0)

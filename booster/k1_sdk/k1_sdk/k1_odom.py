@@ -4,6 +4,12 @@ K1 Odometry Bridge.
 
 Subscribes to /odometer_state (booster_interface/Odometer)
 and publishes to ROS2 /odom topic.
+
+Usage:
+    ros2 run <package> k1_odom.py
+
+    or directly:
+    python3 k1_odom.py
 """
 
 import math
@@ -28,7 +34,7 @@ class K1OdomBridge(Node):
     """ROS2 node that bridges K1 Odometer msg to ROS2 /odom topic."""
 
     def __init__(self):
-        super().__init__("K1_odom_bridge")
+        super().__init__("k1_odom_bridge")
 
         # Parameters
         self.declare_parameter("frame_id", "odom")
