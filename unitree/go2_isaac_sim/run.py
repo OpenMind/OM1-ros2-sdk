@@ -133,8 +133,13 @@ def _configure_ros_utils_paths(robot_root: str) -> None:
     ros_utils.GO2_STAGE_PATH = robot_root
     ros_utils.IMU_PRIM = f"{robot_root}/base/imu_link"
     ros_utils.CAMERA_LINK_PRIM = f"{robot_root}/base/camera_link"
-    ros_utils.HEAD_CAMERA_PRIM = f"{ros_utils.CAMERA_LINK_PRIM}/head_camera"
-    ros_utils.RGB_CAMERA_PRIM = f"{ros_utils.CAMERA_LINK_PRIM}/rgb_camera"
+    ros_utils.REALSENSE_DEPTH_CAMERA_PRIM = (
+        f"{ros_utils.CAMERA_LINK_PRIM}/realsense_depth_camera"
+    )
+    ros_utils.REALSENSE_RGB_CAMERA_PRIM = (
+        f"{ros_utils.CAMERA_LINK_PRIM}/realsense_rgb_camera"
+    )
+    ros_utils.GO2_RGB_CAMERA_PRIM = f"{ros_utils.CAMERA_LINK_PRIM}/go2_rgb_camera"
     ros_utils.L1_LINK_PRIM = f"{robot_root}/base/lidar_l1_link"
     ros_utils.L1_LIDAR_PRIM = f"{ros_utils.L1_LINK_PRIM}/lidar_l1_rtx"
     ros_utils.VELO_BASE_LINK_PRIM = f"{robot_root}/base/velodyne_base_link"
@@ -418,11 +423,13 @@ class Go2RosRunner(object):
         ros_utils.setup_depth_camerainfo_graph(
             simulation_app,
             topic="/camera/realsense2_camera_node/depth/camera_info",
-            frame_id="head_camera",
+            frame_id="realsense_depth_camera",
             width=480,
             height=270,
-            fx=320.0,
-            fy=320.0,
+            fx=242.479,
+            fy=242.479,
+            cx=242.736,
+            cy=133.273,
         )
 
         ros_utils.setup_odom_publisher(simulation_app)
@@ -430,11 +437,13 @@ class Go2RosRunner(object):
         ros_utils.setup_color_camerainfo_graph(
             simulation_app,
             topic="/camera/realsense2_camera_node/color/camera_info",
-            frame_id="head_camera",
+            frame_id="realsense_depth_camera",
             width=480,
             height=270,
-            fx=320.0,
-            fy=320.0,
+            fx=242.479,
+            fy=242.479,
+            cx=242.736,
+            cy=133.273,
         )
 
         ros_utils.setup_joint_states_publisher(simulation_app)
