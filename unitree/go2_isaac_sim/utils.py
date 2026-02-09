@@ -266,7 +266,7 @@ def setup_sensors_delayed(simulation_app, render_hz: Optional[float] = None) -> 
     try:
         # Camera link
         ensure_link_xform(usd_stage, CAMERA_LINK_PRIM,
-                          translation=(0.3, 0.0, 0.10),
+                          translation=(0.3, 0.0, 0.35),
                           rpy_rad=(math.radians(90.0), math.radians(0.0), math.radians(-90.0)))
 
         realsense_depth_camera = Camera(
@@ -281,7 +281,7 @@ def setup_sensors_delayed(simulation_app, render_hz: Optional[float] = None) -> 
             from pxr import UsdGeom, Gf
             xformable = UsdGeom.Xformable(realsense_depth_cam_prim)
             xformable.ClearXformOpOrder()
-            xformable.AddTranslateOp().Set(Gf.Vec3d(0.0, 0.0, 0.05))  # 5cm higher than Go2 camera
+            xformable.AddTranslateOp().Set(Gf.Vec3d(0.0, 0.0, 0.0))
             xformable.AddRotateXYZOp().Set(Gf.Vec3f(-25.0, 0.0, 0.0))  # 25° downward tilt (X-axis)
             logger.info(f"[Sensors] Set realsense_depth_camera 25° downward tilt, 5cm higher")
 
@@ -303,7 +303,7 @@ def setup_sensors_delayed(simulation_app, render_hz: Optional[float] = None) -> 
             from pxr import UsdGeom, Gf
             xformable = UsdGeom.Xformable(realsense_rgb_cam_prim)
             xformable.ClearXformOpOrder()
-            xformable.AddTranslateOp().Set(Gf.Vec3d(0.0, 0.0, 0.05))  # 5cm higher than Go2 camera
+            xformable.AddTranslateOp().Set(Gf.Vec3d(0.0, 0.0, 0.0))
             xformable.AddRotateXYZOp().Set(Gf.Vec3f(-25.0, 0.0, 0.0))  # 25° downward tilt (X-axis)
             logger.info(f"[Sensors] Set realsense_rgb_camera 25° downward tilt, 5cm higher")
 
