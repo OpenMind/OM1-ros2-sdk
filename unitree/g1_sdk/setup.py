@@ -1,4 +1,4 @@
-import os
+from glob import glob
 
 from setuptools import find_packages, setup
 
@@ -10,49 +10,11 @@ setup(
     packages=find_packages(exclude=["test"]),
     data_files=[
         ("share/ament_index/resource_index/packages", ["resource/g1_sdk"]),
-        ("share/" + package_name, ["package.xml"]),
-        (
-            "share/" + package_name + "/launch",
-            [
-                "launch/base_control_launch.py",
-                "launch/slam_launch.py",
-                "launch/nav2_launch.py",
-            ],
-        ),
-        (
-            "share/" + package_name + "/urdf",
-            [
-                "urdf/g1_23dof.urdf",
-            ],
-        ),
-        (
-            "share/" + package_name + "/config",
-            [
-                "config/slam_params.yaml",
-                "config/nav2_params.yaml",
-            ],
-        ),
-        (
-            "share/" + package_name + "/meshes",
-            [
-                os.path.join("meshes", f)
-                for f in os.listdir("meshes")
-                if f.endswith(".STL")
-            ],
-        ),
-        # Maps directory for RTAB-Map database storage
-        (
-            "share/" + package_name + "/maps",
-            (
-                [
-                    os.path.join("maps", f)
-                    for f in os.listdir("maps")
-                    if os.path.isfile(os.path.join("maps", f))
-                ]
-                if os.path.exists("maps")
-                else []
-            ),
-        ),
+        ("share/" + package_name + "/launch", glob("launch/*")),
+        ("share/" + package_name + "/urdf", ["urdf/g1_23dof.urdf"]),
+        ("share/" + package_name + "/config", glob("config/*")),
+        ("share/" + package_name + "/meshes", glob("meshes/*")),
+        ("share/" + package_name + "/maps", glob("maps/*")),
     ],
     install_requires=["setuptools"],
     zip_safe=True,
@@ -67,7 +29,9 @@ setup(
             "g1_odom = g1_sdk.g1_odom:main",
             "g1_jointstate = g1_sdk.g1_jointstate:main",
             "g1_nav2_api = g1_sdk.g1_nav2_api:main",
+            "g1_scan_relay = g1_sdk.g1_scan_relay:main",
             "waypoint_manager = g1_sdk.waypoint_manager:main",
+            "insta360_stream = g1_sdk.insta360_stream:main",
         ],
     },
 )

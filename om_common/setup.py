@@ -20,6 +20,7 @@ setup(
         "console_scripts": [
             "d435_obstacle_dector = om_common.nodes.d435_obstacle_dector:main",
             "d435_camera_stream = om_common.nodes.d435_camera_stream:main",
+            "d435_isaac_sim_scaler = om_common.nodes.d435_isaac_sim_scaler:main",
             "laser_scan_localization = om_common.nodes.laser_scan_localization:main",
             "local_traversability_node = om_common.nodes.local_traversability_node:main",
             "om_path = om_common.nodes.om_path:main",

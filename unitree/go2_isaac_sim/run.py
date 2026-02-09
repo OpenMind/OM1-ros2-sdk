@@ -408,7 +408,12 @@ class Go2RosRunner(object):
         for _ in range(10):
             self._world.step(render=False)
 
-        self._sensors = ros_utils.setup_sensors_delayed(simulation_app)
+        render_hz = None
+        if self._render_dt:
+            render_hz = 1.0 / self._render_dt
+        self._sensors = ros_utils.setup_sensors_delayed(
+            simulation_app, render_hz=render_hz
+        )
         ros_utils.setup_ros_publishers(self._sensors, simulation_app)
 
         ros_utils.setup_depth_camerainfo_graph(

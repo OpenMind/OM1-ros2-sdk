@@ -9,36 +9,38 @@ This repository contains the ROS 2 Isaac Sim script for the Unitree Go2 quadrupe
 - **LiDAR Support**: Simulation of Velodyne VLP-16 and Unitree 4D LiDAR.
 
 ## Installation
-  To install Isaac Isaac Sim, running the following commands, or check the instructions [here](https://docs.isaacsim.omniverse.nvidia.com/5.1.0/installation/index.html) to install Isaac Sim.
+To install Isaac Isaac Sim, running the following commands, or check the instructions [here](https://docs.isaacsim.omniverse.nvidia.com/5.1.0/installation/index.html) to install Isaac Sim.
 
-  ```bash
-  uv venv --python 3.11 --seed env_isaacsim
+```bash
+uv venv --python 3.11 --seed env_isaacsim
 
-  source env_isaacsim/bin/activate
+source env_isaacsim/bin/activate
 
-  # note that here we are installing IsaacSim 5.1
-  pip install "isaacsim[all,extscache]==5.1.0" --extra-index-url https://pypi.nvidia.com
+# note that here we are installing IsaacSim 5.1
+pip install "isaacsim[all,extscache]==5.1.0" --extra-index-url https://pypi.nvidia.com
 
-  # install the following or another CUDA-enabled PyTorch build that matches your system architecture
+# install the following or another CUDA-enabled PyTorch build that matches your system architecture
 
-  pip install -U torch==2.7.0 torchvision==0.22.0 --index-url https://download.pytorch.org/whl/cu128
+pip install -U torch==2.7.0 torchvision==0.22.0 --index-url https://download.pytorch.org/whl/cu128
 
-  # after installation, run the following to test successful installation
-  isaacsim
-  ```
+# after installation, run the following to test successful installation
+isaacsim
+```
 
 ## Running
-  To run the script, simply do (note: a trained policy is required, which should contain the policy.pt, env.yaml, and deploy.yaml files)
-  ```bash
-  source env_isaacsim/bin/activate
-  python3 run.py #using default policy
-  python3 run.py --policy_dir YOUR_POLICY_DIR #using your own policy
-  ```
+To run the script, simply do (note: a trained policy is required, which should contain the policy.pt, env.yaml, and deploy.yaml files)
 
-  You may need to additionally run the following
+```bash
+export ROS_DISTRO=humble
+export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:PATH_TO_VENV/env_isaaclab/lib/python3.11/site-packages/isaacsim/exts/isaacsim.ros2.bridge/humble/lib
+```
 
-  ```bash
-  export ROS_DISTRO=humble
-  export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
-  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:PATH_TO_VENV/env_isaaclab/lib/python3.11/site-packages/isaacsim/exts/isaacsim.ros2.bridge/humble/lib
-  ```
+> [!NOTE]
+> Make sure to replace `PATH_TO_VENV` with the actual path to your virtual environment
+
+```bash
+source env_isaacsim/bin/activate
+python3 run.py #using default policy
+python3 run.py --policy_dir YOUR_POLICY_DIR #using your own policy
+```

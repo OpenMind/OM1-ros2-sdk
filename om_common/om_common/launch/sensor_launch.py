@@ -48,6 +48,22 @@ def get_sensor_launch():
         "use_sim",
         default=EnvironmentVariable("USE_SIM", default_value="false"),
     )
+    d435_camera_ahead = LaunchConfiguration(
+        "d435_camera_ahead",
+        default=EnvironmentVariable("D435_CAMERA_AHEAD", default_value="0"),
+    )
+    d435_camera_height = LaunchConfiguration(
+        "d435_camera_height",
+        default=EnvironmentVariable("D435_CAMERA_HEIGHT", default_value="0.35"),
+    )
+    d435_tilt_angle = LaunchConfiguration(
+        "d435_tilt_angle",
+        default=EnvironmentVariable("D435_TILT_ANGLE", default_value="25.0"),
+    )
+    d435_obstacle_threshold = LaunchConfiguration(
+        "d435_obstacle_threshold",
+        default=EnvironmentVariable("D435_OBSTACLE_THRESHOLD", default_value="0.10"),
+    )
 
     entities = [
         DeclareLaunchArgument(
@@ -94,6 +110,26 @@ def get_sensor_launch():
             "use_sim",
             default_value=use_sim,
             description="Enable or disable simulation mode (can be set via USE_SIM environment variable)",
+        ),
+        DeclareLaunchArgument(
+            "d435_camera_ahead",
+            default_value=d435_camera_ahead,
+            description="Forward offset of the camera from lidar in meters (can be set via D435_CAMERA_AHEAD environment variable)",
+        ),
+        DeclareLaunchArgument(
+            "d435_camera_height",
+            default_value=d435_camera_height,
+            description="Height of the camera from ground in meters (can be set via CAMERA_HEIGHT environment variable)",
+        ),
+        DeclareLaunchArgument(
+            "d435_tilt_angle",
+            default_value=d435_tilt_angle,
+            description="Tilt angle of the camera in degrees (can be set via TILT_ANGLE environment variable)",
+        ),
+        DeclareLaunchArgument(
+            "d435_obstacle_threshold",
+            default_value=d435_obstacle_threshold,
+            description="Obstacle detection threshold in meters above ground (can be set via OBSTACLE_THRESHOLD environment variable)",
         ),
         Node(
             package="rplidar_ros",
@@ -167,7 +203,7 @@ def get_sensor_launch():
                 "--roll",
                 "0",
                 "--pitch",
-                "0.610865",
+                "0.436332313",
                 "--yaw",
                 "0",
                 "--frame-id",
@@ -184,6 +220,14 @@ def get_sensor_launch():
             package="om_common",
             executable="d435_obstacle_dector",
             name="d435_obstacle_dector",
+            parameters=[
+                {
+                    "camera_ahead": d435_camera_ahead,
+                    "camera_height": d435_camera_height,
+                    "tilt_angle": d435_tilt_angle,
+                    "obstacle_threshold": d435_obstacle_threshold,
+                }
+            ],
             output="screen",
             respawn=True,
             respawn_delay=2.0,
@@ -216,6 +260,15 @@ def get_sensor_launch():
             condition=IfCondition(
                 AndSubstitution(d435_camera_stream_enable, NotSubstitution(use_sim))
             ),
+        ),
+        Node(
+            package="om_common",
+            executable="d435_isaac_sim_scaler",
+            name="d435_isaac_sim_scaler",
+            output="screen",
+            respawn=True,
+            respawn_delay=2.0,
+            condition=IfCondition(use_sim),
         ),
     ]
 
