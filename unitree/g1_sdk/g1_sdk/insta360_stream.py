@@ -29,7 +29,6 @@ class Insta360Stream(Node):
         self.declare_parameter("rtsp_url", "rtsp://localhost:8554/top_camera")
         self.declare_parameter("decode_format", "H264")
         self.declare_parameter("fps", 30)
-        self.declare_parameter("decode_format", "H264")
 
         self.rtsp_url = self.get_parameter("rtsp_url").value
         self.fps = self.get_parameter("fps").value
@@ -59,9 +58,9 @@ class Insta360Stream(Node):
                 self.get_logger().error(f"Failed to open RTSP stream: {self.rtsp_url}")
                 return False
 
-            self._cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-            self._cap.set(cv2.CAP_PROP_FPS, self.fps)
-            self._cap.set(
+            self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+            self.cap.set(cv2.CAP_PROP_FPS, self.fps)
+            self.cap.set(
                 cv2.CAP_PROP_FOURCC,
                 cv2.VideoWriter_fourcc(*self.decode_format),  # type: ignore
             )
@@ -110,6 +109,7 @@ class Insta360Stream(Node):
 def main(args=None):
     """Main function to run the node."""
     rclpy.init(args=args)
+    node = None
 
     try:
         node = Insta360Stream()
@@ -117,8 +117,9 @@ def main(args=None):
     except KeyboardInterrupt:
         pass
     finally:
-        if rclpy.ok():
+        if node is not None:
             node.destroy_node()
+        if rclpy.ok():
             rclpy.shutdown()
 
 
