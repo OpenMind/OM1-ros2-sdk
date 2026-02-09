@@ -28,8 +28,9 @@ class ProcessManager:
         self.process: Optional[subprocess.Popen] = None
         self.robot_type = robot_type
 
-        self.package_name = "go2_sdk"
-        if self.robot_type == "g1":
+        if self.robot_type == "go2":
+            self.package_name = "go2_sdk"
+        elif self.robot_type == "g1":
             self.package_name = "g1_sdk"
         elif self.robot_type == "tron":
             self.package_name = "tron_sdk"
