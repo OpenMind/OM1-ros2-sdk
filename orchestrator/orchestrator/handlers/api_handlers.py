@@ -204,6 +204,18 @@ class APIHandlers:
             """
             Start autonomous docking sequence to charger.
             """
+            # Check if robot type supports charging
+            if self.orchestrator.robot_type.lower() != 'go2':
+                return (
+                    jsonify(
+                        {
+                            "status": "error",
+                            "message": f"Charging is only supported for go2 robot, not {self.orchestrator.robot_type}",
+                        }
+                    ),
+                    400,
+                )
+
             if not self.orchestrator.is_nav2_running():
                 return (
                     jsonify(
@@ -263,6 +275,18 @@ class APIHandlers:
             """
             Stop the charging dock process.
             """
+            # Check if robot type supports charging
+            if self.orchestrator.robot_type.lower() != 'go2':
+                return (
+                    jsonify(
+                        {
+                            "status": "error",
+                            "message": f"Charging is only supported for go2 robot, not {self.orchestrator.robot_type}",
+                        }
+                    ),
+                    400,
+                )
+
             if self.orchestrator.charging_manager.stop_dock_sequence():
                 return (
                     jsonify(
@@ -289,6 +313,18 @@ class APIHandlers:
             """
             Get current charging and docking status.
             """
+            # Check if robot type supports charging
+            if self.orchestrator.robot_type.lower() != 'go2':
+                return (
+                    jsonify(
+                        {
+                            "status": "error",
+                            "message": f"Charging is only supported for go2 robot, not {self.orchestrator.robot_type}",
+                        }
+                    ),
+                    400,
+                )
+
             status = self.orchestrator.charging_manager.get_status()
             return jsonify(status.model_dump()), 200
 
