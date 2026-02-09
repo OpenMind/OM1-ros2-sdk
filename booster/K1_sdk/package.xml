@@ -19,6 +19,7 @@
   <depend>ament_index_python</depend>
   <depend>realsense2_camera</depend>
   <depend>depth_image_proc</depend>
+  <depend>booster_interface</depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
