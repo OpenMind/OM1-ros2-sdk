@@ -32,6 +32,7 @@ class Insta360Stream(Node):
 
         self.rtsp_url = self.get_parameter("rtsp_url").value
         self.fps = self.get_parameter("fps").value
+        self.decode_format = self.get_parameter("decode_format").value
 
         self.bridge = CvBridge()
 
@@ -56,6 +57,13 @@ class Insta360Stream(Node):
             if not self.cap.isOpened():
                 self.get_logger().error(f"Failed to open RTSP stream: {self.rtsp_url}")
                 return False
+
+            self._cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+            self._cap.set(cv2.CAP_PROP_FPS, self.fps)
+            self._cap.set(
+                cv2.CAP_PROP_FOURCC,
+                cv2.VideoWriter_fourcc(*self.decode_format),  # type: ignore
+            )
 
             self.get_logger().info("Successfully connected to RTSP stream")
             return True
