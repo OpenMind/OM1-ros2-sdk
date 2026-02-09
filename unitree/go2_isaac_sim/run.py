@@ -133,8 +133,12 @@ def _configure_ros_utils_paths(robot_root: str) -> None:
     ros_utils.GO2_STAGE_PATH = robot_root
     ros_utils.IMU_PRIM = f"{robot_root}/base/imu_link"
     ros_utils.CAMERA_LINK_PRIM = f"{robot_root}/base/camera_link"
-    ros_utils.REALSENSE_DEPTH_CAMERA_PRIM = f"{ros_utils.CAMERA_LINK_PRIM}/realsense_depth_camera"
-    ros_utils.REALSENSE_RGB_CAMERA_PRIM = f"{ros_utils.CAMERA_LINK_PRIM}/realsense_rgb_camera"
+    ros_utils.REALSENSE_DEPTH_CAMERA_PRIM = (
+        f"{ros_utils.CAMERA_LINK_PRIM}/realsense_depth_camera"
+    )
+    ros_utils.REALSENSE_RGB_CAMERA_PRIM = (
+        f"{ros_utils.CAMERA_LINK_PRIM}/realsense_rgb_camera"
+    )
     ros_utils.GO2_RGB_CAMERA_PRIM = f"{ros_utils.CAMERA_LINK_PRIM}/go2_rgb_camera"
     ros_utils.L1_LINK_PRIM = f"{robot_root}/base/lidar_l1_link"
     ros_utils.L1_LIDAR_PRIM = f"{ros_utils.L1_LINK_PRIM}/lidar_l1_rtx"
