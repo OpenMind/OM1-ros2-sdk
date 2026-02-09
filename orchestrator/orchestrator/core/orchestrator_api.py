@@ -62,7 +62,7 @@ class OrchestratorAPI(Node):
         self.location_manager = LocationManager(
             self.maps_directory, self.locations_directory, self.get_logger()
         )
-        self.charging_manager = ChargingManager(self.get_logger())
+        self.charging_manager = ChargingManager(self.robot_type, self.get_logger())
 
         self.transform_service = TransformService(self, self.get_logger())
         self.flask_service = FlaskService(logger=self.get_logger())
