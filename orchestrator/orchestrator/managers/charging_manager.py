@@ -43,7 +43,7 @@ class ChargingManager:
             Battery current in mA.
         """
         # Charging manager only supports GO2
-        if self.robot_type.lower() != 'go2':
+        if self.robot_type.lower() != "go2":
             return
 
         self.battery_soc = soc
@@ -93,9 +93,11 @@ class ChargingManager:
             True if dock sequence started successfully, False otherwise.
         """
         # Charging manager only supports GO2
-        if self.robot_type.lower() != 'go2':
+        if self.robot_type.lower() != "go2":
             if self.logger:
-                self.logger.warning(f"Auto Charging is not supported for {self.robot_type}")
+                self.logger.warning(
+                    f"Auto Charging is not supported for {self.robot_type}"
+                )
             return False
 
         if self.process_manager.is_running():
@@ -127,7 +129,7 @@ class ChargingManager:
             True if dock sequence stopped successfully, False otherwise.
         """
         # Charging manager only supports GO2
-        if self.robot_type.lower() != 'go2':
+        if self.robot_type.lower() != "go2":
             if self.logger:
                 self.logger.warning(f"Charging is not supported for {self.robot_type}")
             return False

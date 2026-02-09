@@ -205,7 +205,7 @@ class APIHandlers:
             Start autonomous docking sequence to charger.
             """
             # Check if robot type supports charging
-            if self.orchestrator.robot_type.lower() != 'go2':
+            if self.orchestrator.robot_type.lower() != "go2":
                 return (
                     jsonify(
                         {
@@ -276,7 +276,7 @@ class APIHandlers:
             Stop the charging dock process.
             """
             # Check if robot type supports charging
-            if self.orchestrator.robot_type.lower() != 'go2':
+            if self.orchestrator.robot_type.lower() != "go2":
                 return (
                     jsonify(
                         {
@@ -314,7 +314,7 @@ class APIHandlers:
             Get current charging and docking status.
             """
             # Check if robot type supports charging
-            if self.orchestrator.robot_type.lower() != 'go2':
+            if self.orchestrator.robot_type.lower() != "go2":
                 return (
                     jsonify(
                         {
