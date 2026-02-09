@@ -267,12 +267,11 @@ def setup_sensors_delayed(simulation_app, render_hz: Optional[float] = None) -> 
         # Camera link
         ensure_link_xform(usd_stage, CAMERA_LINK_PRIM,
                           translation=(0.3, 0.0, 0.10),
-                          rpy_rad=(math.radians(90.0), math.radians(-25.0), math.radians(-90.0)))
+                          rpy_rad=(math.radians(90.0), math.radians(0.0), math.radians(-90.0)))
 
         realsense_depth_camera = Camera(
             prim_path=REALSENSE_DEPTH_CAMERA_PRIM,
             name="realsense_depth_camera",
-            frequency=25,
             resolution=(480, 270),
         )
         realsense_depth_camera.initialize()
@@ -295,7 +294,6 @@ def setup_sensors_delayed(simulation_app, render_hz: Optional[float] = None) -> 
         realsense_rgb_camera = Camera(
             prim_path=REALSENSE_RGB_CAMERA_PRIM,
             name="realsense_rgb_camera",
-            frequency=10,
             resolution=(640, 480),
         )
         realsense_rgb_camera.initialize()
@@ -316,7 +314,6 @@ def setup_sensors_delayed(simulation_app, render_hz: Optional[float] = None) -> 
         go2_rgb_camera = Camera(
             prim_path=GO2_RGB_CAMERA_PRIM,
             name="go2_rgb_camera",
-            frequency=10,
             resolution=(640, 480),
         )
         go2_rgb_camera.initialize()
@@ -336,7 +333,7 @@ def setup_sensors_delayed(simulation_app, render_hz: Optional[float] = None) -> 
     except Exception as e:
         logger.info(f"[WARN] Camera setup failed: {e}")
         import traceback
-        traceback.logger.info_exc()
+        traceback.print_exc()
 
     # --- IMU ---
     try:
@@ -376,7 +373,7 @@ def setup_sensors_delayed(simulation_app, render_hz: Optional[float] = None) -> 
     except Exception as e:
         logger.info(f"[WARN] L1 LiDAR setup failed: {e}")
         import traceback
-        traceback.logger.info_exc()
+        traceback.print_exc()
 
     try:
         ensure_link_xform(usd_stage, VELO_BASE_LINK_PRIM, translation=(0.1, 0.0, 0.2), rpy_rad=(0.0, 0.0, 0.0))
@@ -403,7 +400,7 @@ def setup_sensors_delayed(simulation_app, render_hz: Optional[float] = None) -> 
     except Exception as e:
         logger.info(f"[WARN] 2D LiDAR setup failed: {e}")
         import traceback
-        traceback.logger.info_exc()
+        traceback.print_exc()
 
     simulation_app.update()
     return sensors
@@ -835,7 +832,7 @@ def setup_ros_publishers(sensors, simulation_app) -> None:
             except Exception as e:
                 logger.info(f"[WARN] Camera publisher setup failed: {e}")
                 import traceback
-                traceback.logger.info_exc()
+                traceback.print_exc()
 
     # Setup static TFs for sensor frames
     setup_static_tfs(simulation_app)
