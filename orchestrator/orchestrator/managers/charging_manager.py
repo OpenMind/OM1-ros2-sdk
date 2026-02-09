@@ -10,17 +10,19 @@ class ChargingManager:
     Manages charging operations and status monitoring.
     """
 
-    def __init__(self, logger=None):
+    def __init__(self, robot_type: str, logger=None):
         """
         Initialize the ChargingManager.
 
         Parameters
         ----------
+        robot_type : str
+            Type of robot (e.g., 'go2', 'g1', 'tron').
         logger
             Logger instance for logging operations.
         """
         self.logger = logger
-        self.process_manager = ProcessManager()
+        self.process_manager = ProcessManager(robot_type)
 
         self.is_charging = False
         self.battery_soc = 0.0
