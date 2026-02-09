@@ -52,7 +52,7 @@ class Go2AutoChargeMonitor(Node):
 
         # Publisher for charging status
         self.status_pub = self.create_publisher(
-            OMChargingStatus, "/go2/charging_status", 10
+            OMChargingStatus, "/om/go2/charging_status", 10
         )
 
         self.pose_sub = self.create_subscription(
