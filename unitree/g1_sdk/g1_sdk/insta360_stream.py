@@ -17,6 +17,7 @@ import cv2
 import rclpy
 from cv_bridge import CvBridge
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy
 from sensor_msgs.msg import Image
 
 
@@ -36,14 +37,20 @@ class Insta360Stream(Node):
 
         self.bridge = CvBridge()
 
+        qos_profile = QoSProfile(
+            reliability=QoSReliabilityPolicy.BEST_EFFORT,
+            history=QoSHistoryPolicy.KEEP_LAST,
+            depth=1
+        )
+
         self.image_publisher = self.create_publisher(
-            Image, "/camera/insta360/image_raw", 10
+            Image, "/camera/insta360/image_raw", qos_profile
         )
 
         self.cap = None
         self.initialize_capture()
 
-        timer_period = 1.0 / self.fps
+        timer_period = 1.0 / (self.fps * 2)  # Poll at 2x FPS for low latency
         self.timer = self.create_timer(timer_period, self.capture_and_publish)
 
         self.get_logger().info("Insta360 Stream Bridge started")
@@ -64,6 +71,8 @@ class Insta360Stream(Node):
                 cv2.CAP_PROP_FOURCC,
                 cv2.VideoWriter_fourcc(*self.decode_format),  # type: ignore
             )
+            self.cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 1000)
+            self.cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, 100)
 
             self.get_logger().info("Successfully connected to RTSP stream")
             return True
@@ -80,7 +89,10 @@ class Insta360Stream(Node):
             return
 
         try:
-            ret, frame = self.cap.read()
+            for _ in range(2):
+                self.cap.grab()
+
+            ret, frame = self.cap.retrieve()
 
             if not ret:
                 self.get_logger().warn(
