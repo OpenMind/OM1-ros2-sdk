@@ -85,6 +85,7 @@ ros2 launch go2_sdk slam_launch.py
 ### Additional Documentation
 - **[REST API Documentation](docs/API.md)** - Complete API reference for remote control
 - **[Production Deployment](docs/DEPLOYMENT.md)** - Docker deployment and production setup
+- **[Isaac Simulator](docs/ISAAC_SIM.md)** - Setting up and using Isaac Sim for advanced simulation
 - **[Gazebo Simulation](docs/GAZEBO.md)** - Simulation environment setup and usage
 
 ## Contributing
