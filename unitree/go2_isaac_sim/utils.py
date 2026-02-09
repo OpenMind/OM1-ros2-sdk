@@ -281,9 +281,9 @@ def setup_sensors_delayed(simulation_app, render_hz: Optional[float] = None) -> 
             from pxr import UsdGeom, Gf
             xformable = UsdGeom.Xformable(realsense_depth_cam_prim)
             xformable.ClearXformOpOrder()
-            xformable.AddTranslateOp().Set(Gf.Vec3d(0.0, 0.0, 0.0))
-            xformable.AddRotateXYZOp().Set(Gf.Vec3f(0.0, 0.0, 0.0))
-            logger.info(f"[Sensors] Cleared realsense_depth_camera transform offset")
+            xformable.AddTranslateOp().Set(Gf.Vec3d(0.0, 0.0, 0.05))  # 5cm higher than Go2 camera
+            xformable.AddRotateXYZOp().Set(Gf.Vec3f(-25.0, 0.0, 0.0))  # 25° downward tilt (X-axis)
+            logger.info(f"[Sensors] Set realsense_depth_camera 25° downward tilt, 5cm higher")
 
         realsense_depth_camera.set_clipping_range(near_distance=0.1, far_distance=100.0)
         realsense_depth_camera.add_distance_to_image_plane_to_frame()
@@ -303,9 +303,9 @@ def setup_sensors_delayed(simulation_app, render_hz: Optional[float] = None) -> 
             from pxr import UsdGeom, Gf
             xformable = UsdGeom.Xformable(realsense_rgb_cam_prim)
             xformable.ClearXformOpOrder()
-            xformable.AddTranslateOp().Set(Gf.Vec3d(0.0, 0.0, 0.0))
-            xformable.AddRotateXYZOp().Set(Gf.Vec3f(0.0, 0.0, 0.0))
-            logger.info(f"[Sensors] Cleared realsense_rgb_camera transform offset")
+            xformable.AddTranslateOp().Set(Gf.Vec3d(0.0, 0.0, 0.05))  # 5cm higher than Go2 camera
+            xformable.AddRotateXYZOp().Set(Gf.Vec3f(-25.0, 0.0, 0.0))  # 25° downward tilt (X-axis)
+            logger.info(f"[Sensors] Set realsense_rgb_camera 25° downward tilt, 5cm higher")
 
         realsense_rgb_camera.set_clipping_range(near_distance=0.1, far_distance=100.0)
         sensors["realsense_rgb_camera"] = realsense_rgb_camera
