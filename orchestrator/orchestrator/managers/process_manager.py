@@ -23,14 +23,22 @@ class ProcessManager:
         Parameters
         ----------
         robot_type : str
-            The type of robot, either "go2" or "g1".
+            The type of robot, either "go2", "g1" or "tron". This determines which ROS2 package's launch files to use.
         """
         self.process: Optional[subprocess.Popen] = None
         self.robot_type = robot_type
 
+        self.package_name = "go2_sdk"
+        if self.robot_type == "g1":
+            self.package_name = "g1_sdk"
+        elif self.robot_type == "tron":
+            self.package_name = "tron_sdk"
+        else:
+            raise ValueError(f"Unsupported robot type: {self.robot_type}")
+
     def start(self, launch_file: str, args: Optional[str] = None) -> bool:
         """
-        Start a ROS2 launch file as a subprocess, selecting the correct package for robot type.
+        Start a ROS2 launch file as a subprocess.
 
         Parameters
         ----------
@@ -45,8 +53,7 @@ class ProcessManager:
             True if the process was started successfully, False if a process is already running.
         """
         if self.process is None or self.process.poll() is not None:
-            package = "g1_sdk" if self.robot_type == "g1" else "go2_sdk"
-            cmd = ["ros2", "launch", package, launch_file]
+            cmd = ["ros2", "launch", self.package_name, launch_file]
             if args:
                 cmd.extend(args.split())
             self.process = subprocess.Popen(cmd, preexec_fn=os.setsid)
