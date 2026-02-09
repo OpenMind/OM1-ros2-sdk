@@ -29,6 +29,7 @@ class Insta360Stream(Node):
         self.declare_parameter("rtsp_url", "rtsp://localhost:8554/top_camera")
         self.declare_parameter("decode_format", "H264")
         self.declare_parameter("fps", 30)
+        self.declare_parameter("decode_format", "H264")
 
         self.rtsp_url = self.get_parameter("rtsp_url").value
         self.fps = self.get_parameter("fps").value
