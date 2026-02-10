@@ -10,6 +10,7 @@ import numpy as np
 import rclpy
 from cv_bridge import CvBridge
 from rclpy.node import Node
+from rclpy.qos import HistoryPolicy, QoSProfile, ReliabilityPolicy
 from sensor_msgs.msg import Image
 from unitree_api.msg import Request, RequestHeader, RequestIdentity, Response
 
@@ -68,7 +69,23 @@ class Go2CameraStreamNode(Node):
             Response, "/api/videohub/response", self.camera_response_callback, 10
         )
 
-        self.image_publisher = self.create_publisher(Image, "/camera/go2/image_raw", 10)
+        reliable_qos = QoSProfile(
+            reliability=ReliabilityPolicy.RELIABLE,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=10,
+        )
+        best_effort_qos = QoSProfile(
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=5,
+        )
+
+        self.image_publisher_reliable = self.create_publisher(
+            Image, "/camera/go2/image_raw", reliable_qos
+        )
+        self.image_publisher_best_effort = self.create_publisher(
+            Image, "/camera/go2/image_raw/best_effort", best_effort_qos
+        )
 
         # 30 Hz timer to request camera images
         self.create_timer(1 / 30, self.request_camera_image)
@@ -260,7 +277,9 @@ class Go2CameraStreamNode(Node):
                 image_msg = self.bridge.cv2_to_imgmsg(frame, encoding="bgr8")
                 image_msg.header.stamp = self.get_clock().now().to_msg()
                 image_msg.header.frame_id = "go2_camera"
-                self.image_publisher.publish(image_msg)
+
+                self.image_publisher_reliable.publish(image_msg)
+                self.image_publisher_best_effort.publish(image_msg)
             except Exception as e:
                 self.get_logger().error(f"Error publishing image: {e}")
 
