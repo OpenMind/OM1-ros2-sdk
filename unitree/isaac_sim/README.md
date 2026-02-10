@@ -1,9 +1,9 @@
-# Unitree Go2 Isaac Sim (go2_isaac_sim)
+# Unitree Isaac Sim (isaac_sim)
 
-This repository contains the ROS 2 Isaac Sim script for the Unitree Go2 quadruped robot. It provides a complete simulation environment compatible with the unitree-sdk, including mapping and navigation capabilities
+This repository contains the ROS 2 Isaac Sim script for Unitree robots (G1 and GO2). It provides a complete simulation environment compatible with the OM1-ros2-sdk, including mapping and navigation capabilities
 
 ## Features
-- **Isaac Sim**: Realistic physics simulation of the Unitree Go2.
+- **Isaac Sim**: Realistic physics simulation of Unitree robots (G1 and GO2).
 - **Navigation Stack (Nav2)**: Fully configured navigation stack for autonomous movement.
 - **SLAM**: Mapping capabilities using `slam_toolbox`.
 - **LiDAR Support**: Simulation of Velodyne VLP-16 and Unitree 4D LiDAR.
@@ -39,8 +39,19 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:PATH_TO_VENV/env_isaaclab/lib/python3.11
 > [!NOTE]
 > Make sure to replace `PATH_TO_VENV` with the actual path to your virtual environment
 
+
+### Go2 Simulation
+
 ```bash
 source env_isaacsim/bin/activate
-python3 run.py #using default policy
-python3 run.py --policy_dir YOUR_POLICY_DIR #using your own policy
+python3 run.py # using default policy
+python3 run.py --policy_dir YOUR_POLICY_DIR # using your own policy
+```
+
+### G1 Simulation
+
+```bash
+source env_isaacsim/bin/activate
+python3 run.py --robot_type g1 # using default policy
+python3 run.py --robot_type g1 --policy_dir YOUR_POLICY_DIR # using your own policy
 ```
