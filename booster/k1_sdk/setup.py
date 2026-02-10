@@ -23,7 +23,6 @@ setup(
     entry_points={
         "console_scripts": [
             "k1_odom = k1_sdk.k1_odom:main",
-            "insta360_stream = k1_sdk.insta360_stream:main",
         ],
     },
 )
