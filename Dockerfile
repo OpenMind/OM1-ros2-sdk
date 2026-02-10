@@ -32,8 +32,7 @@ RUN apt-get update && \
     libportaudio2 \
     x11-apps \
     libsm6 \
-    ffmpeg && \
-    rm -rf /var/lib/apt/lists/*
+    ffmpeg
 
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1 \
     && update-alternatives --set python3 /usr/bin/python3.10
