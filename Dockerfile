@@ -2,9 +2,8 @@ FROM ros:humble-ros-base-jammy AS base
 
 SHELL ["/bin/bash", "-c"]
 
-RUN apt-get update
-
-RUN apt-get install -y \
+RUN apt-get update && \
+    apt-get install -y \
     software-properties-common \
     python3-pip \
     python3.10 \
@@ -33,7 +32,8 @@ RUN apt-get install -y \
     libportaudio2 \
     x11-apps \
     libsm6 \
-    ffmpeg
+    ffmpeg && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1 \
     && update-alternatives --set python3 /usr/bin/python3.10
