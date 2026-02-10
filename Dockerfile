@@ -2,8 +2,9 @@ FROM ros:humble-ros-base-jammy AS base
 
 SHELL ["/bin/bash", "-c"]
 
-RUN sed -i 's|http://archive.ubuntu.com|https://archive.ubuntu.com|g' /etc/apt/sources.list
-RUN sed -i 's|http://security.ubuntu.com|https://security.ubuntu.com|g' /etc/apt/sources.list
+RUN sed -i 's|http://ports.ubuntu.com|https://ports.ubuntu.com|g' /etc/apt/sources.list 2>/dev/null || true \
+    && sed -i 's|http://ports.ubuntu.com|https://ports.ubuntu.com|g' /etc/apt/sources.list.d/ubuntu.sources 2>/dev/null || true \
+    && find /etc/apt/sources.list.d -type f -maxdepth 1 -exec sed -i 's|http://ports.ubuntu.com|https://ports.ubuntu.com|g' {} \; 2>/dev/null || true
 
 RUN apt-get update && \
     apt-get install -y \
