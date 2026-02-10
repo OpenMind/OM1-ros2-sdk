@@ -44,6 +44,7 @@
                       ".*/cmd_vel",
                       ".*/cmd_vel_nav",
                       ".*/cmd_vel_teleop",
+                      ".*/remote_controller_state",
                       ".*/lowcmd",
 
                       // Sensor data
@@ -137,6 +138,7 @@
                       ".*/mf/sportmodestate",
                       ".*/multiplestate",
                       ".*/odom",
+                      ".*/odometer_state",
                       ".*/utlidar/robot_odom",
                       ".*/utlidar/robot_pose",
                       ".*/om/pose",
@@ -157,6 +159,7 @@
                       ".*/cmd_vel",
                       ".*/cmd_vel_nav",
                       ".*/cmd_vel_teleop",
+                      ".*/remote_controller_state",
                       ".*/lowcmd",
 
                       // Sensor data
