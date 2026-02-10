@@ -254,6 +254,7 @@ def setup_sensors_delayed(
     enable_lidar: bool = True,
     lidar_l1_position: Optional[Tuple[float, float, float]] = None,
     lidar_velo_position: Optional[Tuple[float, float, float]] = None,
+    robot_type: str = "go2",
 ) -> dict:
     """Setup sensors after simulation is fully running."""
     import omni.kit.commands
@@ -343,30 +344,32 @@ def setup_sensors_delayed(
         sensors["realsense_rgb_camera"] = realsense_rgb_camera
         logger.info("[Sensors] RealSense RGB camera initialized")
 
-        go2_rgb_camera = Camera(
-            prim_path=GO2_RGB_CAMERA_PRIM,
-            name="go2_rgb_camera",
-            resolution=(640, 480),
-        )
-        go2_rgb_camera.initialize()
-
-        go2_rgb_cam_prim = usd_stage.GetPrimAtPath(GO2_RGB_CAMERA_PRIM)
-        if go2_rgb_cam_prim and go2_rgb_cam_prim.IsValid():
-            from pxr import Gf, UsdGeom
-
-            xformable = UsdGeom.Xformable(go2_rgb_cam_prim)
-            xformable.ClearXformOpOrder()
-            xformable.AddTranslateOp().Set(Gf.Vec3d(0.0, 0.0, 0.0))
-            xformable.AddRotateXYZOp().Set(
-                Gf.Vec3f(0.0, 25.0, 0.0)
-            )  # Counteract camera_link's -25° tilt
-            logger.info(
-                "[Sensors] Set go2_rgb_camera to face forward (counteracting camera_link tilt)"
+        # Only add go2_rgb_camera for go2 robot
+        if robot_type == "go2":
+            go2_rgb_camera = Camera(
+                prim_path=GO2_RGB_CAMERA_PRIM,
+                name="go2_rgb_camera",
+                resolution=(640, 480),
             )
+            go2_rgb_camera.initialize()
 
-        go2_rgb_camera.set_clipping_range(near_distance=0.1, far_distance=100.0)
-        sensors["go2_rgb_camera"] = go2_rgb_camera
-        logger.info("[Sensors] Go2 RGB camera initialized")
+            go2_rgb_cam_prim = usd_stage.GetPrimAtPath(GO2_RGB_CAMERA_PRIM)
+            if go2_rgb_cam_prim and go2_rgb_cam_prim.IsValid():
+                from pxr import Gf, UsdGeom
+
+                xformable = UsdGeom.Xformable(go2_rgb_cam_prim)
+                xformable.ClearXformOpOrder()
+                xformable.AddTranslateOp().Set(Gf.Vec3d(0.0, 0.0, 0.0))
+                xformable.AddRotateXYZOp().Set(
+                    Gf.Vec3f(0.0, 25.0, 0.0)
+                )  # Counteract camera_link's -25° tilt
+                logger.info(
+                    "[Sensors] Set go2_rgb_camera to face forward (counteracting camera_link tilt)"
+                )
+
+            go2_rgb_camera.set_clipping_range(near_distance=0.1, far_distance=100.0)
+            sensors["go2_rgb_camera"] = go2_rgb_camera
+            logger.info("[Sensors] Go2 RGB camera initialized")
     except Exception as e:
         logger.info(f"[WARN] Camera setup failed: {e}")
         import traceback
@@ -679,7 +682,6 @@ def setup_color_camera_publishers(sensors, simulation_app) -> None:
         rp = cam.get_render_product_path()
         if rp:
             try:
-                # RGB image for Go2 camera
                 rv = syn_data.SyntheticData.convert_sensor_type_to_rendervar(
                     sd.SensorType.Rgb.name
                 )

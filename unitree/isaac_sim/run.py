@@ -819,6 +819,7 @@ class RobotRosRunner(object):
             enable_lidar=enable_lidar,
             lidar_l1_position=lidar_l1_pos,
             lidar_velo_position=lidar_velo_pos,
+            robot_type=self._robot_type,
         )
 
         # Additional render steps to initialize camera render products
