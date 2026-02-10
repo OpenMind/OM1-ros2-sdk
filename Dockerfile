@@ -2,6 +2,9 @@ FROM ros:humble-ros-base-jammy AS base
 
 SHELL ["/bin/bash", "-c"]
 
+RUN sed -i 's|http://archive.ubuntu.com|https://archive.ubuntu.com|g' /etc/apt/sources.list
+RUN sed -i 's|http://security.ubuntu.com|https://security.ubuntu.com|g' /etc/apt/sources.list
+
 RUN apt-get update && \
     apt-get install -y \
     software-properties-common \
