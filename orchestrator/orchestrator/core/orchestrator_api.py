@@ -3,6 +3,7 @@ import os
 import rclpy
 from geometry_msgs.msg import Twist
 from rclpy.node import Node
+from unitree_go.msg import LowState
 
 from om_api.msg import (
     MapStorage,
@@ -19,7 +20,6 @@ from om_api.msg import (
     OMTTSRequest,
     OMTTSResponse,
 )
-from unitree_go.msg import LowState
 
 from ..handlers.api_handlers import APIHandlers
 from ..handlers.ros_handlers import ROSHandlers
@@ -62,7 +62,7 @@ class OrchestratorAPI(Node):
         self.location_manager = LocationManager(
             self.maps_directory, self.locations_directory, self.get_logger()
         )
-        self.charging_manager = ChargingManager(self.get_logger())
+        self.charging_manager = ChargingManager(self.robot_type, self.get_logger())
 
         self.transform_service = TransformService(self, self.get_logger())
         self.flask_service = FlaskService(logger=self.get_logger())

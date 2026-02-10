@@ -38,6 +38,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/OMModeResponse.msg"
   "msg/OMTTSRequest.msg"
   "msg/OMTTSResponse.msg"
+  "msg/OMChargingStatus.msg"
   DEPENDENCIES std_msgs geometry_msgs
 )
 

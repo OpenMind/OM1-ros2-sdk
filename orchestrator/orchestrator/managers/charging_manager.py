@@ -10,17 +10,20 @@ class ChargingManager:
     Manages charging operations and status monitoring.
     """
 
-    def __init__(self, logger=None):
+    def __init__(self, robot_type: str, logger=None):
         """
         Initialize the ChargingManager.
 
         Parameters
         ----------
+        robot_type : str
+            Type of robot (e.g., 'go2', 'g1', 'tron').
         logger
             Logger instance for logging operations.
         """
         self.logger = logger
-        self.process_manager = ProcessManager()
+        self.robot_type = robot_type
+        self.process_manager = ProcessManager(robot_type)
 
         self.is_charging = False
         self.battery_soc = 0.0
@@ -39,6 +42,10 @@ class ChargingManager:
         current : float
             Battery current in mA.
         """
+        # Charging manager only supports GO2
+        if self.robot_type.lower() != "go2":
+            return
+
         self.battery_soc = soc
         self.battery_current = current
 
@@ -85,6 +92,14 @@ class ChargingManager:
         bool
             True if dock sequence started successfully, False otherwise.
         """
+        # Charging manager only supports GO2
+        if self.robot_type.lower() != "go2":
+            if self.logger:
+                self.logger.warning(
+                    f"Auto Charging is not supported for {self.robot_type}"
+                )
+            return False
+
         if self.process_manager.is_running():
             if self.logger:
                 self.logger.warning("Charging dock process is already running")
@@ -113,6 +128,12 @@ class ChargingManager:
         bool
             True if dock sequence stopped successfully, False otherwise.
         """
+        # Charging manager only supports GO2
+        if self.robot_type.lower() != "go2":
+            if self.logger:
+                self.logger.warning(f"Charging is not supported for {self.robot_type}")
+            return False
+
         if self.process_manager.stop():
             self.charging_confirmed_time = None  # Reset confirmation timer
             if self.logger:

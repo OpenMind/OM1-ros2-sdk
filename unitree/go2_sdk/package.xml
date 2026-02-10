@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>go2_sdk</name>
+  <version>0.0.0</version>
+  <description>Unitree Go2 and G1 robot SDK with SLAM capabilities</description>
+  <maintainer email="hello@openmind.org">OpenMind</maintainer>
+  <license>MIT</license>
+
+  <depend>rclpy</depend>
+  <depend>tf2_ros</depend>
+  <depend>sensor_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>om_common</depend>
+  <depend>rplidar_ros</depend>
+  <depend>topic_tools</depend>
+  <depend>slam_toolbox</depend>
+  <depend>launch</depend>
+  <depend>launch_ros</depend>
+  <depend>ament_index_python</depend>
+  <depend>robot_state_publisher</depend>
+  <depend>joint_state_publisher</depend>
+  <depend>nav2_bringup</depend>
+  <depend>nav2_map_server</depend>
+  <depend>nav2_amcl</depend>
+  <depend>nav2_controller</depend>
+  <depend>nav2_planner</depend>
+  <depend>nav2_bt_navigator</depend>
+  <depend>nav2_lifecycle_manager</depend>
+  <depend>nav2_rviz_plugins</depend>
+  <depend>nav2_behaviors</depend>
+  <depend>nav2_smoother</depend>
+  <depend>nav2_velocity_smoother</depend>
+  <depend>nav2_waypoint_follower</depend>
+  <depend>spatio_temporal_voxel_layer</depend>
+  <depend>joy</depend>
+  <depend>teleop_twist_joy</depend>
+  <depend>realsense2_camera</depend>
+  <depend>depth_image_proc</depend>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
