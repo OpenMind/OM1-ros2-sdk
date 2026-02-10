@@ -26,15 +26,6 @@ def generate_launch_description():
                 respawn_delay=2.0,
                 condition=UnlessCondition(use_sim),
             ),
-            Node(
-                package="k1_sdk",
-                executable="cmd_vel_to_k1",
-                name="cmd_vel_to_k1",
-                output="screen",
-                respawn=True,
-                respawn_delay=2.0,
-                condition=UnlessCondition(use_sim),
-            ),
         ]
     )
 

@@ -22,7 +22,6 @@ setup(
     license="MIT",
     entry_points={
         "console_scripts": [
-            "cmd_vel_to_k1 = k1_sdk.k1_movement:main",
             "k1_odom = k1_sdk.k1_odom:main",
             "insta360_stream = k1_sdk.insta360_stream:main",
         ],
