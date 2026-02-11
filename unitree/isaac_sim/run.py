@@ -51,6 +51,7 @@ ROBOT_G1 = "g1"
 
 G1_INIT_HEIGHT = 1.05
 G1_HISTORY_LENGTH = 5
+CMD_VEL_TIMEOUT = 0.5  # seconds – stop if no new /cmd_vel received
 
 logger = logging.getLogger(__name__)
 
@@ -744,6 +745,9 @@ class RobotRosRunner(object):
         _configure_ros_utils_paths(robot_root, robot_type)
 
         self._base_command = np.zeros(3, dtype=np.float32)
+        self._last_cmd_vel_time: Optional[float] = None
+        self._last_cmd_vel_count: int = 0
+        self._cmd_vel_count_attr = None
 
         cmd_scale = np.maximum(np.abs(self._cmd_min), np.abs(self._cmd_max))
         vx, vy, wz = cmd_scale.tolist()
@@ -786,8 +790,8 @@ class RobotRosRunner(object):
 
     def setup_ros(self) -> None:
         """Set up ROS2 nodes for command velocity and sensor publishers."""
-        self._linear_attr, self._angular_attr = ros_utils.setup_cmd_vel_graph(
-            self._cmd_vel_topic
+        self._linear_attr, self._angular_attr, self._cmd_vel_count_attr = (
+            ros_utils.setup_cmd_vel_graph(self._cmd_vel_topic)
         )
         if not self._enable_sensors:
             return
@@ -906,12 +910,27 @@ class RobotRosRunner(object):
             return
 
         cmd = self._base_command.copy()
-        cmd_vel = self._get_cmd_vel()
-        if cmd_vel is not None:
-            if self._cmd_vel_only:
-                cmd = cmd_vel
-            else:
-                cmd = cmd + cmd_vel
+
+        # Check if a new /cmd_vel message arrived via the OmniGraph counter
+        now = time.time()
+        if self._cmd_vel_count_attr is not None:
+            count = self._cmd_vel_count_attr.get()
+            if count != self._last_cmd_vel_count:
+                self._last_cmd_vel_count = count
+                self._last_cmd_vel_time = now
+
+        timed_out = (
+            self._last_cmd_vel_time is None
+            or (now - self._last_cmd_vel_time) > CMD_VEL_TIMEOUT
+        )
+
+        if not timed_out:
+            cmd_vel = self._get_cmd_vel()
+            if cmd_vel is not None:
+                if self._cmd_vel_only:
+                    cmd = cmd_vel
+                else:
+                    cmd = cmd + cmd_vel
 
         cmd = np.minimum(np.maximum(cmd, self._cmd_min), self._cmd_max)
         self._robot.forward(step_size, cmd)
