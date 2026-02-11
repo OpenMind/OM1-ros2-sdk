@@ -138,7 +138,7 @@ class OMPath(Node):
         for angle, distance in data:
             d_m = distance
 
-            if not math.isfinite(d_m) or d_m > 3.0 or d_m < self.relevant_distance_min:
+            if not math.isfinite(d_m) or d_m > 5.0 or d_m < self.relevant_distance_min:
                 continue
 
             # Only rotate sensor data if not in simulation
