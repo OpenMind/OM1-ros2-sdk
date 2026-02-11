@@ -90,10 +90,10 @@ class OMPath(Node):
 
         for range_key in path_ranges:
             self.paths_pubs[range_key] = self.create_publisher(
-                Paths, f"/om/paths/{range_key}", 10
+                Paths, f"/om/paths/r{range_key}", 10
             )
             self.markers_pubs[range_key] = self.create_publisher(
-                MarkerArray, f"/om/paths_markers/{range_key}", 10
+                MarkerArray, f"/om/paths_markers/r{range_key}", 10
             )
 
         self.paths_pub_default = self.create_publisher(Paths, "/om/paths", 10)
