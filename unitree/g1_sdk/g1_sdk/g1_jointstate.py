@@ -20,7 +20,9 @@ class G1JointStatePublisher(Node):
         self.declare_parameter("publish_rate", 50.0)
         self.publish_rate = self.get_parameter("publish_rate").value
 
-        self.min_publish_interval = 1.0 / self.publish_rate if self.publish_rate > 0 else 0.0
+        self.min_publish_interval = (
+            1.0 / self.publish_rate if self.publish_rate > 0 else 0.0
+        )
         self.last_publish_time = self.get_clock().now()
 
         # Publisher for joint states
@@ -84,7 +86,9 @@ class G1JointStatePublisher(Node):
             The incoming LowState message containing motor states.
         """
         current_time = self.get_clock().now()
-        time_since_last_publish = (current_time - self.last_publish_time).nanoseconds / 1e9
+        time_since_last_publish = (
+            current_time - self.last_publish_time
+        ).nanoseconds / 1e9
 
         if time_since_last_publish < self.min_publish_interval:
             return
