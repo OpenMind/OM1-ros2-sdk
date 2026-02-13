@@ -86,8 +86,14 @@ def yaw_to_quat_xyzw(yaw: float):
     return [0.0, 0.0, math.sin(half), math.cos(half)]
 
 
-def setup_cmd_vel_graph(topic_name: str = "/cmd_vel") -> Tuple[object, object]:
-    """Set up the command velocity subscriber graph for ROS2 integration."""
+def setup_cmd_vel_graph(
+    topic_name: str = "/cmd_vel",
+) -> Tuple[object, object, object]:
+    """Set up the command velocity subscriber graph for ROS2 integration.
+
+    Returns (linear_attr, angular_attr, msg_count_attr).
+    msg_count_attr increments each time a new /cmd_vel message is received.
+    """
     import omni.graph.core as og
     from isaacsim.core.utils import extensions
     from isaacsim.core.utils.prims import is_prim_path_valid
@@ -107,10 +113,12 @@ def setup_cmd_vel_graph(topic_name: str = "/cmd_vel") -> Tuple[object, object]:
                     ("OnTick", "omni.graph.action.OnTick"),
                     ("ROS2Context", "isaacsim.ros2.bridge.ROS2Context"),
                     ("TwistSub", "isaacsim.ros2.bridge.ROS2SubscribeTwist"),
+                    ("MsgCounter", "omni.graph.action.Counter"),
                 ],
                 og.Controller.Keys.CONNECT: [
                     ("OnTick.outputs:tick", "TwistSub.inputs:execIn"),
                     ("ROS2Context.outputs:context", "TwistSub.inputs:context"),
+                    ("TwistSub.outputs:execOut", "MsgCounter.inputs:execIn"),
                 ],
                 og.Controller.Keys.SET_VALUES: [
                     ("ROS2Context.inputs:useDomainIDEnvVar", True),
@@ -120,9 +128,11 @@ def setup_cmd_vel_graph(topic_name: str = "/cmd_vel") -> Tuple[object, object]:
             },
         )
     twist_node_path = graph_path + "/TwistSub"
+    counter_node_path = graph_path + "/MsgCounter"
     return (
         og.Controller.attribute(twist_node_path + ".outputs:linearVelocity"),
         og.Controller.attribute(twist_node_path + ".outputs:angularVelocity"),
+        og.Controller.attribute(counter_node_path + ".outputs:count"),
     )
 
 
