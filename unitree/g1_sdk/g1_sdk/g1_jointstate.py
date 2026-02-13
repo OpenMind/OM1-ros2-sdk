@@ -17,6 +17,14 @@ class G1JointStatePublisher(Node):
     def __init__(self):
         super().__init__("g1_joint_state_publisher")
 
+        self.declare_parameter("publish_rate", 50.0)
+        self.publish_rate = self.get_parameter("publish_rate").value
+
+        self.min_publish_interval = (
+            1.0 / self.publish_rate if self.publish_rate > 0 else 0.0
+        )
+        self.last_publish_time = self.get_clock().now()
+
         # Publisher for joint states
         self.joint_state_pub = self.create_publisher(JointState, "joint_states", 10)
 
@@ -64,6 +72,7 @@ class G1JointStatePublisher(Node):
 
         self.msg_count = 0
         self.get_logger().info("G1 Joint State Publisher initialized")
+        self.get_logger().info(f"Publishing at {self.publish_rate} Hz")
         self.get_logger().info("Subscribing to /lowstate (unitree_hg/msg/LowState)")
         self.get_logger().info("Publishing to /joint_states")
 
@@ -76,6 +85,15 @@ class G1JointStatePublisher(Node):
         msg : LowState
             The incoming LowState message containing motor states.
         """
+        current_time = self.get_clock().now()
+        time_since_last_publish = (
+            current_time - self.last_publish_time
+        ).nanoseconds / 1e9
+
+        if time_since_last_publish < self.min_publish_interval:
+            return
+
+        self.last_publish_time = current_time
         self.msg_count += 1
 
         try:
