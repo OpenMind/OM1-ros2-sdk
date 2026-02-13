@@ -11,6 +11,8 @@ Usage:
     python3 insta360_stream.py
 """
 
+import queue
+import threading
 import time
 
 import cv2
@@ -48,10 +50,20 @@ class Insta360Stream(Node):
         )
 
         self.cap = None
+        self.running = True
         self.initialize_capture()
 
-        timer_period = 1.0 / (self.fps * 2)  # Poll at 2x FPS for low latency
-        self.timer = self.create_timer(timer_period, self.capture_and_publish)
+        self.publish_queue = queue.Queue(maxsize=2)
+
+        self.frame_count = 0
+        self.last_fps_time = time.time()
+        self.create_timer(2.0, self.report_fps)
+
+        self.capture_thread = threading.Thread(target=self._capture_loop, daemon=True)
+        self.capture_thread.start()
+
+        self.publish_thread = threading.Thread(target=self._publish_loop, daemon=True)
+        self.publish_thread.start()
 
         self.get_logger().info("Insta360 Stream Bridge started")
         self.get_logger().info(f"RTSP URL: {self.rtsp_url}")
@@ -78,43 +90,78 @@ class Insta360Stream(Node):
             return True
         except Exception as e:
             self.get_logger().error(f"Error initializing capture: {e}")
-            time.sleep(5)
             return False
 
-    def capture_and_publish(self):
-        """Capture frame from RTSP stream and publish to ROS2 topic."""
-        if self.cap is None or not self.cap.isOpened():
-            self.get_logger().warn("Attempting to reconnect to RTSP stream...")
-            self.initialize_capture()
-            return
-
-        try:
-            for _ in range(2):
-                self.cap.grab()
-
-            ret, frame = self.cap.retrieve()
-
-            if not ret:
-                self.get_logger().warn(
-                    "Failed to capture frame, attempting reconnection..."
-                )
-                self.cap.release()
+    def _capture_loop(self):
+        """Dedicated thread for reading frames from RTSP stream."""
+        while self.running and rclpy.ok():
+            if self.cap is None or not self.cap.isOpened():
+                self.get_logger().warn("Attempting to reconnect to RTSP stream...")
                 self.initialize_capture()
-                return
+                time.sleep(1)
+                continue
 
-            image_msg = self.bridge.cv2_to_imgmsg(frame, encoding="bgr8")
-            image_msg.header.stamp = self.get_clock().now().to_msg()
-            image_msg.header.frame_id = "insta360_camera"
+            try:
+                ret, frame = self.cap.read()
 
-            self.image_publisher.publish(image_msg)
+                if not ret:
+                    self.get_logger().warn(
+                        "Failed to capture frame, attempting reconnection..."
+                    )
+                    self.cap.release()
+                    self.initialize_capture()
+                    time.sleep(1)
+                    continue
 
-        except Exception as e:
-            self.get_logger().error(f"Error capturing/publishing frame: {e}")
+                try:
+                    self.publish_queue.put_nowait((frame, self.get_clock().now()))
+                except queue.Full:
+                    pass
+
+                self.frame_count += 1
+
+            except Exception as e:
+                self.get_logger().error(f"Error capturing frame: {e}")
+                time.sleep(0.1)
+
+    def _publish_loop(self):
+        """Dedicated thread for publishing frames to ROS2 topic."""
+        while self.running and rclpy.ok():
+            try:
+                frame, timestamp = self.publish_queue.get(timeout=1.0)
+
+                image_msg = self.bridge.cv2_to_imgmsg(frame, encoding="bgr8")
+                image_msg.header.stamp = timestamp.to_msg()
+                image_msg.header.frame_id = "insta360_camera"
+
+                self.image_publisher.publish(image_msg)
+
+            except queue.Empty:
+                continue
+            except Exception as e:
+                self.get_logger().error(f"Error publishing frame: {e}")
+
+    def report_fps(self):
+        """Report actual capture FPS."""
+        current_time = time.time()
+        elapsed = current_time - self.last_fps_time
+        fps = self.frame_count / elapsed if elapsed > 0 else 0
+        self.get_logger().info(f"Capturing at {fps:.2f} FPS")
+        self.frame_count = 0
+        self.last_fps_time = current_time
 
     def destroy_node(self):
         """Clean up resources."""
+        self.running = False
+        if self.capture_thread is not None and self.capture_thread.is_alive():
+            self.capture_thread.join(timeout=2.0)
+
+        if self.publish_thread is not None and self.publish_thread.is_alive():
+            self.publish_thread.join(timeout=2.0)
+
         if self.cap is not None:
             self.cap.release()
+
         super().destroy_node()
 
 
