@@ -46,7 +46,7 @@ class Insta360Stream(Node):
         )
 
         self.image_publisher = self.create_publisher(
-            Image, "/camera/insta360/image_raw2", qos_profile
+            Image, "/camera/insta360/image_raw", qos_profile
         )
 
         self.cap = None
