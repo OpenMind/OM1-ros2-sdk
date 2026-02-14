@@ -266,6 +266,9 @@
           ".*/api/bashrunner/request",
           ".*/api/bashrunner/response",
 
+          // Booster RPC service
+          ".*/booster_rpc_service",
+
           // SLAM services
           ".*/uslam/client_command",
           ".*/utlidar/mapping_cmd",
@@ -313,6 +316,9 @@
           ".*/api/assistant_recorder/response",
           ".*/api/bashrunner/request",
           ".*/api/bashrunner/response",
+
+          // Booster RPC service
+          ".*/booster_rpc_service",
 
           // SLAM services
           ".*/uslam/client_command",
